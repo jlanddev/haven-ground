@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { width: 100%; height: 100vh; }
+    .watermark {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      z-index: 1000;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="watermark">Browne Mapping Technology</div>
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const parcel1 = [
+      [32.2672465, -101.4019454],
+      [32.2658308, -101.4014937],
+      [32.2656163, -101.4025188],
+      [32.2661956, -101.4027849],
+      [32.2671911, -101.4027116]
+    ];
+
+    const parcel2 = [
+      [32.2671525, -101.4031988],
+      [32.2671310, -101.4034881],
+      [32.2668907, -101.4034576],
+      [32.2664950, -101.4033815],
+      [32.2661116, -101.4032081]
+    ];
+
+    const allPoints = [...parcel1, ...parcel2];
+    const centerLat = allPoints.reduce((sum, p) => sum + p[0], 0) / allPoints.length;
+    const centerLng = allPoints.reduce((sum, p) => sum + p[1], 0) / allPoints.length;
+
+    const map = L.map('map', {
+      scrollWheelZoom: false,
+      dragging: true,
+      touchZoom: true,
+      doubleClickZoom: true,
+      boxZoom: true
+    }).setView([centerLat, centerLng], 17);
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: false,
+      maxZoom: 20
+    }).addTo(map);
+    
+    map.attributionControl.setPrefix(false);
+
+    const boundaryStyle = {
+      color: '#228B22',
+      weight: 4,
+      opacity: 1,
+      fillColor: '#228B22',
+      fillOpacity: 0.15
+    };
+
+    L.polygon(parcel1, boundaryStyle).addTo(map);
+    L.polygon(parcel2, boundaryStyle).addTo(map);
+
+    L.polyline([parcel1[4], parcel2[0]], {
+      color: '#FFD700',
+      weight: 3,
+      opacity: 0.8,
+      dashArray: '10, 10'
+    }).addTo(map);
+
+    L.marker([32.2665, -101.4021], {
+      icon: L.divIcon({
+        className: 'parcel-label',
+        html: '<div style="background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-family: sans-serif;">Parcel 1</div>',
+        iconSize: [80, 30],
+        iconAnchor: [40, 15]
+      })
+    }).addTo(map);
+
+    L.marker([32.2668, -101.4033], {
+      icon: L.divIcon({
+        className: 'parcel-label',
+        html: '<div style="background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-family: sans-serif;">Parcel 2</div>',
+        iconSize: [80, 30],
+        iconAnchor: [40, 15]
+      })
+    }).addTo(map);
+
+    map.zoomControl.setPosition('topright');
+    
+    const bounds = L.latLngBounds([...parcel1, ...parcel2]);
+    map.fitBounds(bounds, { padding: [50, 50] });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1677 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { properties as propertiesData } from '../propertiesData';
+import { getContactFormText, getSectionHeaders, sanitizePropertyData } from '../propertyConfig';
+
+// Property Map Component with two separate parcels
+function PropertyMap() {
+  const [mapLoaded, setMapLoaded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (window.L) {
+      initializeMap();
+      return;
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = initializeMap;
+    document.head.appendChild(script);
+
+    function initializeMap() {
+      setTimeout(() => {
+        if (!document.getElementById('leaflet-map')) return;
+        
+        const L = window.L;
+        
+        const parcel1 = [
+          [32.2672465, -101.4019454],
+          [32.2658308, -101.4014937],
+          [32.2656163, -101.4025188],
+          [32.2661956, -101.4027849],
+          [32.2671911, -101.4027116]
+        ];
+
+        const parcel2 = [
+          [32.2671525, -101.4031988],
+          [32.2671310, -101.4034881],
+          [32.2668907, -101.4034576],
+          [32.2664950, -101.4033815],
+          [32.2661116, -101.4032081]
+        ];
+
+        const allPoints = [...parcel1, ...parcel2];
+        const centerLat = allPoints.reduce((sum, p) => sum + p[0], 0) / allPoints.length;
+        const centerLng = allPoints.reduce((sum, p) => sum + p[1], 0) / allPoints.length;
+
+        try {
+          const map = L.map('leaflet-map', {
+            scrollWheelZoom: false
+          }).setView([centerLat, centerLng], 17);
+
+          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: false,
+            maxZoom: 20
+          }).addTo(map);
+          
+          // Remove Leaflet attribution
+          map.attributionControl.setPrefix(false);
+
+          const boundaryStyle = {
+            color: '#228B22',
+            weight: 4,
+            opacity: 1,
+            fillColor: '#228B22',
+            fillOpacity: 0.15
+          };
+
+          // Add Parcel 1
+          L.polygon(parcel1, boundaryStyle).addTo(map);
+          
+          // Add Parcel 2  
+          L.polygon(parcel2, boundaryStyle).addTo(map);
+
+          // Connection line between parcels
+          L.polyline([parcel1[4], parcel2[0]], {
+            color: '#FFD700',
+            weight: 3,
+            opacity: 0.8,
+            dashArray: '10, 10'
+          }).addTo(map);
+
+          // Add labels for each parcel
+          L.marker([32.2665, -101.4021], {
+            icon: L.divIcon({
+              className: 'parcel-label',
+              html: '<div style="background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold;">Parcel 1</div>',
+              iconSize: [80, 30],
+              iconAnchor: [40, 15]
+            })
+          }).addTo(map);
+
+          L.marker([32.2668, -101.4033], {
+            icon: L.divIcon({
+              className: 'parcel-label',
+              html: '<div style="background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold;">Parcel 2</div>',
+              iconSize: [80, 30],
+              iconAnchor: [40, 15]
+            })
+          }).addTo(map);
+
+          map.zoomControl.setPosition('topright');
+          
+          // Fit map to show both parcels
+          const bounds = L.latLngBounds([...parcel1, ...parcel2]);
+          map.fitBounds(bounds, { padding: [50, 50] });
+
+          setMapLoaded(true);
+        } catch (error) {
+          console.error('Error initializing map:', error);
+        }
+      }, 100);
+    }
+
+    return () => {
+      if (document.getElementById('leaflet-map')) {
+        const mapContainer = document.getElementById('leaflet-map');
+        if (mapContainer && mapContainer._leaflet_id) {
+          mapContainer._leaflet = null;
+        }
+        mapContainer.innerHTML = '';
+      }
+    };
+  }, []);
+
+  return (
+    <div className="relative">
+      <div 
+        id="leaflet-map" 
+        className="w-full h-[400px] rounded-lg"
+        style={{ background: '#f0f0f0' }}
+      >
+        {!mapLoaded && (
+          <div className="flex items-center justify-center h-full text-[#7D6B58]">Loading boundary map...</div>
+        )}
+      </div>
+      
+      {/* Browne Mapping Technology watermark */}
+      {mapLoaded && (
+        <div className="absolute bottom-2 left-2 bg-[#2F4F33] bg-opacity-60 text-white px-2 py-1 rounded text-[10px] pointer-events-none" style={{ zIndex: 1001 }}>
+          Browne Mapping Technology
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function PropertyDetailPage() {
+  const params = useParams();
+  const propertyId = parseInt(params.id);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedLot, setExpandedLot] = useState(null);
+  const [selectedLotImage, setSelectedLotImage] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
+  const [modalImages, setModalImages] = useState([]);
+  const [selectedLot, setSelectedLot] = useState(null);
+
+  // Modal functions
+  const openModal = (images, startIndex) => {
+    setModalImages(images);
+    setModalImageIndex(startIndex);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const nextModalImage = () => {
+    setModalImageIndex((modalImageIndex + 1) % modalImages.length);
+  };
+
+  const prevModalImage = () => {
+    setModalImageIndex(modalImageIndex === 0 ? modalImages.length - 1 : modalImageIndex - 1);
+  };
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (!isModalOpen) return;
+      
+      if (e.key === 'Escape') {
+        closeModal();
+      } else if (e.key === 'ArrowRight') {
+        nextModalImage();
+      } else if (e.key === 'ArrowLeft') {
+        prevModalImage();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isModalOpen, modalImageIndex, modalImages.length]);
+
+  // Properties data matching the main properties page
+  const properties = [
+    {
+      id: 1,
+      title: "Nashboro Village",
+      location: "Nashville", 
+      description: "Our Nashboro Village is coming in 2027, and it's going to redefine what community means around here.",
+      images: ["/images/nashboro/Nashboro Village Plan.png"],
+      features: ["30 Townhomes", "13,000 Sq Ft Commercial", "12-Acre Park"],
+      lots: "18 x 40 and 20 x 40",
+      homeTypes: "Townhomes & Commercial",
+      priceRange: "Coming 2027",
+      type: "community",
+      featured: true,
+      address: "Nashboro Village",
+      county: "Nashville",
+      targetBuyer: "Families and commercial developers",
+      detailedDescription: "Our Nashboro Village is coming in 2027, and it's going to redefine what community means around here.\n\nThese thirty townhomes we're putting up aren't just structures to fill space. They're going to be three stories of real homes where families will gather, where kids will leave their handprints on walls, where life's moments - both ordinary and extraordinary - will unfold day after day.\n\nI'm particularly proud of the restaurant space we've designed. It'll be the kind of place where you don't just eat, you experience. Where conversations flow as easily as the wine. Where the chef might come out to your table not because it's policy, but because they genuinely want to know what you thought of that new dish they've been perfecting.\n\nAround that, our 13,000 square feet of commercial space will bring the right kind of energy - shops that serve a purpose, that add something meaningful to daily life. Places worth walking to, worth spending time in.\n\nAnd that 12-acre park? That's the heart of it all. That's our commitment to creating something bigger than just buildings. It's green space where community actually happens - where dogs run until they're happily exhausted, where kids climb trees, where you might strike up a conversation with a neighbor that turns into a friendship spanning years. Those 1,500 feet of sidewalks aren't just pathways; they're connections, linking everything together.\n\nEven our approach to the land itself tells you something about what we value. Those pervious pavers and bioretention systems show we're thinking about tomorrow, not just today.\n\nOur Nashboro Village is coming in 2027. We're building it right, building it to last, building it for life as it should be lived.\n\nWorth the wait. Worth calling home.",
+      specifications: {
+        lotSize: "3.46 Acres",
+        zoning: "R10 (PUD)",
+        proposedUse: "13,000 Sq Ft Commercial + 30 Townhomes",
+        maxHeight: "Commercial 1 Story in 30' / Residential 3 Stories in 35'",
+        parking: "Commercial: 74 Stalls (1 per 175 Sq Ft) / Residential: 34 Garage + 40 Surface (2.5 per Unit)",
+        amenities: "12 Acre Improved Park Area accessible to public, Outdoor Patio Space, Attractive Storm Water Management (Pervious Pavers & Bioretention), 1,500 linear feet of Sidewalk Accessible to Public"
+      },
+      mapEmbed: "https://www.acres.com/embed?savedId=336000&layers=elevation&enable3dMode=1&boundaryColor=00FFFF",
+      contactFormText: "Connect with our team to learn more about Nashboro Village townhomes coming in 2027. Be first to know when reservations open for this exciting Nashville community."
+    },
+    {
+      id: 2,
+      title: "Kentucky Trails",
+      location: "Belton", 
+      description: "Discover attainable homeownership in Belton's newest community, with quality single-family homes starting from the mid $300s. Kentucky Trails is designed with first-time homebuyers and growing families in mind.",
+      images: [
+        "/images/kt images/kt images/kt plat.png",
+        "/images/kt images/kt images/kt entrance.png", 
+        "/images/kt images/kt images/kt model a.png",
+        "/images/kt images/kt images/kt model b.png",
+        "/images/kt images/kt images/kt model c.png"
+      ],
+      features: ["Affordable Starter Homes", "Community Pond", "Walking Trails", "Direct Elementary School Access", "Open Green Spaces", "Safe Cul-de-sacs"],
+      lots: "40 x 120 and 50 x 120",
+      homeTypes: "Single-Family",
+      priceRange: "Starting Mid $300s",
+      type: "community",
+      featured: true,
+      address: "Kentucky Trails, Belton, TX",
+      county: "Bell County, TX",
+      status: "COMING SOON",
+      targetBuyer: "First-time homebuyers and growing families",
+      communityHighlights: [
+        "Affordable, thoughtfully designed starter homes",
+        "Family-friendly community pond", 
+        "Convenient walking trails connecting neighbors",
+        "Direct access to the new elementary school",
+        "Open green spaces for children to play",
+        "Safe neighborhood design with quiet cul-de-sacs"
+      ],
+      homeFeatures: [
+        "Smart, efficient floorplans that maximize space",
+        "Modern exteriors with curb appeal",
+        "Practical, open layouts for everyday living", 
+        "Quality construction at attainable price points",
+        "Yard space for growing families",
+        "Standard 2-car garages"
+      ],
+      contactFormText: "Connect with our sales team to learn more about homes in Kentucky Trails. Schedule a visit to see this exciting Belton community."
+    },
+    {
+      id: 3,
+      title: "Oak Hill Reserve",
+      location: "Chappell Hill",
+      description: "Discover the perfect balance of suburban convenience and rural tranquility at Oak Hill Reserve. These thoughtfully planned homesites offer stunning views in the heart of Texas.",
+      images: [
+        "/images/Oak Hill/Oak Hill Reserve/reel_1 (2160p) (2).mp4",
+        "/images/Oak Hill/Homesite1/1_081a9246.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/2_081a9251.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/3_081a9256.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/4_081a9268.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/6_081a9279.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/7_081a9281.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/10_081a9296.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/14_081a9319.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/15_081a9324.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/16_081a9329.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/17_081a9334.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/18_081a9336.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/19_081a9341.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/21_081a9351.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/22_081a9361.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/24_081a9374.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/25_081a9379.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/26_081a9384.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/27_081a9386.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/31_081a9409.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/33_081a9424.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/34_081a9429.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/35_081a9434.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/36_081a9439.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/42_081a9466.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/43_081a9471.jpg.jpeg",
+        "/images/Oak Hill/Homesite1/44_3_3.jpg.jpeg"
+      ],
+      features: ["Near Gates Ranch", "Build-Friendly Topography", "Power on Site"],
+      lots: "Lot Sizes: 1.8-2 acres",
+      homeTypes: "Custom Homes",
+      priceRange: "From the $100s",
+      type: "community",
+      featured: true,
+      address: "Oak Hill Reserve, Chappell Hill, TX",
+      county: "Washington County, TX",
+      targetBuyer: "Available country homesites in rural Texas setting",
+      communityHighlights: [
+        "Near the prestigious Gates Ranch development",
+        "Build-friendly topography for easy construction", 
+        "Power already on site for immediate development",
+        "Large 1.8-2 acre lots for privacy and space",
+        "Rural setting with easy access to amenities",
+        "Custom home opportunities with 2500 sqft minimum"
+      ],
+      homeFeatures: [
+        "Single-family custom homes starting at 2500 sqft",
+        "Spec homes available from the $900s", 
+        "Ready building lots from mid $100s",
+        "Build-friendly terrain for construction",
+        "Power infrastructure already in place",
+        "Spacious lots for privacy and outdoor living"
+      ],
+      detailedDescription: "Oak Hill Reserve offers the perfect balance of suburban convenience and rural tranquility in Chappell Hill. These thoughtfully planned homesites provide stunning views in the heart of Texas.\n\nWith 1.8-2 acre lots, you'll have plenty of space for your custom dream home with a minimum of 2500 square feet. Our build-friendly topography makes construction straightforward, and power is already on site for immediate development.\n\nLocated near the prestigious Gates Ranch development, Oak Hill Reserve combines rural charm with modern convenience. Whether you're looking for spec homes starting in the $900s or ready lots from the mid $100s, we have options to fit your vision.",
+      mapEmbed: "https://www.acres.com/embed?savedId=339554&enable3dMode=1&boundaryColor=00FFFF",
+      lotTable: [
+        { 
+          lot: "Homesite Astoria", 
+          size: "2.0 acres", 
+          price: "$1,900,000", 
+          status: "Move-In Ready", 
+          features: ["Modern Farmhouse", "3BR/3.5BA", "Game Room"],
+          hasDetails: true,
+          description: "Nestled in our peaceful Oak Hill Reserve subdivision in Chapel Hill, Washington County, this charming modern farmhouse sits on a beautiful 2+ acre lot with lovely countryside views. Our friendly, tight-knit community is truly special - we're blessed with wonderful neighbors who look out for each other, and we're just a stone's throw from the famous Gates Ranch!\n\nThe home has a comfortable layout with 3 downstairs bedrooms, each with their own bathroom. The owner's suite has a really nice walk-in closet with built-ins that'll make organizing a breeze. You'll fall in love with the open living area - it's got these gorgeous vaulted ceilings with wood beams that give it so much character, plus a cozy wood-burning fireplace for those chilly Texas evenings.\n\nThe kitchen is a real gem for anyone who loves to cook - 48\" Thermador gas range with double oven and a super handy Butler's Pantry nearby. Upstairs, there's this fantastic 30'x12' space that would be perfect for a game room or extra sleeping area for the grandkids when they visit! It even has its own little beverage area with a sink and wine cooler.\n\nOut back, you'll enjoy countless evenings on the covered patio with its outdoor kitchen - perfect for BBQs with the neighbors! The community water system is reliable, and we've got underground utilities and sensible restrictions to keep our little slice of heaven looking nice.\n\nWashington County is such a genuine, down-to-earth place to live - you'll love the authentic small-town feel, the incredible wildflower displays in spring, and all the local festivals. Come join us in Oak Hill Reserve - where neighbors become friends and life moves at just the right pace!",
+          images: [
+            "/images/Oak Hill/Homesite1/1_081a9246.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/2_081a9251.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/3_081a9256.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/4_081a9268.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/6_081a9279.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/7_081a9281.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/10_081a9296.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/14_081a9319.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/15_081a9324.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/16_081a9329.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/17_081a9334.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/18_081a9336.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/19_081a9341.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/21_081a9351.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/22_081a9361.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/24_081a9374.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/25_081a9379.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/26_081a9384.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/27_081a9386.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/31_081a9409.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/33_081a9424.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/34_081a9429.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/35_081a9434.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/36_081a9439.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/42_081a9466.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/43_081a9471.jpg.jpeg",
+            "/images/Oak Hill/Homesite1/44_3_3.jpg.jpeg"
+          ]
+        },
+        { lot: "Lot 1", size: "1.8 acres", price: "$135,000", status: "Available", features: ["Power on Site"] },
+        { lot: "Lot 2", size: "2.0 acres", price: "$150,000", status: "Available", features: ["Power on Site"] },
+        { lot: "Lot 3", size: "1.9 acres", price: "$142,500", status: "Available", features: ["Power on Site"] },
+        { lot: "Lot 4", size: "2.0 acres", price: "$150,000", status: "Available", features: ["Power on Site"] },
+        { lot: "Lot 5", size: "1.8 acres", price: "$135,000", status: "Available", features: ["Power on Site"] },
+        { lot: "Lot 6", size: "1.9 acres", price: "$142,500", status: "Available", features: ["Power on Site"] },
+        { lot: "Lot 7", size: "2.0 acres", price: "$150,000", status: "Available", features: ["Power on Site"] },
+        { lot: "Lot 8", size: "1.8 acres", price: "$135,000", status: "Available", features: ["Power on Site"] }
+      ],
+      contactFormText: "Talk to our dedicated specialist who knows Oak Hill Reserve inside and out. We'll help you find the perfect homesite in Chappell Hill."
+    }
+  ];
+
+  const property = properties.find(p => p.id === propertyId) || properties[0];
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % property.images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => prev === 0 ? property.images.length - 1 : prev - 1);
+  };
+
+  const handleShare = () => {
+    const shareData = {
+      title: `${property.title} - ${property.location}`,
+      text: `Check out this beautiful ${property.acres} acre property in ${property.location}`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      navigator.share(shareData);
+    } else {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        alert('Property link copied to clipboard! 📋');
+      });
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen font-serif bg-stone-50 overflow-x-hidden max-w-full">
+      {/* Navigation */}
+      <nav className="bg-[#F5EFD9] py-4 border-b border-[#D2C6B2] sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center relative z-20">
+              <a href="/" className="relative">
+                <img 
+                  src="/images/Haven LOGO Use.png" 
+                  alt="Haven Ground Logo" 
+                  className="h-16 sm:h-20 md:h-24 w-auto hover:opacity-90 transition-opacity duration-300"
+                />
+              </a>
+            </div>
+
+            <div className="hidden md:flex items-center space-x-8 lg:space-x-10">
+              
+              <a href="/team" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Our Team</a>
+              <a href="/properties" className="text-[#2F4F33] text-lg font-medium border-b-2 border-[#2F4F33] transition-colors duration-200">Properties</a>
+              <a href="/development" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Development</a>
+              <a href="/about" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">About</a>
+              <a href="/contact" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Contact</a>
+            </div>
+
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden relative z-20 p-2 rounded-md text-[#2F4F33] hover:text-[#7D6B58] hover:bg-[#D2C6B2] focus:outline-none focus:ring-2 focus:ring-[#7D6B58] transition-colors duration-200"
+            >
+              <div className="w-6 h-6 flex flex-col justify-center items-center space-y-1">
+                <span className={`block w-6 h-0.5 bg-current transform transition duration-300 ease-in-out ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
+                <span className={`block w-6 h-0.5 bg-current transform transition duration-300 ease-in-out ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+                <span className={`block w-6 h-0.5 bg-current transform transition duration-300 ease-in-out ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
+              </div>
+            </button>
+          </div>
+
+          {/* Mobile Navigation Menu */}
+          <div className={`md:hidden absolute top-full left-0 right-0 bg-[#F5EFD9] border-b border-[#D2C6B2] shadow-lg transform transition-all duration-300 ease-in-out origin-top ${isMobileMenuOpen ? 'translate-y-0 opacity-100 scale-y-100' : '-translate-y-2 opacity-0 scale-y-95 pointer-events-none'}`}>
+            <div className="px-4 py-4 space-y-2">
+              
+              <a href="/team" className="block text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium py-3 hover:bg-[#D2C6B2] rounded-lg px-4 transition-all duration-200 border-l-4 border-transparent hover:border-[#2F4F33]">Our Team</a>
+              <a href="/properties" className="block text-[#2F4F33] font-medium text-lg py-3 bg-[#D2C6B2] rounded-lg px-4 border-l-4 border-[#2F4F33]">Properties</a>
+              <a href="/development" className="block text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium py-3 hover:bg-[#D2C6B2] rounded-lg px-4 transition-all duration-200 border-l-4 border-transparent hover:border-[#2F4F33]">Development</a>
+              <a href="/about" className="block text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium py-3 hover:bg-[#D2C6B2] rounded-lg px-4 transition-all duration-200 border-l-4 border-transparent hover:border-[#2F4F33]">About</a>
+              <a href="/contact" className="block text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium py-3 hover:bg-[#D2C6B2] rounded-lg px-4 transition-all duration-200 border-l-4 border-transparent hover:border-[#2F4F33]">Contact</a>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Property Header */}
+      <div className="bg-white py-8 border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="hidden sm:flex justify-between items-start gap-6">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl text-[#2F4F33] font-light mb-3 break-words leading-tight text-wrap">{property.title}</h1>
+              <p className="text-[#7D6B58] text-base md:text-lg mb-2 break-words leading-relaxed text-wrap">{property.location}</p>
+            </div>
+            <div className="text-right flex-shrink-0 min-w-0">
+              {(property.type === 'community' || property.type === 'subdivision') ? (
+                <>
+                  <p className="text-2xl md:text-3xl lg:text-4xl text-[#2F4F33] font-light mb-2 break-words">{property.priceRange}</p>
+                  <p className="text-[#7D6B58] mb-1 text-sm md:text-base break-words">{property.lots}</p>
+                  <p className="text-lg md:text-xl lg:text-2xl text-[#2F4F33] mb-1 break-words">{property.homeTypes}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl md:text-3xl lg:text-4xl text-[#2F4F33] font-light mb-2 break-words">${property.price?.toLocaleString()}</p>
+                  <p className="text-[#7D6B58] mb-1 text-sm md:text-base break-words">${property.pricePerAcre?.toLocaleString()}/acre</p>
+                  <p className="text-lg md:text-xl lg:text-2xl text-[#2F4F33] mb-1 break-words">{property.acres} acres</p>
+                </>
+              )}
+            </div>
+          </div>
+          
+          <div className="sm:hidden px-2">
+            <h1 className="text-xl text-[#2F4F33] font-light mb-3 break-words leading-tight text-wrap">{property.title}</h1>
+            <p className="text-[#7D6B58] text-base mb-2 break-words leading-relaxed text-wrap">{property.location}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 overflow-x-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+          
+          {/* Left Column - Images and Details */}
+          <div className="lg:col-span-2">
+            
+            {/* Image/Video Gallery */}
+            <div className="bg-white rounded-lg overflow-hidden shadow-xl mb-8">
+              <div className="relative">
+                {property.images[currentImageIndex].endsWith('.mp4') ? (
+                  <div className="relative bg-[#F5EFD9] flex items-center justify-center" style={{ minHeight: '400px' }}>
+                    <video 
+                      src={property.images[currentImageIndex]}
+                      poster="/images/Oak Hill/Oak Hill Reserve/IMG_8202.jpg"
+                      className="max-w-full max-h-[600px] h-auto rounded-lg shadow-lg"
+                      controls
+                      muted
+                      loop
+                      playsInline
+                      webkit-playsinline="true"
+                      controlsList="nodownload nofullscreen noremoteplayback"
+                      disablePictureInPicture
+                      style={{
+                        maxHeight: '600px',
+                        width: 'auto',
+                        objectFit: 'contain'
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <img 
+                    src={property.images[currentImageIndex]} 
+                    alt={`${property.title} - Image ${currentImageIndex + 1}`}
+                    className="w-full h-auto object-contain bg-[#F5EFD9] rounded-lg shadow-lg"
+                    style={{ maxHeight: '600px', imageRendering: 'crisp-edges' }}
+                  />
+                )}
+                
+                <button
+                  onClick={prevImage}
+                  className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 bg-[#2F4F33] bg-opacity-70 text-white p-2 sm:p-3 rounded-full hover:bg-opacity-90 focus:bg-opacity-90 focus:ring-2 focus:ring-white focus:outline-none transition-all duration-300 text-xl sm:text-2xl font-bold"
+                >
+                  ‹
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-[#2F4F33] bg-opacity-70 text-white p-2 sm:p-3 rounded-full hover:bg-opacity-90 focus:bg-opacity-90 focus:ring-2 focus:ring-white focus:outline-none transition-all duration-300 text-xl sm:text-2xl font-bold"
+                >
+                  ›
+                </button>
+
+                <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-[#2F4F33] bg-opacity-70 text-white px-2 sm:px-3 py-1 rounded-lg text-sm sm:text-base font-medium">
+                  {currentImageIndex + 1} / {property.images.length}
+                </div>
+              </div>
+
+              <div className="p-3 sm:p-4 flex gap-2 sm:gap-3 overflow-x-auto">
+                {property.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                      index === currentImageIndex 
+                        ? 'border-[#2F4F33] shadow-lg scale-105' 
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] hover:shadow-md'
+                    }`}
+                  >
+                    {image.endsWith('.mp4') ? (
+                      <div className="relative w-full h-full bg-[#F5EFD9] flex items-center justify-center">
+                        <video 
+                          src={image}
+                          poster="/images/Oak Hill/Oak Hill Reserve/IMG_8202.jpg"
+                          className="w-full h-full object-cover"
+                          muted
+                          loop
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-white bg-opacity-80 rounded-full p-1">
+                            <svg className="w-4 h-4 text-[#2F4F33]" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img 
+                        src={image} 
+                        alt={`Thumbnail ${index + 1}`}
+                        className="w-full h-full object-cover bg-[#F5EFD9]"
+                        style={{ imageRendering: 'crisp-edges' }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Lot Chart - Show for Oak Hill Reserve */}
+            {property.id === 3 && property.lotTable && (
+              <div className="bg-white rounded-lg shadow-xl mb-8 overflow-hidden">
+                <div className="p-4 bg-[#2F4F33] text-white">
+                  <h2 className="text-xl font-medium">Available Properties</h2>
+                  <p className="text-sm opacity-90 mt-1">Custom homesites and move-in ready homes</p>
+                </div>
+                {/* Mobile Card Layout */}
+                <div className="block sm:hidden">
+                  {property.lotTable?.map((lot, index) => (
+                    <div key={index} className="border-b border-gray-200 last:border-b-0">
+                      <div 
+                        className={`p-4 ${lot.hasDetails ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                        onClick={() => {
+                          if (lot.hasDetails) {
+                            setExpandedLot(expandedLot === index ? null : index);
+                            setSelectedLot(lot);
+                          }
+                        }}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-[#2F4F33] text-lg">{lot.lot}</h3>
+                            <p className="text-sm text-gray-600">{lot.size}</p>
+                          </div>
+                          <div className="text-right ml-4">
+                            <p className="font-semibold text-[#2F4F33]">{lot.price}</p>
+                            <p className="text-xs text-gray-600">{lot.status}</p>
+                          </div>
+                        </div>
+                        {lot.features && lot.features.length > 0 && (
+                          <div className="mt-2">
+                            <div className="flex flex-wrap gap-1">
+                              {lot.features.map((feature, fIdx) => (
+                                <span key={fIdx} className="inline-block bg-[#F5EFD9] text-[#2F4F33] px-2 py-1 rounded-full text-xs">
+                                  {feature}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {lot.hasDetails && (
+                          <div className="mt-3 text-center">
+                            <span className="text-sm text-[#2F4F33] font-medium">
+                              {expandedLot === index ? '▼ Hide Details' : '▶ View Details'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Mobile Expanded Content */}
+                      {expandedLot === index && lot.hasDetails && (
+                        <div className="bg-[#F5EFD9] p-4">
+                          <h4 className="font-bold text-[#2F4F33] mb-3">About This Home</h4>
+                          <div className="text-sm text-[#2F4F33] space-y-3 mb-4 leading-relaxed">
+                            {lot.description.split('\n\n').map((paragraph, pIdx) => (
+                              <p key={pIdx}>{paragraph}</p>
+                            ))}
+                          </div>
+                          <div className="flex flex-col gap-2 mb-4">
+                            <button className="w-full bg-[#2F4F33] text-white py-3 rounded font-medium">
+                              Schedule a Tour
+                            </button>
+                            <button className="w-full border-2 border-[#2F4F33] text-[#2F4F33] py-3 rounded font-medium">
+                              Request Info
+                            </button>
+                          </div>
+                          {lot.images && lot.images.length > 0 && (
+                            <div>
+                              <h5 className="font-bold text-[#2F4F33] mb-2">Photos ({lot.images.length})</h5>
+                              <div className="grid grid-cols-3 gap-2">
+                                {lot.images.slice(0, 6).map((img, imgIdx) => (
+                                  <img 
+                                    key={imgIdx}
+                                    src={img}
+                                    alt={`Photo ${imgIdx + 1}`}
+                                    className="w-full h-20 object-cover rounded cursor-pointer"
+                                    onClick={() => openModal(lot.images, imgIdx)}
+                                  />
+                                ))}
+                              </div>
+                              {lot.images.length > 6 && (
+                                <button 
+                                  className="mt-2 text-sm text-[#2F4F33] underline"
+                                  onClick={() => openModal(lot.images, 0)}
+                                >
+                                  View all {lot.images.length} photos
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table Layout */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-[#F5EFD9]">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-[#2F4F33] font-medium">Lot</th>
+                        <th className="px-4 py-3 text-left text-[#2F4F33] font-medium">Size</th>
+                        <th className="px-4 py-3 text-left text-[#2F4F33] font-medium">Price</th>
+                        <th className="px-4 py-3 text-left text-[#2F4F33] font-medium">Status</th>
+                        <th className="px-4 py-3 text-left text-[#2F4F33] font-medium">Features</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {property.lotTable.map((lot, index) => (
+                        <>
+                          <tr 
+                            key={index} 
+                            className={`${index % 2 === 0 ? 'bg-white' : 'bg-[#F5EFD9]/30'} ${lot.hasDetails ? 'cursor-pointer hover:bg-[#D2C6B2]/20 transition-colors' : ''}`}
+                            onClick={() => {
+                              if (lot.hasDetails) {
+                                setExpandedLot(expandedLot === index ? null : index);
+                                setSelectedLot(lot);
+                              }
+                            }}
+                          >
+                            <td className="px-4 py-3 text-[#2F4F33] font-medium whitespace-nowrap">
+                              <div className="flex items-center">
+                                {lot.lot}
+                                {lot.hasDetails && (
+                                  <span className="ml-2 text-[#7D6B58] text-xs">
+                                    {expandedLot === index ? '▲' : '▼'}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-[#2F4F33]">{lot.size}</td>
+                            <td className="px-4 py-3 text-[#2F4F33] font-semibold">{lot.price}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                lot.status === 'Available' 
+                                  ? 'bg-green-100 text-green-800'
+                                  : lot.status === 'Move-In Ready'
+                                  ? 'bg-blue-100 text-blue-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {lot.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-[#2F4F33]">
+                              {lot.features.join(', ')}
+                            </td>
+                          </tr>
+                          {expandedLot === index && lot.hasDetails && (
+                            <tr>
+                              <td colSpan="5" className="p-0">
+                                <div className="bg-[#F5EFD9]">
+                                  {/* Mobile Layout */}
+                                  <div className="block sm:hidden p-4">
+                                    <h3 className="text-lg font-bold text-[#2F4F33] mb-3">About This Home</h3>
+                                    <div className="text-sm text-[#2F4F33] space-y-3 mb-4">
+                                      {lot.description.split('\n\n').map((paragraph, pIndex) => (
+                                        <p key={pIndex} className="leading-relaxed">{paragraph}</p>
+                                      ))}
+                                    </div>
+                                    <div className="space-y-2 mb-4">
+                                      <button className="w-full bg-[#2F4F33] text-white py-2.5 rounded">
+                                        Schedule a Tour
+                                      </button>
+                                      <button className="w-full border border-[#2F4F33] text-[#2F4F33] py-2.5 rounded">
+                                        Request Info
+                                      </button>
+                                    </div>
+                                    {lot.images && lot.images.length > 0 && (
+                                      <div>
+                                        <h4 className="text-sm font-bold text-[#2F4F33] mb-2">Photos ({lot.images.length})</h4>
+                                        <div className="grid grid-cols-3 gap-2">
+                                          {lot.images.slice(0, 6).map((img, imgIdx) => (
+                                            <img 
+                                              key={imgIdx}
+                                              src={img}
+                                              alt={`Photo ${imgIdx + 1}`}
+                                              className="w-full h-20 object-cover rounded"
+                                              onClick={() => openModal(lot.images, imgIdx)}
+                                            />
+                                          ))}
+                                        </div>
+                                        {lot.images.length > 6 && (
+                                          <button 
+                                            className="mt-2 text-sm text-[#2F4F33] underline"
+                                            onClick={() => openModal(lot.images, 0)}
+                                          >
+                                            View all {lot.images.length} photos
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Desktop Layout */}
+                                  <div className="hidden sm:block p-6 border-t-2 border-[#2F4F33]">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                      <div className="w-full">
+                                        <h3 className="text-2xl text-[#2F4F33] font-bold mb-4">About This Home</h3>
+                                        <div className="text-[#2F4F33] space-y-4">
+                                          {lot.description.split('\n\n').map((paragraph, pIndex) => (
+                                            <p key={pIndex} className="text-base leading-relaxed">{paragraph}</p>
+                                          ))}
+                                        </div>
+                                        <div className="flex gap-3 mt-6">
+                                          <button className="bg-[#2F4F33] text-white px-6 py-3 rounded hover:bg-[#1a2e1c] transition">
+                                            Schedule a Tour
+                                          </button>
+                                          <button className="border-2 border-[#2F4F33] text-[#2F4F33] px-6 py-3 rounded hover:bg-[#2F4F33] hover:text-white transition">
+                                            Request Info
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <div className="w-full">
+                                        <h3 className="text-xl text-[#2F4F33] font-bold mb-4">Property Photos ({lot.images.length} Total)</h3>
+                                        <div className="relative group">
+                                          <img 
+                                            src={lot.images[selectedLotImage]} 
+                                            alt={`${lot.lot} - Photo ${selectedLotImage + 1}`}
+                                            className="w-full h-96 object-cover rounded-lg shadow-xl cursor-pointer hover:opacity-95 transition-opacity"
+                                            onClick={() => openModal(lot.images, selectedLotImage)}
+                                          />
+                                          {/* Left Arrow */}
+                                          <button 
+                                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedLotImage(selectedLotImage === 0 ? lot.images.length - 1 : selectedLotImage - 1);
+                                            }}
+                                          >
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                                            </svg>
+                                          </button>
+                                          {/* Right Arrow */}
+                                          <button 
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedLotImage((selectedLotImage + 1) % lot.images.length);
+                                            }}
+                                          >
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                          </button>
+                                          {/* Photo Counter */}
+                                          <div className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-1 rounded-lg">
+                                            {selectedLotImage + 1} / {lot.images.length}
+                                          </div>
+                                        </div>
+                                        <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+                                          {lot.images.map((img, imgIndex) => (
+                                            <img 
+                                              key={imgIndex}
+                                              src={img} 
+                                              alt={`Thumbnail ${imgIndex + 1}`}
+                                              className={`w-20 h-20 object-cover rounded cursor-pointer transition-all flex-shrink-0 ${
+                                                selectedLotImage === imgIndex 
+                                                  ? 'ring-4 ring-[#2F4F33] scale-110' 
+                                                  : 'hover:scale-105 opacity-70 hover:opacity-100'
+                                              }`}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (e.shiftKey || e.metaKey || e.ctrlKey) {
+                                                  // Open modal when clicking with modifier key
+                                                  openModal(lot.images, imgIndex);
+                                                } else {
+                                                  // Normal thumbnail click - just change main image
+                                                  setSelectedLotImage(imgIndex);
+                                                }
+                                              }}
+                                              onDoubleClick={(e) => {
+                                                e.stopPropagation();
+                                                openModal(lot.images, imgIndex);
+                                              }}
+                                            />
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Interactive Map - Show for properties with mapEmbed */}
+            {property.mapEmbed && (
+              <div className="bg-white rounded-lg shadow-xl mb-8 overflow-hidden">
+                <div className="p-4 bg-[#2F4F33] text-white">
+                  <h2 className="text-xl font-medium">Interactive Property Map</h2>
+                  <p className="text-sm opacity-90 mt-1">Explore the terrain and boundaries</p>
+                </div>
+                <div className="relative" style={{ paddingBottom: '60%' }}>
+                  <iframe
+                    src={property.mapEmbed}
+                    className="absolute top-0 left-0 w-full h-full border-none"
+                    title="Interactive Property Map"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Pricing Section */}
+            <div className="sm:hidden bg-white rounded-lg shadow-lg p-6 mb-8 border-2 border-[#2F4F33]">
+              <div className="text-center">
+                {(property.type === 'community' || property.type === 'subdivision') ? (
+                  <>
+                    <p className="text-2xl sm:text-3xl md:text-4xl text-[#2F4F33] font-light mb-2 break-words">{property.priceRange}</p>
+                    <p className="text-[#7D6B58] mb-1 text-sm md:text-base break-words">{property.lots}</p>
+                    <p className="text-lg sm:text-xl md:text-2xl text-[#2F4F33] mb-1 break-words">{property.homeTypes}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-2xl sm:text-3xl md:text-4xl text-[#2F4F33] font-light mb-2 break-words">${property.price?.toLocaleString()}</p>
+                    <p className="text-[#7D6B58] mb-1 text-sm md:text-base break-words">${property.pricePerAcre?.toLocaleString()}/acre</p>
+                    <p className="text-lg sm:text-xl md:text-2xl text-[#2F4F33] mb-1 break-words">{property.acres} acres</p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Community Overview */}
+            <div className="bg-white rounded-lg shadow-xl p-8 mb-8">
+              <div className="text-center mb-8">
+                {property.status && (
+                  <div className="inline-block px-4 py-2 bg-[#2F4F33] text-white rounded-full text-lg font-bold mb-4">
+                    {property.status}
+                  </div>
+                )}
+                <h2 className="text-3xl text-[#2F4F33] font-serif font-light mb-3">
+                  {((property.type === 'community' || property.type === 'subdivision') || property.type === 'subdivision') ? 'Community Development' : 'Commercial Investment Opportunity'}
+                </h2>
+                <p className="text-[#7D6B58] font-serif italic">
+                  {((property.type === 'community' || property.type === 'subdivision') || property.type === 'subdivision') ? property.targetBuyer || 'Perfect community living' : 'Prime location for your next business venture'}
+                </p>
+              </div>
+              
+              <div className="group relative cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+                <div className={`bg-gradient-to-br from-[#2F4F33] to-[#1a2e1c] rounded-lg p-8 transform transition-all duration-500 ${isExpanded ? '' : 'hover:scale-105 hover:shadow-2xl'}`}>
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <h3 className="text-2xl sm:text-3xl text-[#F5EFD9] font-serif font-bold mb-2 break-words leading-tight text-wrap">
+                        {(property.type === 'community' || property.type === 'subdivision') ? property.title : `${property.acres} Acre Lot`}
+                      </h3>
+                      <p className="text-[#D2C6B2] text-base sm:text-lg break-words">
+                        {property.location}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-block px-2 py-1 sm:px-3 sm:py-1.5 bg-green-500 text-white rounded-full text-xs sm:text-sm font-bold transition-all duration-300 hover:shadow-lg hover:shadow-green-400/50 hover:scale-110 cursor-pointer">
+                        {property.status || 'AVAILABLE'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {(property.type === 'community' || property.type === 'subdivision') ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div className="text-center">
+                        <p className="text-[#7D6B58] text-sm mb-1">Starting Price</p>
+                        <p className="text-white font-bold text-xl">{property.priceRange}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[#7D6B58] text-sm mb-1">Home Type</p>
+                        <p className="text-white font-bold text-xl">{property.homeTypes}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[#7D6B58] text-sm mb-1">Lot Type</p>
+                        <p className="text-white font-bold text-xl">{property.lots}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[#7D6B58] text-sm mb-1">Location</p>
+                        <p className="text-white font-bold text-xl">{property.location}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div className="text-center">
+                        <p className="text-[#7D6B58] text-sm mb-1">Price</p>
+                        <p className="text-white font-bold text-xl">${property.price ? Math.round(property.price/1000) : '250'}K</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[#7D6B58] text-sm mb-1">Per Acre</p>
+                        <p className="text-white font-bold text-xl">${property.pricePerAcre ? Math.round(property.pricePerAcre/1000) : '54'}K</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[#7D6B58] text-sm mb-1">Traffic</p>
+                        <p className="text-white font-bold text-xl">High</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[#7D6B58] text-sm mb-1">Zoning</p>
+                        <p className="text-white font-bold text-xl">Commercial</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-center">
+                    <span className={`text-[#7D6B58] transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                      </svg>
+                    </span>
+                    <span className="ml-2 text-[#7D6B58] text-sm">
+                      {isExpanded ? 'Click to collapse' : (property.type === 'community' || property.type === 'subdivision') ? 'Click to explore community features' : 'Click to explore investment potential'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className={`mt-4 bg-white rounded-lg shadow-xl overflow-hidden transition-all duration-500 ${isExpanded ? 'max-h-[1000px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4'}`}>
+                  <div className="p-8 border-l-4 border-[#2F4F33]">
+                    <h4 className="text-2xl text-[#2F4F33] font-serif font-bold mb-6">
+                      {((property.type === 'community' || property.type === 'subdivision') || property.type === 'subdivision') ? 'Community Highlights' : 'Commercial Investment Highlights'}
+                    </h4>
+                    {((property.type === 'community' || property.type === 'subdivision') || property.type === 'subdivision') ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div className="space-y-4">
+                          {property.communityHighlights?.slice(0, 3).map((highlight, index) => (
+                            <div key={index} className="flex items-start">
+                              <span className="text-green-500 mr-3 text-xl">✓</span>
+                              <div>
+                                <p className="text-[#2F4F33]">{highlight}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="space-y-4">
+                          {property.communityHighlights?.slice(3, 6).map((highlight, index) => (
+                            <div key={index} className="flex items-start">
+                              <span className="text-green-500 mr-3 text-xl">✓</span>
+                              <div>
+                                <p className="text-[#2F4F33]">{highlight}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div className="space-y-4">
+                          <div className="flex items-start">
+                            <span className="text-green-500 mr-3 text-xl">✓</span>
+                            <div>
+                              <p className="font-bold text-[#2F4F33]">Prime Location</p>
+                              <p className="text-[#7D6B58] text-sm">Direct I-20 access with high visibility</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start">
+                            <span className="text-green-500 mr-3 text-xl">✓</span>
+                            <div>
+                              <p className="font-bold text-[#2F4F33]">Development Ready</p>
+                              <p className="text-[#7D6B58] text-sm">Level terrain with utilities at site</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start">
+                            <span className="text-green-500 mr-3 text-xl">✓</span>
+                            <div>
+                              <p className="font-bold text-[#2F4F33]">Multiple Uses</p>
+                              <p className="text-[#7D6B58] text-sm">RV park, truck stop, restaurant, retail</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <div className="flex items-start">
+                            <span className="text-green-500 mr-3 text-xl">✓</span>
+                            <div>
+                              <p className="font-bold text-[#2F4F33]">Billboard Income</p>
+                              <p className="text-[#7D6B58] text-sm">Additional revenue potential</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start">
+                            <span className="text-green-500 mr-3 text-xl">✓</span>
+                            <div>
+                              <p className="font-bold text-[#2F4F33]">Strategic Position</p>
+                              <p className="text-[#7D6B58] text-sm">Between major West Texas cities</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start">
+                            <span className="text-green-500 mr-3 text-xl">✓</span>
+                            <div>
+                              <p className="font-bold text-[#2F4F33]">Industrial Activity</p>
+                              <p className="text-[#7D6B58] text-sm">Refinery & truck facility nearby</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="bg-[#F5EFD9] rounded-lg p-6">
+                      <p className="text-[#2F4F33] font-serif leading-relaxed mb-4">
+                        {property.detailedDescription ? property.detailedDescription.split('\n\n')[0] : property.description}
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowContactForm(true);
+                          }}
+                          className="flex-1 bg-[#2F4F33] text-[#F5EFD9] py-4 px-6 hover:bg-[#1a2e1c] transition duration-300 font-serif text-lg shadow-lg hover:shadow-xl"
+                        >
+                          Inquire About This Property
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowCalendar(true);
+                          }}
+                          className="flex-1 border-2 border-[#2F4F33] text-[#2F4F33] py-4 px-6 hover:bg-[#2F4F33] hover:text-white transition duration-300 font-serif"
+                        >
+                          Schedule Site Visit
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Form */}
+            <div className="bg-white rounded-lg shadow-xl border-2 border-[#2F4F33] p-6 sm:p-8 mb-8">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl sm:text-3xl text-[#2F4F33] font-medium mb-3">Interested in This Property?</h2>
+                <p className="text-[#7D6B58] text-base sm:text-lg leading-relaxed">
+                  {property.contactFormText || "Get in touch with our team to learn more about this exceptional property opportunity."}
+                </p>
+              </div>
+              
+              <form className="space-y-4 sm:space-y-6" name="property-inquiry" method="POST" data-netlify="true">
+                <input type="hidden" name="form-name" value="property-inquiry" />
+                <input type="hidden" name="property" value={property.title} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Your Name *"
+                      className="w-full px-4 py-3 sm:py-4 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                      required
+                    />
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="Email Address *"
+                      className="w-full px-4 py-3 sm:py-4 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      name="phone"
+                      placeholder="Phone Number"
+                      className="w-full px-4 py-3 sm:py-4 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                    />
+                  </div>
+                  <div className="relative">
+                    <select name="timeline" className="w-full px-4 py-3 sm:py-4 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm">
+                      <option value="">How soon are you looking?</option>
+                      <option value="immediately">Yesterday (but today works)</option>
+                      <option value="1-3months">1-3 months</option>
+                      <option value="3-6months">3-6 months</option>
+                      <option value="6-12months">6-12 months</option>
+                      <option value="just-browsing">Just browsing (we don't judge)</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="relative">
+                  <textarea
+                    name="message"
+                    rows="4"
+                    placeholder="Tell us what you're dreaming of... (Optional, but we love a good story)"
+                    className="w-full px-4 py-3 sm:py-4 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm resize-none"
+                  ></textarea>
+                </div>
+                
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full bg-[#2F4F33] text-white py-4 px-6 rounded-lg hover:bg-[#1a2e1c] focus:bg-[#1a2e1c] focus:ring-4 focus:ring-[#2F4F33] focus:ring-opacity-30 transition-all duration-300 font-medium text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    {property.id === 1 
+                      ? "Learn More About Nashboro Village"
+                      : (property.type === 'community' || property.type === 'subdivision')
+                      ? "Let's Talk About Your Future Home"
+                      : "Inquire About This Property"
+                    }
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Property Description */}
+            {(property.type === 'community' || property.type === 'subdivision') && property.id === 2 ? (
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 className="text-2xl text-[#2F4F33] font-medium mb-4">Perfect For New Homeowners</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="space-y-4">
+                    {property.homeFeatures?.slice(0, 3).map((feature, index) => (
+                      <div key={index} className="flex items-start">
+                        <span className="text-green-500 mr-3 text-xl">✓</span>
+                        <div>
+                          <p className="text-[#2F4F33]">{feature}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-4">
+                    {property.homeFeatures?.slice(3, 6).map((feature, index) => (
+                      <div key={index} className="flex items-start">
+                        <span className="text-green-500 mr-3 text-xl">✓</span>
+                        <div>
+                          <p className="text-[#2F4F33]">{feature}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="bg-[#F5EFD9] rounded-lg p-6 mb-6">
+                  <h3 className="text-xl text-[#2F4F33] font-medium mb-3">Ideal Location</h3>
+                  <p className="text-[#2F4F33] leading-relaxed">
+                    {property.targetBuyer || property.description}
+                  </p>
+                </div>
+                
+                <div className="bg-[#2F4F33] text-white rounded-lg p-6 text-center">
+                  <h3 className="text-xl font-medium mb-2">Start Your Journey</h3>
+                  <p className="mb-4">Join our interest list to be first in line for available properties at {property.title}.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 className="text-2xl text-[#2F4F33] font-medium mb-4">
+                  {property.title}: What We're Building
+                </h2>
+                <div className="text-[#2F4F33] leading-relaxed mb-6">
+                  {property.detailedDescription ? (
+                    <div className="space-y-4">
+                      {property.detailedDescription.split('\n\n').map((paragraph, index) => (
+                        <p key={index} className="leading-relaxed">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>{property.description}</p>
+                  )}
+                </div>
+                
+                {property.specifications && (
+                  <div className="border-t pt-6 mt-6">
+                    <h3 className="text-xl text-[#2F4F33] font-medium mb-4">Project Specifications</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-[#D2C6B2]">
+                        <tbody>
+                          <tr className="border border-[#D2C6B2]">
+                            <td className="border border-[#D2C6B2] p-3 font-medium text-[#2F4F33] bg-[#F5EFD9]">Lot Size</td>
+                            <td className="border border-[#D2C6B2] p-3 text-[#7D6B58]">3.46 Acres</td>
+                          </tr>
+                          <tr className="border border-[#D2C6B2]">
+                            <td className="border border-[#D2C6B2] p-3 font-medium text-[#2F4F33] bg-[#F5EFD9]">Existing Zoning</td>
+                            <td className="border border-[#D2C6B2] p-3 text-[#7D6B58]">R10 (PUD)</td>
+                          </tr>
+                          <tr className="border border-[#D2C6B2]">
+                            <td className="border border-[#D2C6B2] p-3 font-medium text-[#2F4F33] bg-[#F5EFD9]">Proposed Use</td>
+                            <td className="border border-[#D2C6B2] p-3 text-[#7D6B58]">13,000 Sq Ft Commercial + 30 Townhomes</td>
+                          </tr>
+                          <tr className="border border-[#D2C6B2]">
+                            <td className="border border-[#D2C6B2] p-3 font-medium text-[#2F4F33] bg-[#F5EFD9]">Townhome Lot Sizes</td>
+                            <td className="border border-[#D2C6B2] p-3 text-[#7D6B58]">18 x 40 and 20 x 40</td>
+                          </tr>
+                          <tr className="border border-[#D2C6B2]">
+                            <td className="border border-[#D2C6B2] p-3 font-medium text-[#2F4F33] bg-[#F5EFD9]">Max. Height</td>
+                            <td className="border border-[#D2C6B2] p-3 text-[#7D6B58]">Commercial 1 Story in 30', Residential 3 Stories in 35'</td>
+                          </tr>
+                          <tr className="border border-[#D2C6B2]">
+                            <td className="border border-[#D2C6B2] p-3 font-medium text-[#2F4F33] bg-[#F5EFD9]">Parking</td>
+                            <td className="border border-[#D2C6B2] p-3 text-[#7D6B58]">Commercial 74 Stalls (1 Stall per 175 Sq Ft), Residential 34 Garage + 40 Surface (2.5 Stalls per Unit)</td>
+                          </tr>
+                          <tr className="border border-[#D2C6B2]">
+                            <td className="border border-[#D2C6B2] p-3 font-medium text-[#2F4F33] bg-[#F5EFD9]">Amenities</td>
+                            <td className="border border-[#D2C6B2] p-3 text-[#7D6B58]">12 Acre Improved Park Area accessible to public, Outdoor Patio Space, Attractive Storm Water Management (Pervious Pavers & Bioretention), 1,500 linear feet of Sidewalk Accessible to Public</td>
+                          </tr>
+                          <tr className="border border-[#D2C6B2]">
+                            <td className="border border-[#D2C6B2] p-3 font-medium text-[#2F4F33] bg-[#F5EFD9]">Completion Date</td>
+                            <td className="border border-[#D2C6B2] p-3 text-[#7D6B58]">2027</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+
+            {/* Nearby Locations */}
+            {property.id === 1 ? (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl text-[#2F4F33] font-medium mb-4">Nearby Locations</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { name: "Downtown Nashville", type: "City Center", distance: "8 miles" },
+                    { name: "Music Row", type: "Entertainment District", distance: "10 miles" },
+                    { name: "Nashville International Airport", type: "Airport", distance: "12 miles" },
+                    { name: "The Gulch", type: "Business District", distance: "9 miles" },
+                    { name: "Vanderbilt University", type: "University", distance: "11 miles" }
+                  ].map((location, index) => (
+                    <div key={index} className="flex justify-between items-center p-3 border rounded-lg">
+                      <div>
+                        <span className="text-[#2F4F33] font-medium">{location.name}</span>
+                        <span className="text-[#7D6B58] text-sm ml-2">({location.type})</span>
+                      </div>
+                      <span className="text-[#2F4F33] font-medium">{location.distance}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : property.id === 2 && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl text-[#2F4F33] font-medium mb-4">Nearby Locations</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { name: "Downtown Belton", type: "City Center", distance: "5 miles" },
+                    { name: "Temple", type: "Major City", distance: "10 miles" },
+                    { name: "Killeen", type: "Major City", distance: "15 miles" },
+                    { name: "Fort Hood", type: "Military Base", distance: "20 miles" },
+                    { name: "Austin", type: "State Capital", distance: "60 miles" }
+                  ].map((location, index) => (
+                    <div key={index} className="flex justify-between items-center p-3 border rounded-lg">
+                      <div>
+                        <span className="text-[#2F4F33] font-medium">{location.name}</span>
+                        <span className="text-[#7D6B58] text-sm ml-2">({location.type})</span>
+                      </div>
+                      <span className="text-[#2F4F33] font-medium">{location.distance}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column - Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-2 space-y-6">
+              
+              {/* Price Summary */}
+              <div className="bg-white rounded-lg shadow-lg p-6 transition-all duration-300">
+                <div className="text-center mb-6">
+                  {selectedLot ? (
+                    <>
+                      <h3 className="text-2xl text-[#2F4F33] font-medium mb-1">{selectedLot.lot}</h3>
+                      <h4 className="text-3xl text-[#2F4F33] font-light mb-2">{selectedLot.price}</h4>
+                      <p className="text-[#7D6B58]">{selectedLot.size}</p>
+                      <p className="text-xl text-[#2F4F33] mt-2">{selectedLot.status}</p>
+                    </>
+                  ) : (property.type === 'community' || property.type === 'subdivision') ? (
+                    <>
+                      <h3 className="text-3xl text-[#2F4F33] font-light mb-2">{property.priceRange}</h3>
+                      <p className="text-[#7D6B58]">Lot Sizes: {property.lots}</p>
+                      <p className="text-xl text-[#2F4F33] mt-2">{property.homeTypes}</p>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-3xl text-[#2F4F33] font-light mb-2">${property.price?.toLocaleString()}</h3>
+                      <p className="text-[#7D6B58]">${property.pricePerAcre?.toLocaleString()} per acre</p>
+                      <p className="text-xl text-[#2F4F33] mt-2">{property.acres} acres</p>
+                    </>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => setShowContactForm(true)}
+                    className="w-full bg-[#2F4F33] text-[#F5EFD9] py-3 px-6 hover:bg-[#1a2e1c] transition duration-300 font-medium"
+                  >
+                    {selectedLot ? `Inquire About ${selectedLot.lot} 📞` : 'Get More Info 📞'}
+                  </button>
+                  <button 
+                    onClick={() => setShowCalendar(true)}
+                    className="w-full border-2 border-[#2F4F33] text-[#2F4F33] py-3 px-6 hover:bg-[#2F4F33] hover:text-white transition duration-300 font-medium"
+                  >
+                    {selectedLot ? `Schedule Tour of ${selectedLot.lot} 🏃‍♂️` : 'Schedule a Visit 🏃‍♂️'}
+                  </button>
+                  <button 
+                    onClick={handleShare}
+                    className="w-full bg-stone-200 text-[#2F4F33] py-3 px-6 hover:bg-stone-300 transition duration-300 font-medium"
+                  >
+                    Share This Gem 💎
+                  </button>
+                </div>
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Modal */}
+      {showContactForm && (
+        <div className="fixed inset-0 bg-[#2F4F33] bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl text-[#2F4F33] font-medium">Get More Information</h2>
+                <button
+                  onClick={() => setShowContactForm(false)}
+                  className="text-[#7D6B58] hover:text-[#7D6B58] text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#F5EFD9]"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <p className="text-[#7D6B58] mb-6">Drop us a line faster than a tumbleweed in a Texas tornado. We'll get back to you quicker than you can say "y'all come back now."</p>
+              
+              <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Thank you for your inquiry! We\'ll get back to you shortly.'); e.target.reset(); }}>
+                <input
+                  type="text"
+                  placeholder="Your Name *"
+                  className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                  required
+                />
+                <input
+                  type="email"
+                  placeholder="Email Address *"
+                  className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone Number"
+                  className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                />
+                <select className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm">
+                  <option value="">What's your timeline?</option>
+                  <option value="asap">ASAP (I'm ready to sign!)</option>
+                  <option value="soon">Within a few months</option>
+                  <option value="exploring">Just exploring options</option>
+                  <option value="dreaming">Still dreaming (but seriously looking)</option>
+                </select>
+                <textarea
+                  rows="4"
+                  placeholder="Questions? Special requests? Tell us your land story..."
+                  className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm resize-none"
+                ></textarea>
+                
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowContactForm(false)}
+                    className="flex-1 border-2 border-[#D2C6B2] text-[#2F4F33] py-3 px-4 rounded-lg hover:bg-[#F5EFD9] transition duration-300 font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-[#2F4F33] text-white py-3 px-4 rounded-lg hover:bg-[#1a2e1c] focus:bg-[#1a2e1c] focus:ring-4 focus:ring-black focus:ring-opacity-30 transition-all duration-300 font-medium shadow-lg hover:shadow-xl"
+                  >
+                    Send Message 📧
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Visit Modal */}
+      {showCalendar && (
+        <div className="fixed inset-0 bg-[#2F4F33] bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl text-[#2F4F33] font-medium">Schedule Your Visit</h2>
+                <button
+                  onClick={() => setShowCalendar(false)}
+                  className="text-[#7D6B58] hover:text-[#7D6B58] text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#F5EFD9]"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <p className="text-[#7D6B58] mb-6">Pick a time that works for you - we'll meet you there with keys and all the answers to your land questions.</p>
+              
+              <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Thank you for your inquiry! We\'ll get back to you shortly.'); e.target.reset(); }}>
+                <div>
+                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Preferred Date</label>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Preferred Time</label>
+                  <select className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm">
+                    <option value="">Select a time</option>
+                    <option value="9am">9:00 AM</option>
+                    <option value="10am">10:00 AM</option>
+                    <option value="11am">11:00 AM</option>
+                    <option value="1pm">1:00 PM</option>
+                    <option value="2pm">2:00 PM</option>
+                    <option value="3pm">3:00 PM</option>
+                    <option value="4pm">4:00 PM</option>
+                    <option value="5pm">5:00 PM</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Your Name</label>
+                  <input
+                    type="text"
+                    placeholder="How should we address you?"
+                    className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    placeholder="For visit confirmations"
+                    className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="For confirmation emails"
+                    className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Special Requests</label>
+                  <textarea
+                    rows="3"
+                    placeholder="Need directions? Have mobility concerns? Let us know!"
+                    className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm resize-none"
+                  ></textarea>
+                </div>
+                
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowCalendar(false)}
+                    className="flex-1 border-2 border-[#D2C6B2] text-[#2F4F33] py-3 px-4 rounded-lg hover:bg-[#F5EFD9] transition duration-300 font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-[#2F4F33] text-white py-3 px-4 rounded-lg hover:bg-[#1a2e1c] focus:bg-[#1a2e1c] focus:ring-4 focus:ring-black focus:ring-opacity-30 transition-all duration-300 font-medium shadow-lg hover:shadow-xl"
+                  >
+                    Book Your Visit 📅
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="bg-[#2F4F33] text-[#F5EFD9] py-16 border-t border-[#7D6B58]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* Company Info */}
+            <div className="md:col-span-2">
+              <div className="mb-4">
+                <h3 className="text-3xl font-bold text-[#F5EFD9] italic font-serif">Haven Ground</h3>
+              </div>
+              <p className="text-[#D2C6B2] text-lg mb-4 leading-relaxed">
+                Land and community, one meaningful handshake at a time.
+              </p>
+              <p className="text-[#D2C6B2] font-semibold">📍 Proudly based in Texas</p>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className="text-lg font-semibold text-[#F5EFD9] mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><a href="/" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Home</a></li>
+                <li><a href="/properties" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Properties</a></li>
+                <li><a href="/development" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Development</a></li>
+                <li><a href="/about" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">About</a></li>
+                <li><a href="/contact" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Contact</a></li>
+              </ul>
+            </div>
+
+            {/* Contact Info */}
+            <div>
+              <h4 className="text-lg font-semibold text-[#F5EFD9] mb-4">Get in Touch</h4>
+              <div className="space-y-3">
+                <p className="text-[#D2C6B2] text-sm ">Find your homesite that feels the most like home</p>
+                <a 
+                  href="/contact" 
+                  className="inline-block bg-[#F5EFD9] text-[#2F4F33] px-4 py-2 rounded-md hover:bg-[#D2C6B2] active:bg-[#D2C6B2] transition-all duration-200 text-sm font-medium transform hover:scale-105 active:scale-95"
+                >
+                  Contact Us
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Section */}
+          <div className="pt-8 border-t border-[#7D6B58] text-center">
+            <p className="text-[#D2C6B2] text-sm">
+              &copy; {new Date().getFullYear()} Haven Ground. All rights reserved. 
+              <span className="mx-2">|</span>
+              Serving land owners from our heart.
+            </p>
+          </div>
+        </div>
+      </footer>
+
+      {/* Full-Screen Photo Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+          <div className="relative max-w-7xl max-h-full w-full h-full flex items-center justify-center p-4">
+            {/* Close Button */}
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 text-white text-4xl z-10 hover:text-gray-300 transition-colors"
+            >
+              ×
+            </button>
+            
+            {/* Main Image */}
+            <img
+              src={modalImages[modalImageIndex]}
+              alt={`Photo ${modalImageIndex + 1}`}
+              className="max-w-full max-h-full object-contain"
+            />
+            
+            {/* Navigation Arrows */}
+            <button
+              onClick={prevModalImage}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-6xl hover:text-gray-300 transition-colors z-10"
+            >
+              ‹
+            </button>
+            <button
+              onClick={nextModalImage}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white text-6xl hover:text-gray-300 transition-colors z-10"
+            >
+              ›
+            </button>
+            
+            {/* Image Counter */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+              {modalImageIndex + 1} / {modalImages.length}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

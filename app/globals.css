@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #F5EFD9;
+  color: #2F4F33;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Keep serif for headings - they give character */
+h1, h2, h3, h4, h5, h6 {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+/* Force all numbers to use clear, lined-up digits (no old-style numerals) */
+body, body * {
+  font-variant-numeric: lining-nums tabular-nums !important;
+}
+
+/* Specifically target any element containing numbers to use sans-serif */
+[class*="price"], [class*="Price"], [class*="acre"], [class*="Acre"],
+table, th, td, .lot-table, [class*="lot"], [class*="Lot"] {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-variant-numeric: lining-nums tabular-nums !important;
+}
+
+/* Modern 2025 text rendering and wrapping */
+p {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+/* Balance headings */
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+}
+
+/* Better spacing */
+p, li {
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+}

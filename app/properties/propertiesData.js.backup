@@ -1,0 +1,386 @@
+// Centralized Haven Ground Properties Data
+// This is the single source of truth for all property data across the website
+
+export const properties = [
+  {
+    id: 3,
+    slug: "oak-hill",
+    title: "Oak Hill Reserve",
+    location: "Chappell Hill",
+    description: "Eight homesites among ancient live oaks and post oaks, with cedar elms across rolling pastures. Gently sloping terrain with native grasses and countryside views.",
+    images: [
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912082626_0035_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912081746_0001_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912083637_0063_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912083807_0070_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912084226_0084_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912082204_0017_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912082001_0007_d copy 2.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912082334_0023_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912082452_0029_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912083348_0049_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912083423_0054_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912084114_0078_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912084511_0094_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/dji_20250912082001_0007_d.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/081a7335.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/081a7345.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/081a7351.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/081a7356.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/081a7366.jpg",
+      "/images/Oak Hill/Oak Hill Reserve/oak-hill-reserve-aerial.mp4",
+      "/images/Oak Hill/Oak Hill Reserve/oak-hill-reserve-plat.png"
+    ],
+    features: ["Near Gates Ranch", "Build-Friendly Topography", "Power on Site"],
+    communityHighlights: [
+      "Nestled within the storied landscape of Washington County and surrounded by the renowned Gates Ranch, Oak Hill Reserve offers just 8 exclusive acreage homesteads ranging from 1.8 to 2 acres.",
+      "We've thoughtfully prepared the land with power already in place, allowing you to build on your own timeline without rushing what should be a cherished journey.",
+      "Each homesite captures the essence of this breathtaking Texas countryside-some of the most beautiful land the Lone Star State has to offer.",
+      "We believe in freedom, which is why we've created this intimate community without HOA restrictions. Your vision, your timeline, your Texas dream.",
+      "These 8 special properties represent a rare opportunity to establish roots in Washington County, where Texas history and natural beauty meet. Come walk this land and feel the connection that generations of Texans have cherished."
+    ],
+    lots: "1.8-2 acres",
+    homeTypes: "Acreage Lots",
+    priceRange: "From the $140s",
+    price: 158000,
+    pricePerAcre: 79000,
+    acres: "1.805-2.0",
+    availableLots: 8,
+    type: "community",
+    template: "rural",
+    featured: true,
+    lotTable: [
+      { lot: "Lot 1", size: "1.805 acres", price: "$142,595", status: "Available" },
+      { lot: "Lot 2", size: "2.000 acres", price: "$158,000", status: "Available" },
+      { lot: "Lot 3", size: "2.000 acres", price: "$158,000", status: "Available" },
+      { lot: "Lot 4", size: "2.000 acres", price: "$158,000", status: "Available" },
+      { lot: "Lot 5", size: "2.000 acres", price: "$158,000", status: "Available" },
+      { lot: "Lot 6", size: "2.000 acres", price: "$158,000", status: "Available" },
+      { lot: "Lot 7", size: "2.000 acres", price: "$158,000", status: "Available" },
+      { lot: "Lot 8", size: "2.000 acres", price: "$158,000", status: "Available" }
+    ],
+    mapEmbed: "https://www.acres.com/embed?savedId=339554&layers=elevation&boundaryColor=00FFFF",
+    propertyDetails: {
+      location: {
+        parcelId: "0046-082-14700",
+        coordinates: { lng: -96.1301616, lat: 30.2519130 },
+        address: "BROWN COLLEGE LN, WASHINGTON, TX 77880"
+      },
+      features: {
+        access: "Paved Public Road",
+        power: "Available / On Site",
+        water: "Water Wells",
+        internet: "High-Speed Internet Available",
+        sewer: "Septic",
+        topography: "Gently Rolling, Incredible Building Envelopes"
+      }
+    },
+    surroundingLandscape: {
+      headline: "Natural Landscape",
+      description: "Oak Hill Reserve showcases the cherished countryside of Washington County with its perfect blend of open pastures and majestic trees. Ancient live oaks and towering post oaks spread their broad canopies across the landscape, while clusters of cedar elms add texture and depth. The rolling pastures, currently home to grazing cattle and horses, offer sweeping views interrupted only by these heritage trees. Seasonal wildflowers carpet the meadows in spring, while native grasses sustain wildlife and livestock year-round. This is authentic Texas landscape at its finest-rolling terrain with the perfect balance of wooded areas and open spaces, creating natural building sites with character and views. Here, your family can enjoy both the shade of century-old trees and the golden glow of sunset across open pastures."
+    }
+  },
+  {
+    id: 5,
+    slug: "opperman",
+    title: "Opperman Acres",
+    location: "Somerville",
+    description: "Rolling ranchland with native prairie grasses, scattered post oak and cedar elm. Natural drainage patterns across open pastures near Lake Somerville in the Brazos River basin.",
+    communityHighlights: [
+      "Just minutes from Lake Somerville boat ramps and recreational paradise - lake living without the premium lakefront prices.",
+      "Generous 10-25 acre ranchette lots give you room to breathe, build, and bring your country property dreams to life.",
+      "Infrastructure already in place with new road construction completed and power lines installed - ready for you to break ground.",
+      "Classic Texas ranchland with native grasses, scattered trees, and excellent natural drainage for worry-free building sites.",
+      "Affordable entry into lake country living with seller financing available. Your ranch, your timeline, your way."
+    ],
+    images: ["/images/big-spring/Big Spring 5.png"],
+    features: ["Near Lake Somerville", "Power On-Site", "Excellent Access"],
+    lots: "10-25 Acre Tracts",
+    homeTypes: "Ranchette Tracts",
+    priceRange: "From the $150s",
+    price: 150000,
+    pricePerAcre: 10000,
+    acres: "10-25",
+    availableLots: 8,
+    type: "community",
+    template: "rural",
+    status: "available",
+    featured: true,
+    lotTable: [
+      { lot: "Lot 1", size: "10 acres", price: "$350,000", status: "Coming Soon" },
+      { lot: "Lot 2", size: "12 acres", price: "$420,000", status: "Coming Soon" },
+      { lot: "Lot 3", size: "15 acres", price: "$525,000", status: "Coming Soon" },
+      { lot: "Lot 4", size: "10 acres", price: "$350,000", status: "Coming Soon" },
+      { lot: "Lot 5", size: "12 acres", price: "$420,000", status: "Coming Soon" },
+      { lot: "Lot 6", size: "15 acres", price: "$525,000", status: "Coming Soon" },
+      { lot: "Lot 7", size: "11 acres", price: "$385,000", status: "Coming Soon" },
+      { lot: "Lot 8", size: "14 acres", price: "$490,000", status: "Coming Soon" }
+    ],
+    mapEmbed: "https://www.acres.com/embed?savedId=XXXXX&layers=elevation&enable3dMode=1&boundaryColor=00FFFF",
+    propertyDetails: {
+      location: {
+        parcelId: "TBD",
+        coordinates: { lng: -96.5274, lat: 30.3438 },
+        address: "Somerville, TX"
+      },
+      features: {
+        access: "New Road Construction Complete",
+        power: "Power Lines Installed",
+        water: "Well or Rural Water District",
+        topography: "Gently Rolling Ranchland"
+      }
+    },
+    surroundingLandscape: {
+      headline: "Lake Country Living",
+      description: "Opperman Acres offers spacious ranchette lots just minutes from Lake Somerville. These generous 10-15 acre parcels provide ample room for your dream home, barn, workshop, and all your country living aspirations. With new road construction completed and power lines already installed, the infrastructure is in place for easy development. The property features classic Texas ranchland with native grasses, scattered trees, and excellent building sites with natural drainage."
+    }
+  },
+  {
+    id: 1,
+    slug: "nashboro",
+    title: "Nashboro Village",
+    location: "Nashville",
+    description: "Our Nashboro Village is coming in 2027, and it's going to redefine what community means around here.",
+    images: ["/images/nashboro/Nashboro Village Plan.png"],
+    features: ["30 Townhomes", "13,000 Sq Ft Commercial", "12-Acre Park"],
+    lots: "18 x 40 and 20 x 40",
+    homeTypes: "Townhomes & Commercial",
+    priceRange: "Coming 2027",
+    type: "community",
+    template: "high-density",
+    featured: true,
+    detailedDescription: "Our Nashboro Village is coming in 2027, and it's going to redefine what community means around here.\n\nThese thirty townhomes we're putting up aren't just structures to fill space. They're going to be three stories of real homes where families will gather, where kids will leave their handprints on walls, where life's moments - both ordinary and extraordinary - will unfold day after day.\n\nI'm particularly proud of the restaurant space we've designed. It'll be the kind of place where you don't just eat, you experience. Where conversations flow as easily as the wine. Where the chef might come out to your table not because it's policy, but because they genuinely want to know what you thought of that new dish they've been perfecting.\n\nAround that, our 13,000 square feet of commercial space will bring the right kind of energy - shops that serve a purpose, that add something meaningful to daily life. Places worth walking to, worth spending time in.\n\nAnd that 12-acre park? That's the heart of it all. That's our commitment to creating something bigger than just buildings. It's green space where community actually happens - where dogs run until they're happily exhausted, where kids climb trees, where you might strike up a conversation with a neighbor that turns into a friendship spanning years. Those 1,500 feet of sidewalks aren't just pathways; they're connections, linking everything together.\n\nEven our approach to the land itself tells you something about what we value. Those pervious pavers and bioretention systems show we're thinking about tomorrow, not just today.\n\nOur Nashboro Village is coming in 2027. We're building it right, building it to last, building it for life as it should be lived.\n\nWorth the wait. Worth calling home.",
+    specifications: {
+      lotSize: "3.46 Acres",
+      zoning: "R10 (PUD)",
+      proposedUse: "13,000 Sq Ft Commercial + 30 Townhomes",
+      maxHeight: "Commercial 1 Story in 30' / Residential 3 Stories in 35'",
+      parking: "Commercial: 74 Stalls (1 per 175 Sq Ft) / Residential: 34 Garage + 40 Surface (2.5 per Unit)",
+      amenities: "12 Acre Improved Park Area accessible to public, Outdoor Patio Space, Attractive Storm Water Management (Pervious Pavers & Bioretention), 1,500 linear feet of Sidewalk Accessible to Public"
+    },
+    mapEmbed: "https://www.acres.com/embed?savedId=336000&layers=elevation&enable3dMode=1&boundaryColor=00FFFF"
+  },
+  {
+    id: 2,
+    slug: "kentucky-trails",
+    title: "Kentucky Trails",
+    location: "Belton",
+    description: "Residential community with central pond, walking trails to elementary school, and open green spaces with native Texas trees. Safe cul-de-sacs throughout.",
+    images: [
+      "/images/kt images/kt images/kt plat.png",
+      "/images/kt images/kt images/kt entrance.png",
+      "/images/kt images/kt images/kt model a.png",
+      "/images/kt images/kt images/kt model b.png",
+      "/images/kt images/kt images/kt model c.png"
+    ],
+    features: ["Affordable Starter Homes", "Community Pond", "Walking Trails", "Direct Elementary School Access", "Open Green Spaces", "Safe Cul-de-sacs"],
+    lots: "40 x 120 and 50 x 120",
+    homeTypes: "Single-Family",
+    priceRange: "Starting Mid $300s",
+    type: "community",
+    template: "high-density",
+    featured: true
+  },
+  {
+    id: 4,
+    slug: "longhorn",
+    title: "Longhorn Prairie",
+    location: "Itasca, TX",
+    county: "Hill County",
+    description: "Seven acreage lots with native mesquite, cedar, and hackberry trees. Gently rolling terrain with natural clearings and Hill County countryside views. Peaceful country road access.",
+    communityHighlights: [
+      "Just 7 scenic acreage lots in charming Itasca, perfectly positioned between Dallas and Fort Worth for the best of both worlds.",
+      "Power already in place and public water available along road frontage - we've done the heavy lifting so you can focus on building your dream.",
+      "No HOA restrictions, no city taxes. This is true country freedom where you can build your custom home or barndominium exactly as you envision it.",
+      "Priced to move quickly at just $52,000 per acre, these lots won't last long. Small-town Texas charm with big city access.",
+      "Each 1.3 to 1.6 acre homesite offers the perfect canvas for your Texas dream, surrounded by native mesquite, cedar, and hackberry trees."
+    ],
+    images: [
+      "/images/longhorn-prairie/longhorn-aerial.jpg",
+      "/images/longhorn-prairie/DJI_20250329150241_0010_D.jpg",
+      "/images/longhorn-prairie/DJI_20250329150445_0015_D.jpg",
+      "/images/longhorn-prairie/DJI_20250329150508_0016_D.jpg",
+      "/images/longhorn-prairie/DJI_20250329150553_0017_D_2.jpg",
+      "/images/longhorn-prairie/DJI_20250329151131_0022_D.jpg",
+      "/images/longhorn-prairie/DJI_20250329151533_0025_D.jpg",
+      "/images/longhorn-prairie/DJI_20250329152449_0032_D.jpg",
+      "/images/longhorn-prairie/Itasca-Plat-Final.png"
+    ],
+    features: ["7 Lots Available", "Power on Site", "Public Water Available", "No HOA", "No City Taxes", "Build-Ready"],
+    lots: "1.3 to 1.6 acres",
+    homeTypes: "Acreage Lots",
+    priceRange: "From the Mid $60s",
+    price: 67392,
+    pricePerAcre: 52000,
+    acres: "1.3-1.6",
+    availableLots: 7,
+    type: "community",
+    template: "rural",
+    featured: true,
+    lotTable: [
+      { lot: "Lot 1", size: "1.542 acres", price: "$80,184", status: "Available" },
+      { lot: "Lot 2", size: "1.570 acres", price: "$81,640", status: "Available" },
+      { lot: "Lot 3", size: "1.572 acres", price: "$81,744", status: "Available" },
+      { lot: "Lot 4", size: "1.296 acres", price: "$67,392", status: "Available" },
+      { lot: "Lot 5", size: "1.398 acres", price: "$72,696", status: "Available" },
+      { lot: "Lot 6", size: "1.398 acres", price: "$72,696", status: "Available" },
+      { lot: "Lot 7", size: "1.397 acres", price: "$72,644", status: "Available" }
+    ],
+    mapEmbed: "https://www.acres.com/embed?savedId=324689&layers=elevation&enable3dMode=1&boundaryColor=00FFFF",
+    propertyDetails: {
+      location: {
+        parcelId: "213887",
+        coordinates: { lng: -97.0873956, lat: 32.1375974 },
+        address: "HCR 4307, ITASCA, TX 76055"
+      },
+      features: {
+        access: "Public & maintained Road",
+        power: "Available / On Site",
+        water: "Public Taps Available",
+        topography: "Favorable Building Conditions"
+      }
+    },
+    surroundingLandscape: {
+      headline: "Natural Landscape",
+      description: "Nestled in the gentle countryside of Itasca, Longhorn Prairie offers an authentic Texas landscape where nature has been thoughtfully preserved. Each homesite features a harmonious blend of native mesquite, cedar, and hackberry trees creating natural privacy, while open clearings provide perfect building sites with countryside views. A peaceful country road winds through the property, offering easy access while maintaining the rural character that makes this land special. Here, the native Texas vegetation tells a story of resilience and beauty—a canvas waiting for your family's next chapter."
+    }
+  },
+  {
+    id: 7,
+    slug: "sardis",
+    title: "Sardis Lake",
+    location: "Waterford, MS",
+    county: "Lafayette County",
+    description: "Wooded ranchette tracts with native hardwoods including oak, hickory, and sweet gum. Spring-fed pond attracts deer, turkey, and waterfowl. Rolling terrain with mature shade trees and natural drainage.",
+    communityHighlights: [
+      "Just 10 minutes to Sardis Lake boat ramps and 30 minutes to Oxford - perfect for lake living and SEC football weekends.",
+      "Two exceptional ranchette tracts: 20 acres with new driveway and cleared underbrush, plus 23 acres featuring a stunning natural pond.",
+      "No building restrictions means total freedom - build your weekend retreat, permanent ranch home, or hold for future development.",
+      "Harmontown water service available, abundant mature shade trees throughout, and new driveway already in place.",
+      "This is authentic Mississippi ranchland preserved and ready for your vision. Buy one tract, both, or the full 43 acres - complete flexibility."
+    ],
+    images: [
+      "/images/Sardis Lake/M/DJI_20250722162501_0533_D.JPG",
+      "/images/Sardis Lake/M/DJI_20250722162501_0533_PARCEL OVERLAY.JPG",
+      "/images/Sardis Lake/M/DJI_20250722162603_0534_PARCEL OVERLAY.JPG",
+      "/images/Sardis Lake/M/DJI_20250722162939_0538_25_Parcel Overlay.JPG",
+      "/images/Sardis Lake/M/DJI_20250722163038_0540_D.JPG",
+      "/images/Sardis Lake/M/DJI_20250722164040_0554_D.JPG",
+      "/images/Sardis Lake/M/DJI_20250722164532_0557_D.JPG",
+      "/images/Sardis Lake/M/DJI_20250722165800_0568_D.JPG",
+      "/images/Sardis Lake/M/DJI_20250722165813_0569_D.JPG",
+      "/images/Sardis Lake/M/DJI_20250722172413_0589_D.JPG",
+      "/images/Sardis Lake/M/DJI_20250722173315_0608_D.JPG",
+      "/images/Sardis Lake/M/DJI_20250722173553_0613_D.JPG",
+      "/images/Sardis Lake/M/DJI_20250722173651_0615_D.JPG"
+    ],
+    features: ["Ranchette Tracts", "No Restrictions", "New Driveway", "Pond on Tract 2", "Abundant Mature Trees", "Water Available"],
+    lots: "20-43 Acres",
+    homeTypes: "Ranchettes",
+    priceRange: "$310,000",
+    price: 310000,
+    pricePerAcre: 7209,
+    acres: "43",
+    availableLots: 1,
+    parcelNumber: "045-21-016.00",
+    gpsCoordinates: "34.54210, -89.62764",
+    type: "raw_land",
+    template: "rural",
+    featured: true,
+    lotTable: [
+      { lot: "Full Tract", size: "43 acres", price: "$310,000", status: "Available" },
+      { lot: "Tract 1", size: "20 acres", price: "$150,000", status: "Available" },
+      { lot: "Tract 2", size: "23 acres", price: "$155,000", status: "Available" }
+    ],
+    mapEmbed: "https://www.acres.com/embed?savedId=360312&layers=elevation&boundaryColor=00FFFF",
+    propertyDetails: {
+      location: {
+        parcelId: "045-21-016.00",
+        coordinates: { lng: -89.62764, lat: 34.54210 },
+        address: "Waterford, MS (near 194 MS-310)"
+      },
+      features: {
+        access: "Hwy 310 Access / New Driveway",
+        power: "Available Nearby",
+        water: "Harmontown Water Available",
+        topography: "Mix of Open & Wooded with Pond"
+      }
+    },
+    surroundingLandscape: {
+      headline: "Mississippi Ranchland Near Sardis Lake",
+      description: "These exceptional ranchette tracts near Sardis Lake offer the perfect canvas for your Mississippi ranch dream. The 20-acre tract features cleared underbrush and a new driveway, revealing multiple ideal building sites with plenty of room for your ranch home, barn, and workshop. The 23-acre tract is truly special, featuring a serene pond perfect for livestock, recreation, and wildlife - creating a stunning natural centerpiece for your ranch operation. With Harmontown water service available, abundant mature shade trees, and no building restrictions, you have the freedom to create your vision. Just 10 minutes to Sardis Lake boat ramps and 30 minutes to Oxford, you'll enjoy the perfect balance of rural privacy and convenience."
+    },
+    tracts: {
+      tract1: {
+        acres: 20,
+        description: "This beautiful 20-acre ranchette parcel sits just east of Harmontown off Hwy 310. The property has been thoughtfully prepared with a new driveway and cleared underbrush, revealing ideal building sites with plenty of room for your ranch home, barn, workshop, and pastures."
+      },
+      tract2: {
+        acres: 23,
+        description: "This exceptional 23-acre ranchette tract features a serene pond perfect for livestock, fishing, and wildlife habitat. Located just west of the pond and red-roofed house at 194 MS-310, this tract offers the perfect blend of wooded areas and open land.",
+        features: ["Beautiful pond for livestock & recreation", "Harmontown Water service available", "Abundant mature shade trees", "Mix of wooded & open areas", "New driveway access"]
+      }
+    }
+  },
+  {
+    id: 6,
+    slug: "mesquite",
+    title: "Mesquite Ridge",
+    location: "Odessa",
+    description: "Elevated ridge with native mesquite and desert vegetation. Panoramic West Texas landscape views with natural drainage and cooling breezes across fifteen 1.5-acre homesites.",
+    communityHighlights: [
+      "Perched on an elevated ridge with commanding panoramic views of the West Texas landscape - watch legendary sunsets from your front porch.",
+      "Water wells already developed and power on-site means these lots are truly build-ready for your custom home or barndominium.",
+      "15 homesites of 1.5 acres each, priced affordably in the low $70s - West Texas property ownership is within reach.",
+      "Natural elevation provides excellent drainage and cooling breezes, while native mesquite creates authentic desert character.",
+      "This is wide-open West Texas at its finest - big sky country where your vision has room to breathe and grow."
+    ],
+    images: ["/images/big-spring/Big Spring 6.png"],
+    features: ["Build Ready", "Water Wells Developed", "Elevated Ridge"],
+    lots: "1.5 acre homesites",
+    homeTypes: "Custom Homes",
+    priceRange: "From the Low $70s",
+    price: 75000,
+    pricePerAcre: 50000,
+    acres: "1.5",
+    availableLots: 15,
+    type: "community",
+    template: "rural",
+    status: "available",
+    lotTable: [
+      { lot: "Lot 1", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 2", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 3", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 4", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 5", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 6", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 7", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 8", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 9", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 10", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 11", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 12", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 13", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 14", size: "1.5 acres", price: "$75,000", status: "Coming Soon" },
+      { lot: "Lot 15", size: "1.5 acres", price: "$75,000", status: "Coming Soon" }
+    ],
+    mapEmbed: "https://www.acres.com/embed?savedId=XXXXX&layers=elevation&enable3dMode=1&boundaryColor=00FFFF",
+    propertyDetails: {
+      location: {
+        parcelId: "TBD",
+        coordinates: { lng: -102.3676, lat: 31.8457 },
+        address: "Odessa, TX"
+      },
+      features: {
+        access: "County Road Access",
+        power: "Available On Site",
+        water: "Water Wells Developed",
+        topography: "Elevated Ridge with Views"
+      }
+    },
+    surroundingLandscape: {
+      headline: "Panoramic West Texas Views",
+      description: "Mesquite Ridge offers elevated homesites with commanding views of the West Texas landscape. Perched on a natural ridge, these 1.5-acre lots provide the perfect vantage point for stunning sunsets and wide-open skies. Water wells have already been developed, and power is available on-site, making these build-ready lots ideal for your custom home. The elevated terrain offers natural drainage and cooling breezes, while native mesquite and desert vegetation create authentic West Texas character."
+    }
+  }
+];

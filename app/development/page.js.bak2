@@ -1,0 +1,253 @@
+"use client";
+
+import { useState } from 'react';
+
+export default function DevelopmentPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  return (
+    <div className="flex flex-col min-h-screen font-serif bg-gradient-to-br from-[#F5EFD9] to-[#D2C6B2]">
+      {/* Navigation */}
+      <nav className="bg-[#F5EFD9] py-4 border-b border-[#D2C6B2] sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            {/* Logo */}
+            <div className="flex items-center relative z-20">
+              <a href="/" className="relative">
+                <img 
+                  src="/images/Haven LOGO Use.png" 
+                  alt="Haven Ground Logo" 
+                  className="h-16 sm:h-20 md:h-24 w-auto hover:opacity-90 transition-opacity duration-300"
+                />
+              </a>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8 lg:space-x-10">
+              
+              <a href="/team" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Our Team</a>
+              <a href="/properties" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Properties</a>
+              <a href="/development" className="text-[#2F4F33] text-lg font-medium border-b-2 border-[#7D6B58] transition-colors duration-200">Development</a>
+              
+              
+              <a href="/sell-your-land" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Sell Your Land</a>
+            </div>
+
+            {/* Mobile Hamburger Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden relative z-20 p-2 rounded-md text-[#2F4F33] hover:text-[#7D6B58] hover:bg-[#D2C6B2] focus:outline-none focus:ring-2 focus:ring-[#7D6B58] transition-colors duration-200"
+            >
+              <div className="w-6 h-6 flex flex-col justify-center items-center space-y-1">
+                <span className={`block w-6 h-0.5 bg-current transform transition duration-300 ease-in-out ${mobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
+                <span className={`block w-6 h-0.5 bg-current transform transition duration-300 ease-in-out ${mobileMenuOpen ? 'opacity-0' : ''}`}></span>
+                <span className={`block w-6 h-0.5 bg-current transform transition duration-300 ease-in-out ${mobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
+              </div>
+            </button>
+          </div>
+
+          {/* Mobile Navigation Menu */}
+          <div className={`md:hidden absolute top-full left-0 right-0 bg-[#F5EFD9] border-b border-[#D2C6B2] shadow-lg transform transition-all duration-300 ease-in-out origin-top ${mobileMenuOpen ? 'translate-y-0 opacity-100 scale-y-100' : '-translate-y-2 opacity-0 scale-y-95 pointer-events-none'}`}>
+            <div className="px-4 py-4 space-y-2">
+              
+              <a href="/team" className="block text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium py-3 hover:bg-[#D2C6B2] rounded-lg px-4 transition-all duration-200 border-l-4 border-transparent hover:border-[#2F4F33]">Our Team</a>
+              <a href="/properties" className="block text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium py-3 hover:bg-[#D2C6B2] rounded-lg px-4 transition-all duration-200 border-l-4 border-transparent hover:border-[#2F4F33]">Properties</a>
+              <a href="/development" className="block text-[#2F4F33] font-medium text-lg py-3 bg-[#D2C6B2] rounded-lg px-4 border-l-4 border-[#7D6B58]">Development</a>
+              
+              
+              <a href="/sell-your-land" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Sell Your Land</a>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <div className="relative bg-[#2F4F33] overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2F4F33] to-[#1a2e1c] opacity-90"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center">
+            <h1 className="text-5xl md:text-6xl text-[#F5EFD9] font-serif font-light mb-6 leading-tight">
+              Serving Landowners, Building Legacies
+            </h1>
+            <div className="flex items-center justify-center mb-8">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#D2C6B2] to-transparent max-w-xs"></div>
+              <span className="px-6 text-[#D2C6B2] font-serif text-xl italic">across America</span>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#D2C6B2] to-transparent max-w-xs"></div>
+            </div>
+            <p className="text-xl text-[#D2C6B2] max-w-3xl mx-auto leading-relaxed">
+              We help families achieve the American dream of land ownership. Every property tells a story, and we're honored to help write the next chapter.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Core Values Banner */}
+      <div className="py-20 bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <p className="text-xl text-[#3A4045] leading-relaxed max-w-3xl mx-auto font-light italic">
+              We truly believe making people feel safe, loved, and important is a life well lived. These are the values we bring into this business every day.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="border-4 border-[#2F4F33] p-8 text-center bg-[#F5EFD9] hover:bg-white transition-all duration-300 transform hover:scale-105">
+              <div className="mb-6">
+                <svg className="w-20 h-20 mx-auto text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 className="text-3xl text-[#2F4F33] font-serif font-bold">Integrity</h3>
+            </div>
+            <div className="border-4 border-[#2F4F33] p-8 text-center bg-[#F5EFD9] hover:bg-white transition-all duration-300 transform hover:scale-105">
+              <div className="mb-6">
+                <svg className="w-20 h-20 mx-auto text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+              </div>
+              <h3 className="text-3xl text-[#2F4F33] font-serif font-bold">Honor</h3>
+            </div>
+            <div className="border-4 border-[#2F4F33] p-8 text-center bg-[#F5EFD9] hover:bg-white transition-all duration-300 transform hover:scale-105">
+              <div className="mb-6">
+                <svg className="w-20 h-20 mx-auto text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <h3 className="text-3xl text-[#2F4F33] font-serif font-bold">Heart</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* What We Do Section */}
+      <div className="py-16 bg-[#F5EFD9]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <h2 className="text-4xl text-[#2F4F33] font-serif font-light mb-6">Our Services</h2>
+            <p className="text-lg text-[#3A4045]">
+              We handle land development from start to finish, treating every property and every person with respect.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
+            <div className="text-center">
+              <div className="mb-6">
+                <img src="/images/dev-image-1.png" alt="Land Acquisition" className="w-40 h-40 mx-auto object-contain"/>
+              </div>
+              <h3 className="text-xl text-[#2F4F33] font-serif mb-3">Land Acquisition</h3>
+              <p className="text-[#3A4045]">
+                We work with landowners to create arrangements that honor their legacy while opening doors to new opportunities.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="mb-6">
+                <img src="/images/dev-image-2.png" alt="Community Planning" className="w-40 h-40 mx-auto object-contain"/>
+              </div>
+              <h3 className="text-xl text-[#2F4F33] font-serif mb-3">Community Planning</h3>
+              <p className="text-[#3A4045]">
+                Thoughtful design that creates neighborhoods where families want to build their lives and futures.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="mb-6">
+                <img src="/images/dev-image-3.png" alt="Infrastructure" className="w-40 h-40 mx-auto object-contain"/>
+              </div>
+              <h3 className="text-xl text-[#2F4F33] font-serif mb-3">Infrastructure</h3>
+              <p className="text-[#3A4045]">
+                Quality roads, utilities, and drainage built to last. We do it right the first time.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mission Section */}
+      <div className="py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl text-[#2F4F33] font-serif font-light mb-6">Our Mission</h2>
+          <p className="text-lg text-[#3A4045] leading-relaxed mb-6">
+            We believe in the American dream of land ownership. Whether you're a family looking for your homesite, a landowner ready to pass on a legacy, or someone seeking their piece of ground to call their own, we're here to help make it happen.
+          </p>
+          <p className="text-lg text-[#3A4045] leading-relaxed">
+            Our passion is simple: serve landowners well, build communities with care, and help families achieve something meaningful. We build relationships that last and developments that stand the test of time.
+          </p>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="py-16 bg-[#2F4F33]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl text-[#F5EFD9] font-serif font-light mb-4">Ready to Talk?</h2>
+          <p className="text-lg text-[#D2C6B2] mb-8 leading-relaxed">
+            Whether you're a landowner exploring options or a family searching for the perfect homesite, let's have a conversation. No pressure, just honest talk about what makes sense for you.
+          </p>
+          <a
+            href="/contact"
+            className="inline-block bg-[#F5EFD9] text-[#2F4F33] px-10 py-4 text-lg font-medium hover:bg-[#D2C6B2] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Get in Touch
+          </a>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-[#2F4F33] text-[#F5EFD9] py-16 border-t border-[#7D6B58]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* Company Info */}
+            <div className="md:col-span-2">
+              <div className="mb-4">
+                <h3 className="text-3xl font-bold text-[#F5EFD9] italic font-serif">Haven Ground</h3>
+              </div>
+              <p className="text-[#D2C6B2] text-lg mb-4 leading-relaxed">
+                Land and community, one meaningful handshake at a time.
+              </p>
+              <img src="/images/isaiah-58-10-banner.png" alt="Isaiah 58:10 - If you pour yourself out for the hungry" className="h-12 w-auto mx-auto opacity-80" />
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className="text-lg font-semibold text-[#F5EFD9] mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><a href="/" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Home</a></li>
+                <li><a href="/properties" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Properties</a></li>
+                <li><a href="/development" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Development</a></li>
+                <li></li>
+                <li></li>
+                <li><a href="/sell-your-land" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Sell Your Land</a></li>
+              </ul>
+            </div>
+
+            {/* Contact Info */}
+            <div>
+              <h4 className="text-lg font-semibold text-[#F5EFD9] mb-4">Get in Touch</h4>
+              <div className="space-y-3">
+                <p className="text-[#D2C6B2] text-sm ">Find your homesite that feels the most like home</p>
+                <a 
+                  href="/contact" 
+                  className="inline-block bg-[#F5EFD9] text-[#2F4F33] px-4 py-2 rounded-md hover:bg-[#D2C6B2] active:bg-[#D2C6B2] transition-all duration-200 text-sm font-medium transform hover:scale-105 active:scale-95"
+                >
+                  Contact Us
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Section */}
+          <div className="pt-8 border-t border-[#7D6B58] text-center">
+            <p className="text-[#D2C6B2] text-sm">
+              &copy; {new Date().getFullYear()} Haven Ground. All rights reserved.
+              <span className="mx-2">|</span>
+              Serving land owners from our heart.
+              <span className="mx-2">|</span>
+              <a href="/privacy-policy" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200 underline">Privacy Policy</a>
+              <span className="mx-2">|</span>
+              <a href="/terms-of-use" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200 underline">Terms of Use</a>
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
