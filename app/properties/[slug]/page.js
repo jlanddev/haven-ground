@@ -180,6 +180,15 @@ export default function PropertyDetailPage() {
   const [savedFormData, setSavedFormData] = useState(null);
 
   // Separate states for Schedule Visit form
+  const [visitStep, setVisitStep] = useState(1);
+  const [visitFormData, setVisitFormData] = useState({
+    preferred_date: '',
+    preferred_time: '',
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
   const [visitOtpSent, setVisitOtpSent] = useState(false);
   const [visitOtpCode, setVisitOtpCode] = useState('');
   const [visitOtpVerified, setVisitOtpVerified] = useState(false);
@@ -188,6 +197,7 @@ export default function PropertyDetailPage() {
   const [visitE164Phone, setVisitE164Phone] = useState('');
   const [visitFormPhone, setVisitFormPhone] = useState('');
   const [visitShowThankYou, setVisitShowThankYou] = useState(false);
+  const [visitSavedFormData, setVisitSavedFormData] = useState(null);
 
   // States for embedded contact form
   const [embeddedOtpSent, setEmbeddedOtpSent] = useState(false);
@@ -343,11 +353,19 @@ export default function PropertyDetailPage() {
   };
 
   // SMS Verification for Schedule Visit form
+  const handleVisitNext = () => {
+    setVisitStep(visitStep + 1);
+  };
+
+  const handleVisitBack = () => {
+    setVisitStep(visitStep - 1);
+  };
+
   const sendVisitOTP = async () => {
     setVisitIsLoading(true);
     setVisitOtpError('');
 
-    const e164 = '+1' + visitFormPhone.replace(/\D/g, '');
+    const e164 = '+1' + visitFormData.phone.replace(/\D/g, '');
     setVisitE164Phone(e164);
 
     try {
@@ -360,7 +378,7 @@ export default function PropertyDetailPage() {
       const data = await response.json();
 
       if (data.success) {
-        setVisitOtpSent(true);
+        setVisitStep(7); // Move to OTP step
       } else {
         setVisitOtpError(data.error || 'Failed to send code');
       }
@@ -371,7 +389,7 @@ export default function PropertyDetailPage() {
     }
   };
 
-  const verifyVisitOTP = async (formDataObj) => {
+  const verifyVisitOTP = async () => {
     setVisitIsLoading(true);
     setVisitOtpError('');
 
@@ -386,7 +404,7 @@ export default function PropertyDetailPage() {
 
       if (data.verified) {
         setVisitOtpVerified(true);
-        await submitVisitToGHL(formDataObj, visitE164Phone);
+        await submitVisitToGHL(visitFormData, visitE164Phone);
         setShowCalendar(false);
         setVisitShowThankYou(true);
         // Trigger Facebook Pixel event
@@ -1982,121 +2000,264 @@ export default function PropertyDetailPage() {
                 </button>
               </div>
               
-              <p className="text-[#7D6B58] mb-6">
-                {property.template === "high-density"
-                  ? "Pick a time that works for you - we'll show you around and answer all your questions about the community."
-                  : "Pick a time that works for you - we'll meet you there with keys and all the answers to your land questions."}
-              </p>
-              
-              <form className="space-y-4" onSubmit={async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                try {
-                  await fetch('https://services.leadconnectorhq.com/hooks/wLaNbf44RqmPNhV1IEev/webhook-trigger/d3e7ef0e-d618-4ce3-8eec-996d3ca52c5c', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      name: formData.get('name'),
-                      email: formData.get('email'),
-                      phone: formData.get('phone'),
-                      when_buying: formData.get('when_buying'),
-                      building_type: formData.get('building_type'),
-                      message: formData.get('message'),
-                      property: property.title,
-                      property_location: property.location,
-                      lead_source: `Website - ${property.title} Inquiry`,
-                      submitted_at: new Date().toISOString()
-                    })
-                  });
-                  alert('Thank you for your inquiry! We\'ll get back to you shortly.');
-                  e.target.reset();
-                  setShowContactForm(false);
-                } catch (error) {
-                  console.error('Form error:', error);
-                  alert('Thank you for your inquiry! We\'ll get back to you shortly.');
-                  e.target.reset();
-                  setShowContactForm(false);
-                }
-              }}>
-                <div>
-                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Preferred Date</label>
+              {/* Progress Bar */}
+              <div className="mb-6">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-medium text-[#2F4F33]">Step {visitStep} of 7</span>
+                  <span className="text-sm font-medium text-[#2F4F33]">{Math.round((visitStep / 7) * 100)}%</span>
+                </div>
+                <div className="w-full bg-[#D2C6B2] rounded-full h-2">
+                  <div
+                    className="bg-[#2F4F33] h-2 rounded-full transition-all duration-500"
+                    style={{width: `${(visitStep / 7) * 100}%`}}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Step 1: Preferred Date */}
+              {visitStep === 1 && (
+                <div className="space-y-6 animate-fadeIn">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-4">
+                    When would you like to visit?
+                  </h3>
                   <input
                     type="date"
+                    value={visitFormData.preferred_date}
+                    onChange={(e) => setVisitFormData({...visitFormData, preferred_date: e.target.value})}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
+                    className="w-full px-4 py-3 text-lg rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:outline-none transition-all"
+                    autoFocus
                   />
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCalendar(false);
+                        setVisitStep(1);
+                        setVisitFormData({preferred_date: '', preferred_time: '', name: '', email: '', phone: '', message: ''});
+                      }}
+                      className="flex-1 border-2 border-[#D2C6B2] text-[#2F4F33] py-3 px-4 rounded-lg hover:bg-[#F5EFD9] transition duration-300 font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleVisitNext}
+                      disabled={!visitFormData.preferred_date}
+                      className="flex-1 bg-[#2F4F33] text-white py-3 px-4 rounded-lg hover:bg-[#1a2e1c] transition-all duration-300 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Continue →
+                    </button>
+                  </div>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Preferred Time</label>
-                  <select className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm">
-                    <option value="">Select a time</option>
-                    <option value="9am">9:00 AM</option>
-                    <option value="10am">10:00 AM</option>
-                    <option value="11am">11:00 AM</option>
-                    <option value="1pm">1:00 PM</option>
-                    <option value="2pm">2:00 PM</option>
-                    <option value="3pm">3:00 PM</option>
-                    <option value="4pm">4:00 PM</option>
-                    <option value="5pm">5:00 PM</option>
-                  </select>
+              )}
+
+              {/* Step 2: Preferred Time */}
+              {visitStep === 2 && (
+                <div className="space-y-6 animate-fadeIn">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-4">
+                    What time works best?
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'].map((time) => (
+                      <button
+                        key={time}
+                        type="button"
+                        onClick={() => setVisitFormData({...visitFormData, preferred_time: time})}
+                        className={`p-4 border-2 rounded-lg transition-all ${
+                          visitFormData.preferred_time === time
+                            ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold'
+                            : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                        }`}
+                      >
+                        {time}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={handleVisitBack} className="flex-1 border-2 border-[#D2C6B2] text-[#2F4F33] py-3 px-4 rounded-lg hover:bg-[#F5EFD9] transition duration-300 font-medium">
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleVisitNext}
+                      disabled={!visitFormData.preferred_time}
+                      className="flex-1 bg-[#2F4F33] text-white py-3 px-4 rounded-lg hover:bg-[#1a2e1c] transition-all duration-300 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Continue →
+                    </button>
+                  </div>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Your Name</label>
+              )}
+
+              {/* Step 3: Name */}
+              {visitStep === 3 && (
+                <div className="space-y-6 animate-fadeIn">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-4">
+                    What's your name?
+                  </h3>
                   <input
                     type="text"
+                    value={visitFormData.name}
+                    onChange={(e) => setVisitFormData({...visitFormData, name: e.target.value})}
                     placeholder="How should we address you?"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
-                    required
+                    className="w-full px-4 py-3 text-lg rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:outline-none transition-all"
+                    autoFocus
                   />
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={handleVisitBack} className="flex-1 border-2 border-[#D2C6B2] text-[#2F4F33] py-3 px-4 rounded-lg hover:bg-[#F5EFD9] transition duration-300 font-medium">
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleVisitNext}
+                      disabled={!visitFormData.name}
+                      className="flex-1 bg-[#2F4F33] text-white py-3 px-4 rounded-lg hover:bg-[#1a2e1c] transition-all duration-300 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Continue →
+                    </button>
+                  </div>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Phone Number</label>
-                  <input
-                    type="tel"
-                    placeholder="For visit confirmations"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Email Address</label>
+              )}
+
+              {/* Step 4: Email */}
+              {visitStep === 4 && (
+                <div className="space-y-6 animate-fadeIn">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-4">
+                    What's your email?
+                  </h3>
                   <input
                     type="email"
+                    value={visitFormData.email}
+                    onChange={(e) => setVisitFormData({...visitFormData, email: e.target.value})}
                     placeholder="For confirmation emails"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm"
-                    required
+                    className="w-full px-4 py-3 text-lg rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:outline-none transition-all"
+                    autoFocus
                   />
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={handleVisitBack} className="flex-1 border-2 border-[#D2C6B2] text-[#2F4F33] py-3 px-4 rounded-lg hover:bg-[#F5EFD9] transition duration-300 font-medium">
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleVisitNext}
+                      disabled={!visitFormData.email}
+                      className="flex-1 bg-[#2F4F33] text-white py-3 px-4 rounded-lg hover:bg-[#1a2e1c] transition-all duration-300 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Continue →
+                    </button>
+                  </div>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#2F4F33] mb-2">Special Requests</label>
+              )}
+
+              {/* Step 5: Phone */}
+              {visitStep === 5 && (
+                <div className="space-y-6 animate-fadeIn">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-4">
+                    What's your phone number?
+                  </h3>
+                  <input
+                    type="tel"
+                    value={visitFormData.phone}
+                    onChange={(e) => setVisitFormData({...visitFormData, phone: e.target.value})}
+                    placeholder="(469) 640-3864"
+                    className="w-full px-4 py-3 text-lg rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:outline-none transition-all"
+                    autoFocus
+                  />
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={handleVisitBack} className="flex-1 border-2 border-[#D2C6B2] text-[#2F4F33] py-3 px-4 rounded-lg hover:bg-[#F5EFD9] transition duration-300 font-medium">
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleVisitNext}
+                      disabled={!visitFormData.phone}
+                      className="flex-1 bg-[#2F4F33] text-white py-3 px-4 rounded-lg hover:bg-[#1a2e1c] transition-all duration-300 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Continue →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 6: Message (Optional) */}
+              {visitStep === 6 && (
+                <div className="space-y-6 animate-fadeIn">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-4">
+                    Any special requests? (Optional)
+                  </h3>
                   <textarea
-                    rows="3"
+                    value={visitFormData.message}
+                    onChange={(e) => setVisitFormData({...visitFormData, message: e.target.value})}
                     placeholder="Need directions? Have mobility concerns? Let us know!"
-                    className="w-full px-4 py-3 rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:ring-2 focus:ring-[#2F4F33] focus:ring-opacity-20 focus:outline-none transition-all duration-200 shadow-sm resize-none"
-                  ></textarea>
+                    rows="4"
+                    className="w-full px-4 py-3 text-lg rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:outline-none transition-all resize-none"
+                    autoFocus
+                  />
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={handleVisitBack} className="flex-1 border-2 border-[#D2C6B2] text-[#2F4F33] py-3 px-4 rounded-lg hover:bg-[#F5EFD9] transition duration-300 font-medium">
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={sendVisitOTP}
+                      disabled={visitIsLoading}
+                      className="flex-1 bg-[#2F4F33] text-white py-3 px-4 rounded-lg hover:bg-[#1a2e1c] transition-all duration-300 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {visitIsLoading ? 'Sending Code...' : 'Send Verification Code →'}
+                    </button>
+                  </div>
                 </div>
-                
-                <div className="flex gap-3 pt-4">
+              )}
+
+              {/* Step 7: OTP Verification */}
+              {visitStep === 7 && (
+                <div className="space-y-6 animate-fadeIn">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-4">
+                    Enter verification code
+                  </h3>
+                  <p className="text-[#7D6B58] mb-4">
+                    We sent a 6-digit code to <strong>{visitFormData.phone}</strong>
+                  </p>
+                  <input
+                    type="text"
+                    placeholder="000000"
+                    value={visitOtpCode}
+                    onChange={(e) => setVisitOtpCode(e.target.value)}
+                    maxLength={6}
+                    className="w-full px-4 py-3 text-lg rounded-lg border-2 border-[#D2C6B2] text-[#2F4F33] focus:border-[#2F4F33] focus:outline-none transition-all text-center text-2xl tracking-widest font-bold"
+                    autoFocus
+                  />
+                  {visitOtpError && (
+                    <p className="text-red-600 text-sm">{visitOtpError}</p>
+                  )}
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setVisitStep(6)}
+                      className="flex-1 border-2 border-[#D2C6B2] text-[#2F4F33] py-3 px-4 rounded-lg hover:bg-[#F5EFD9] transition duration-300 font-medium"
+                    >
+                      ← Change Number
+                    </button>
+                    <button
+                      type="button"
+                      onClick={verifyVisitOTP}
+                      disabled={visitIsLoading || visitOtpCode.length !== 6}
+                      className="flex-1 bg-[#2F4F33] text-white py-3 px-4 rounded-lg hover:bg-[#1a2e1c] transition-all duration-300 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {visitIsLoading ? 'Verifying...' : 'Verify & Book 📅'}
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setShowCalendar(false)}
-                    className="flex-1 border-2 border-[#D2C6B2] text-[#2F4F33] py-3 px-4 rounded-lg hover:bg-[#F5EFD9] transition duration-300 font-medium"
+                    onClick={sendVisitOTP}
+                    disabled={visitIsLoading}
+                    className="w-full text-[#2F4F33] underline hover:text-[#7D6B58] transition-colors text-sm"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 bg-[#2F4F33] text-white py-3 px-4 rounded-lg hover:bg-[#1a2e1c] focus:bg-[#1a2e1c] focus:ring-4 focus:ring-black focus:ring-opacity-30 transition-all duration-300 font-medium shadow-lg hover:shadow-xl"
-                  >
-                    Book Your Visit 📅
+                    Didn't receive code? Resend
                   </button>
                 </div>
-              </form>
+              )}
             </div>
           </div>
         </div>
