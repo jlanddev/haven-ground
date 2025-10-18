@@ -6,7 +6,7 @@ export const properties = [
     id: 3,
     slug: "oak-hill",
     title: "Oak Hill Reserve",
-    location: "Chappell Hill",
+    location: "Washington, TX",
     description: "Oak Hill Reserve consists of eight homesites on gently rolling Washington County land, with mature live oak and post oak trees throughout the property.",
     images: [
       "/images/Oak Hill/Oak Hill Reserve/dji_20250912082626_0035_d.jpg",
@@ -60,6 +60,16 @@ export const properties = [
       { lot: "Lot 8", size: "2.000 acres", price: "$158,000", status: "Available" }
     ],
     mapEmbed: "https://www.acres.com/embed?savedId=339554&layers=elevation&boundaryColor=00FFFF",
+    boundary: [
+      [30.25302487202977, -96.13023161888123],
+      [30.25038355223657, -96.12938404083252],
+      [30.250031370898597, -96.13180875778198],
+      [30.251829336078558, -96.13198041915894],
+      [30.25248734603798, -96.13206624984741],
+      [30.252496613752427, -96.13201260566711],
+      [30.252885856969044, -96.1320447921753],
+      [30.25302487202977, -96.13023161888123]
+    ],
     propertyDetails: {
       location: {
         parcelId: "0046-082-14700",
@@ -120,11 +130,19 @@ export const properties = [
       { lot: "Lot 8", size: "1.73 acres", price: "SOLD", status: "Sold" }
     ],
     mapEmbed: "https://www.acres.com/embed?savedId=365773&layers=elevation&boundaryColor=00FFFF",
+    boundary: [
+      [34.99120874680841, -89.88357067108154],
+      [34.99113843084136, -89.88210082054138],
+      [34.987640135227025, -89.88207936286926],
+      [34.98763134535125, -89.88354921340942],
+      [34.98770166433091, -89.88354921340942],
+      [34.99120874680841, -89.88357067108154]
+    ],
     propertyDetails: {
       location: {
         parcelId: "207101000 0002000",
         county: "Desoto County",
-        coordinates: { lng: -89.9, lat: 34.9 },
+        coordinates: { lng: -89.88283, lat: 34.9894 },
         address: "Davidson Rd, Desoto County, MS"
       },
       features: {
@@ -144,7 +162,7 @@ export const properties = [
     id: 5,
     slug: "opperman",
     title: "Opperman Acres",
-    location: "Somerville",
+    location: "Somerville, TX",
     description: "Opperman Acres offers ten to twenty-five acre tracts on rolling Burleson County ranchland with native post oak and mesquite. The property is located near Lake Somerville with electricity and road infrastructure in place.",
     communityHighlights: [
       "5 Tracts Available - 10 to 25 Acres",
@@ -193,11 +211,17 @@ export const properties = [
       { lot: "Tract 9", size: "14.15 acres", price: "$183,000", status: "Sold" }
     ],
     mapEmbed: "https://www.acres.com/embed?savedId=365472&layers=elevation&boundaryColor=00FFFF",
+    boundary: [
+      // Parcel 1
+      [[30.362100218212618, -96.62747025489807], [30.359184107292123, -96.62379026412964], [30.354397793950085, -96.62921905517578], [30.353647886115454, -96.62906885147095], [30.352388768675823, -96.63048505783081], [30.35349975549296, -96.63198709487915], [30.35497179359423, -96.63373589515686], [30.355647627567976, -96.63458347320557], [30.357027055024602, -96.63317799568176], [30.35816576236327, -96.63178324699402], [30.359628472665975, -96.6301953792572], [30.361026358907182, -96.62861824035645], [30.362100218212618, -96.62747025489807]],
+      // Parcel 2
+      [[30.362850061254036, -96.6278350353241], [30.36283154668027, -96.62381172180176], [30.36094304174408, -96.62601113319397], [30.3620909608552, -96.62745952606201], [30.362757488350113, -96.62816762924194], [30.362850061254036, -96.6278350353241]]
+    ],
     propertyDetails: {
       location: {
         parcelId: "87436",
         county: "Burleson County",
-        coordinates: { lng: -96.483328, lat: 30.493105 },
+        coordinates: { lng: -96.627, lat: 30.358 },
         address: "FM 60, Somerville, TX"
       },
       features: {
@@ -246,13 +270,16 @@ export const properties = [
       { lot: "Tract 3", size: "13.42 acres", price: "SOLD", status: "Sold" },
       { lot: "Tract 4", size: "13.42 acres", price: "SOLD", status: "Sold" }
     ],
-    mapEmbed: "https://www.acres.com/embed?savedId=365813&layers=elevation&boundaryColor=00FFFF",
+    mapEmbed: "https://www.acres.com/embed?savedId=329058&layers=elevation&boundaryColor=00FFFF",
+    boundary: [
+      [[32.026943, -97.286446], [32.026706, -97.286296], [32.025979, -97.285824], [32.024805, -97.285062], [32.024969, -97.284654], [32.022677, -97.28326], [32.022695, -97.283227], [32.022722, -97.283195], [32.023495, -97.281489], [32.02425, -97.279934], [32.025979, -97.281089], [32.026706, -97.281575], [32.027434, -97.282058], [32.028671, -97.282884], [32.027434, -97.285434], [32.026943, -97.286446]]
+    ],
     propertyDetails: {
       location: {
         parcelId: "TBD",
-        county: "TBD",
-        coordinates: { lng: -96.0, lat: 31.0 },
-        address: "Texas"
+        county: "Hill County",
+        coordinates: { lng: -97.283, lat: 32.0257 },
+        address: "Whitney, Texas"
       },
       features: {
         access: "Public Road Access",
@@ -270,7 +297,7 @@ export const properties = [
     id: 1,
     slug: "nashboro",
     title: "Nashboro Village",
-    location: "Nashville",
+    location: "Nashville, TN",
     description: "Nashboro Village is a planned development in Nashville featuring 30 three-story townhomes, 13,000 square feet of commercial space including a restaurant, and a 12-acre public park. The project is currently in engineering and planning with completion anticipated in 2027.",
     images: ["/images/nashboro/Nashboro Village Plan.png"],
     features: ["Engineering Phase", "30 Townhomes Planned", "Coming 2027"],
@@ -290,11 +317,14 @@ export const properties = [
       amenities: "12 Acre Improved Park Area accessible to public, Outdoor Patio Space, Attractive Storm Water Management (Pervious Pavers & Bioretention), 1,500 linear feet of Sidewalk Accessible to Public"
     },
     mapEmbed: "https://www.acres.com/embed?savedId=336000&layers=elevation&enable3dMode=1&boundaryColor=00FFFF",
+    boundary: [
+      [[36.089182, -86.637572], [36.088965, -86.6371], [36.088904, -86.636896], [36.08887, -86.636574], [36.088844, -86.63651], [36.0888, -86.636478], [36.088731, -86.636499], [36.087899, -86.637057], [36.087535, -86.637229], [36.0873, -86.637282], [36.087725, -86.638023], [36.088107, -86.637744], [36.089182, -86.637572]]
+    ],
     propertyDetails: {
       location: {
         parcelId: "TBD",
         county: "Davidson County",
-        coordinates: { lng: -86.7816, lat: 36.1627 },
+        coordinates: { lng: -86.6373, lat: 36.0883 },
         address: "Nashville, TN"
       },
       features: {
@@ -327,11 +357,41 @@ export const properties = [
     template: "high-density",
     status: "Engineering & Planning",
     featured: true,
+    boundary: [
+      [
+        [38.827305148301065, -94.49320435523987],
+        [38.82721320821227, -94.4912838935852],
+        [38.824714063957344, -94.49153065681458],
+        [38.824806007273565, -94.493408203125],
+        [38.827305148301065, -94.49320435523987]
+      ],
+      [
+        [38.824948101255984, -94.49621915817261],
+        [38.824714063957344, -94.49153065681458],
+        [38.82276650945721, -94.49169158935547],
+        [38.822967118390295, -94.49640154838562],
+        [38.82435464803655, -94.49629426002502],
+        [38.82450510143349, -94.49625134468079],
+        [38.824948101255984, -94.49621915817261]
+      ],
+      [
+        [38.82206437374046, -94.49647665023804],
+        [38.82195570926086, -94.49418067932129],
+        [38.821855403440225, -94.49176669120789],
+        [38.821922274003015, -94.49176083908802],
+        [38.821922274003015, -94.49175596237183],
+        [38.82259097617714, -94.49170231819153],
+        [38.82276650945721, -94.49169158935547],
+        [38.822967118390295, -94.49640154838562],
+        [38.82259097617714, -94.4964337348938],
+        [38.82206437374046, -94.49647665023804]
+      ]
+    ],
     propertyDetails: {
       location: {
         parcelId: "TBD",
         county: "Cass County",
-        coordinates: { lng: -94.5319, lat: 38.8119 },
+        coordinates: { lng: -94.494, lat: 38.8245 },
         address: "Belton, MO"
       },
       features: {
@@ -389,11 +449,19 @@ export const properties = [
       { lot: "Lot 7", size: "1.397 acres", price: "$72,644", status: "Available" }
     ],
     mapEmbed: "https://www.acres.com/embed?savedId=324689&layers=elevation&enable3dMode=1&boundaryColor=00FFFF",
+    boundary: [
+      // Lot 1
+      [[32.13790903094892, -97.08779096603394], [32.13789494587818, -97.0877816510742], [32.13788177637073, -97.08778023719788], [32.13700962556803, -97.0871901512146], [32.13768190921506, -97.0858028547936], [32.13768190921506, -97.08579540252686], [32.13787269150953, -97.08540916442871], [32.138408696772515, -97.08570957183838], [32.13889927509962, -97.08598852157593], [32.138408696772515, -97.08700776100159], [32.13807255824709, -97.08771586418152], [32.1379817097843, -97.08779096603394], [32.13790903094892, -97.08779096603394]],
+      // Lot 2
+      [[32.137563805689936, -97.08604216575623], [32.13703688040684, -97.0856773853302], [32.13648269708325, -97.08683609962463], [32.13700962556803, -97.0871901512146], [32.137563805689936, -97.08604216575623]],
+      // Lot 3
+      [[32.13703688040684, -97.08566665649414], [32.13650995207955, -97.08531260490417], [32.135946680501235, -97.08647131919861], [32.136001190806, -97.08650350570679], [32.136473612082696, -97.08682537078857], [32.13703688040684, -97.08566665649414]]
+    ],
     propertyDetails: {
       location: {
         parcelId: "213887",
         county: "Hill County",
-        coordinates: { lng: -97.0873956, lat: 32.1375974 },
+        coordinates: { lng: -97.0866, lat: 32.1372 },
         address: "HCR 4307, ITASCA, TX 76055"
       },
       features: {
@@ -456,11 +524,14 @@ export const properties = [
       { lot: "Tract 2", size: "23 acres", price: "$155,000", status: "Available" }
     ],
     mapEmbed: "https://www.acres.com/embed?savedId=360312&layers=elevation&boundaryColor=00FFFF",
+    boundary: [
+      [[34.54645632878821, -89.6257996559143], [34.546376795888506, -89.62569236755371], [34.546217729861056, -89.62546706199646], [34.54580238935608, -89.62507009506226], [34.545722855831414, -89.6249520778656], [34.542833086219716, -89.62496280670166], [34.5426740134193, -89.62568163871765], [34.54165770779642, -89.62918996810913], [34.546403306863525, -89.62916851043701], [34.54645632878821, -89.6257996559143]]
+    ],
     propertyDetails: {
       location: {
         parcelId: "045-21-016.00",
         county: "Panola County",
-        coordinates: { lng: -89.62764, lat: 34.54210 },
+        coordinates: { lng: -89.627, lat: 34.5445 },
         address: "Waterford, MS (near 194 MS-310)"
       },
       features: {
@@ -490,7 +561,7 @@ export const properties = [
     id: 6,
     slug: "mesquite-plains",
     title: "Mesquite Plains",
-    location: "Odessa",
+    location: "Odessa, TX",
     description: "Mesquite Plains is a planned development near Odessa featuring 40 lots ranging from one to two acres each. The project is currently in the engineering phase with hydrology studies and water planning underway.",
     communityHighlights: [
       "40 Homesites Planned - 1 to 2 Acres Each",
@@ -514,11 +585,21 @@ export const properties = [
     featured: true,
     lotTable: [],
     mapEmbed: "https://www.acres.com/embed?savedId=365741&layers=elevation&boundaryColor=00FFFF",
+    boundary: [
+      // Parcel 1
+      [[31.669499388342714, -102.40139722824097], [31.667727916172936, -102.40081787109375], [31.667262214272597, -102.40280270576477], [31.669042826582185, -102.40337133407593], [31.669499388342714, -102.40139722824097]],
+      // Parcel 2
+      [[31.67128908880194, -102.40195512771606], [31.669499388342714, -102.40139722824097], [31.669042826582185, -102.40337133407593], [31.670823404756888, -102.40392923355103], [31.67128908880194, -102.40195512771606]],
+      // Parcel 3
+      [[31.669946816690654, -102.39940166473389], [31.668184484396804, -102.39884376525879], [31.667718784785563, -102.40080714225769], [31.66949025712951, -102.40138649940491], [31.669946816690654, -102.39940166473389]],
+      // Parcel 4
+      [[31.669042826582185, -102.40337133407593], [31.667262214272597, -102.40280270576477], [31.666805641515438, -102.40472316741943], [31.666860430364792, -102.40479826927185], [31.668595393879514, -102.40536689758301], [31.669042826582185, -102.40337133407593]]
+    ],
     propertyDetails: {
       location: {
         parcelId: "TBD",
         county: "Ector County",
-        coordinates: { lng: -102.3676, lat: 31.8457 },
+        coordinates: { lng: -102.4023, lat: 31.6683 },
         address: "Odessa, TX"
       },
       features: {

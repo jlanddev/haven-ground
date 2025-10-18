@@ -5,12 +5,15 @@ import { useParams } from 'next/navigation';
 import { properties as propertiesData } from '../propertiesData';
 import { getContactFormText, getSectionHeaders, sanitizePropertyData } from '../propertyConfig';
 
-// Property Map Component with two separate parcels
-function PropertyMap() {
+// Dynamic Property Map Component - Acres.com Style
+function PropertyMap({ property }) {
   const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (!property?.propertyDetails?.location?.coordinates) return;
+
+    const mapId = `leaflet-map-${property.slug}`;
 
     if (window.L) {
       initializeMap();
@@ -29,89 +32,78 @@ function PropertyMap() {
 
     function initializeMap() {
       setTimeout(() => {
-        if (!document.getElementById('leaflet-map')) return;
-        
+        if (!document.getElementById(mapId)) return;
+
         const L = window.L;
-        
-        const parcel1 = [
-          [32.2672465, -101.4019454],
-          [32.2658308, -101.4014937],
-          [32.2656163, -101.4025188],
-          [32.2661956, -101.4027849],
-          [32.2671911, -101.4027116]
-        ];
-
-        const parcel2 = [
-          [32.2671525, -101.4031988],
-          [32.2671310, -101.4034881],
-          [32.2668907, -101.4034576],
-          [32.2664950, -101.4033815],
-          [32.2661116, -101.4032081]
-        ];
-
-        const allPoints = [...parcel1, ...parcel2];
-        const centerLat = allPoints.reduce((sum, p) => sum + p[0], 0) / allPoints.length;
-        const centerLng = allPoints.reduce((sum, p) => sum + p[1], 0) / allPoints.length;
+        const coords = property.propertyDetails.location.coordinates;
+        const lat = coords.lat;
+        const lng = coords.lng;
 
         try {
-          const map = L.map('leaflet-map', {
-            scrollWheelZoom: false
-          }).setView([centerLat, centerLng], 17);
+          const map = L.map(mapId, {
+            scrollWheelZoom: false,
+            zoomControl: true
+          }).setView([lat, lng], 15);
 
+          // Esri satellite imagery - no country flags
           L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: false,
             maxZoom: 20
           }).addTo(map);
-          
-          // Remove Leaflet attribution
-          map.attributionControl.setPrefix(false);
 
+          // Remove Leaflet attribution and add custom text
+          map.attributionControl.setPrefix('');
+          map.attributionControl.addAttribution('Property boundaries displayed for reference only');
+
+          // Acres.com style - cyan boundary (#00FFFF)
           const boundaryStyle = {
-            color: '#228B22',
-            weight: 4,
-            opacity: 1,
-            fillColor: '#228B22',
-            fillOpacity: 0.15
+            color: '#00FFFF',
+            weight: 3,
+            opacity: 0.9,
+            fillColor: '#00FFFF',
+            fillOpacity: 0.1
           };
 
-          // Add Parcel 1
-          L.polygon(parcel1, boundaryStyle).addTo(map);
-          
-          // Add Parcel 2  
-          L.polygon(parcel2, boundaryStyle).addTo(map);
+          // Draw actual boundary polygon(s) if available, otherwise circle
+          if (property.boundary && Array.isArray(property.boundary)) {
+            // Check if it's multiple polygons (array of arrays of arrays) or single polygon (array of arrays)
+            const isMultiPolygon = Array.isArray(property.boundary[0][0]);
 
-          // Connection line between parcels
-          L.polyline([parcel1[4], parcel2[0]], {
-            color: '#FFD700',
-            weight: 3,
-            opacity: 0.8,
-            dashArray: '10, 10'
-          }).addTo(map);
+            if (isMultiPolygon) {
+              // Multiple polygons (multiple parcels)
+              const allBounds = [];
+              property.boundary.forEach(polygonCoords => {
+                const polygon = L.polygon(polygonCoords, boundaryStyle).addTo(map);
+                allBounds.push(...polygonCoords);
+              });
+              // Fit map to show all polygons
+              const bounds = L.latLngBounds(allBounds);
+              map.fitBounds(bounds, { padding: [50, 50] });
+            } else {
+              // Single polygon
+              const polygon = L.polygon(property.boundary, boundaryStyle).addTo(map);
+              map.fitBounds(polygon.getBounds(), { padding: [50, 50] });
+            }
+          } else {
+            // Fallback to circle for properties without boundary data
+            const radius = 200; // meters
+            L.circle([lat, lng], {
+              ...boundaryStyle,
+              radius: radius
+            }).addTo(map);
+          }
 
-          // Add labels for each parcel
-          L.marker([32.2665, -101.4021], {
+          // Property marker at center
+          L.marker([lat, lng], {
             icon: L.divIcon({
-              className: 'parcel-label',
-              html: '<div style="background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold;">Parcel 1</div>',
-              iconSize: [80, 30],
-              iconAnchor: [40, 15]
-            })
-          }).addTo(map);
-
-          L.marker([32.2668, -101.4033], {
-            icon: L.divIcon({
-              className: 'parcel-label',
-              html: '<div style="background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold;">Parcel 2</div>',
-              iconSize: [80, 30],
-              iconAnchor: [40, 15]
+              className: 'property-marker',
+              html: '<div style="background: #00FFFF; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px rgba(0,255,255,0.8);"></div>',
+              iconSize: [12, 12],
+              iconAnchor: [6, 6]
             })
           }).addTo(map);
 
           map.zoomControl.setPosition('topright');
-          
-          // Fit map to show both parcels
-          const bounds = L.latLngBounds([...parcel1, ...parcel2]);
-          map.fitBounds(bounds, { padding: [50, 50] });
 
           setMapLoaded(true);
         } catch (error) {
@@ -121,34 +113,29 @@ function PropertyMap() {
     }
 
     return () => {
-      if (document.getElementById('leaflet-map')) {
-        const mapContainer = document.getElementById('leaflet-map');
+      if (document.getElementById(mapId)) {
+        const mapContainer = document.getElementById(mapId);
         if (mapContainer && mapContainer._leaflet_id) {
           mapContainer._leaflet = null;
         }
         mapContainer.innerHTML = '';
       }
     };
-  }, []);
+  }, [property]);
+
+  const mapId = `leaflet-map-${property.slug}`;
 
   return (
     <div className="relative">
-      <div 
-        id="leaflet-map" 
-        className="w-full h-[400px] rounded-lg"
+      <div
+        id={mapId}
+        className="w-full h-[500px] rounded-lg"
         style={{ background: '#f0f0f0' }}
       >
         {!mapLoaded && (
-          <div className="flex items-center justify-center h-full text-[#7D6B58]">Loading boundary map...</div>
+          <div className="flex items-center justify-center h-full text-[#7D6B58]">Loading satellite map...</div>
         )}
       </div>
-      
-      {/* Browne Mapping Technology watermark */}
-      {mapLoaded && (
-        <div className="absolute bottom-2 left-2 bg-[#2F4F33] bg-opacity-60 text-white px-2 py-1 rounded text-[10px] pointer-events-none" style={{ zIndex: 1001 }}>
-          Browne Mapping Technology
-        </div>
-      )}
     </div>
   );
 }
@@ -333,16 +320,9 @@ export default function PropertyDetailPage() {
       if (data.verified) {
         setOtpVerified(true);
         await submitToGHL(formDataObj, e164Phone);
-        setShowContactForm(false);
-        setShowThankYou(true);
-        // Trigger Facebook Pixel event
-        if (typeof window !== 'undefined' && window.fbq) {
-          window.fbq('track', 'Lead', {
-            content_name: property.title,
-            content_category: 'Property Inquiry'
-          });
-        }
-      } else {
+        // Redirect to thank you page for Google/Facebook conversion tracking
+        window.location.href = `/thank-dispo?property=${encodeURIComponent(property.title)}`;
+      } else{
         setOtpError('Invalid code. Please try again.');
       }
     } catch (error) {
@@ -405,15 +385,8 @@ export default function PropertyDetailPage() {
       if (data.verified) {
         setVisitOtpVerified(true);
         await submitVisitToGHL(visitFormData, visitE164Phone);
-        setShowCalendar(false);
-        setVisitShowThankYou(true);
-        // Trigger Facebook Pixel event
-        if (typeof window !== 'undefined' && window.fbq) {
-          window.fbq('track', 'Schedule', {
-            content_name: property.title,
-            content_category: 'Visit Schedule'
-          });
-        }
+        // Redirect to thank you page for Google/Facebook conversion tracking
+        window.location.href = `/thank-dispo?property=${encodeURIComponent(property.title)}`;
       } else {
         setVisitOtpError('Invalid code. Please try again.');
       }
@@ -518,21 +491,8 @@ export default function PropertyDetailPage() {
 
       if (data.verified) {
         await submitEmbeddedToGHL(embeddedSavedFormData, embeddedE164Phone);
-        setEmbeddedShowThankYou(true);
-        // Trigger Facebook Pixel event
-        if (typeof window !== 'undefined' && window.fbq) {
-          window.fbq('track', 'Lead', {
-            content_name: property.title,
-            content_category: 'Property Inquiry - Embedded Form'
-          });
-        }
-        // Reset form
-        setTimeout(() => {
-          setEmbeddedOtpSent(false);
-          setEmbeddedOtpCode('');
-          setEmbeddedFormPhone('');
-          setEmbeddedShowThankYou(false);
-        }, 3000);
+        // Redirect to thank you page for Google/Facebook conversion tracking
+        window.location.href = `/thank-dispo?property=${encodeURIComponent(property.title)}`;
       } else {
         setEmbeddedOtpError('Invalid code. Please try again.');
       }
@@ -1142,22 +1102,15 @@ export default function PropertyDetailPage() {
               </div>
             )}
 
-            {/* Interactive Map - Show for properties with mapEmbed (except mesquite-plains which shows at top) */}
-            {property.mapEmbed && property.slug !== 'mesquite-plains' && (
+            {/* Interactive Property Map - Custom Leaflet Map */}
+            {property.propertyDetails?.location?.coordinates && (
               <div className="bg-white rounded-lg shadow-xl mb-8 overflow-hidden">
                 <div className="p-4 bg-[#2F4F33] text-white">
                   <h2 className="text-xl font-medium">Interactive Property Map</h2>
-                  <p className="text-sm opacity-90 mt-1">Explore the property</p>
+                  <p className="text-sm opacity-90 mt-1">Satellite view with property boundaries</p>
                 </div>
-                <div className="relative" style={{ paddingBottom: '60%' }}>
-                  <iframe
-                    src={property.mapEmbed}
-                    className="absolute top-0 left-0 w-full h-full border-none"
-                    title="Interactive Property Map"
-                    allowFullScreen
-                    allow="geolocation"
-                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                  />
+                <div className="p-4">
+                  <PropertyMap property={property} />
                 </div>
               </div>
             )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { properties as propertiesData } from './propertiesData';
 
 export default function PropertiesPage() {
@@ -8,6 +8,9 @@ export default function PropertiesPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState({});
   const [hasNavigated, setHasNavigated] = useState({});
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
   const [filters, setFilters] = useState({
     search: '',
     minAcres: '',
@@ -310,6 +313,237 @@ export default function PropertiesPage() {
       console.error('Webhook error:', error);
     }
   };
+
+  // Initialize bulk map when Map View is selected
+  useEffect(() => {
+    if (viewMode !== 'map' || typeof window === 'undefined') return;
+    if (mapInstanceRef.current) return; // Already initialized
+
+    setMapLoaded(false); // Reset loading state
+
+    // Check if Leaflet is already loaded
+    if (window.L) {
+      initializeBulkMap();
+      return;
+    }
+
+    // Load Leaflet CSS if not already loaded
+    if (!document.querySelector('link[href*="leaflet.css"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    // Load Leaflet JS if not already loaded
+    if (!document.querySelector('script[src*="leaflet.js"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => {
+        // Small delay to ensure CSS is fully loaded
+        setTimeout(initializeBulkMap, 100);
+      };
+      document.head.appendChild(script);
+    } else {
+      setTimeout(initializeBulkMap, 100);
+    }
+
+    function initializeBulkMap() {
+      const L = window.L;
+      if (!mapContainerRef.current || mapInstanceRef.current) return;
+
+      // Get all properties with coordinates
+      const propertiesWithCoords = sortedProperties.filter(
+        p => p.propertyDetails?.location?.coordinates
+      );
+
+      if (propertiesWithCoords.length === 0) return;
+
+      // Initialize map
+      const map = L.map(mapContainerRef.current, {
+        scrollWheelZoom: false, // Disable scroll zoom to prevent page scroll conflicts
+        zoomControl: true,
+        dragging: true,
+        touchZoom: true,
+        doubleClickZoom: true
+      }).setView([37.5, -95], 5); // Center of US
+
+      mapInstanceRef.current = map;
+
+      // Enable scroll wheel zoom only when map is focused
+      map.on('focus', () => map.scrollWheelZoom.enable());
+      map.on('blur', () => map.scrollWheelZoom.disable());
+
+      // Add message to click map to enable scroll zoom
+      const scrollHint = L.control({ position: 'topleft' });
+      scrollHint.onAdd = function() {
+        const div = L.DomUtil.create('div', 'scroll-zoom-hint');
+        div.innerHTML = `
+          <div style="
+            background: rgba(47, 79, 51, 0.9);
+            color: #F5EFD9;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: Georgia, serif;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            margin: 10px;
+          ">
+            Click map to enable scroll zoom
+          </div>
+        `;
+        return div;
+      };
+      scrollHint.addTo(map);
+
+      // Remove hint after first click
+      map.once('click', () => {
+        map.scrollWheelZoom.enable();
+        scrollHint.remove();
+      });
+
+      // Esri satellite imagery
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: false,
+        maxZoom: 20
+      }).addTo(map);
+
+      // Custom attribution - no Leaflet logo or flags
+      map.attributionControl.setPrefix('');
+      map.attributionControl.addAttribution('Property locations displayed for reference only');
+
+      // Add markers and boundaries for each property
+      const allBounds = [];
+
+      propertiesWithCoords.forEach(property => {
+        const coords = property.propertyDetails.location.coordinates;
+        const latLng = [coords.lat, coords.lng];
+        allBounds.push(latLng);
+
+        // Create custom cyan marker
+        const marker = L.marker(latLng, {
+          icon: L.divIcon({
+            html: `
+              <div style="position: relative;">
+                <div style="
+                  background: #00FFFF;
+                  width: 20px;
+                  height: 20px;
+                  border-radius: 50%;
+                  border: 3px solid white;
+                  box-shadow: 0 0 12px rgba(0,255,255,0.9), 0 2px 8px rgba(0,0,0,0.4);
+                  cursor: pointer;
+                "></div>
+                <div style="
+                  position: absolute;
+                  top: 24px;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  background: rgba(47, 79, 51, 0.95);
+                  color: #F5EFD9;
+                  padding: 4px 8px;
+                  border-radius: 4px;
+                  white-space: nowrap;
+                  font-size: 11px;
+                  font-weight: 600;
+                  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                  pointer-events: none;
+                  font-family: Georgia, serif;
+                ">${property.title}</div>
+              </div>
+            `,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+            className: 'custom-property-marker'
+          })
+        }).addTo(map);
+
+        // Create popup content
+        const popupContent = `
+          <div style="font-family: Georgia, serif; min-width: 200px;">
+            <h3 style="color: #2F4F33; font-size: 16px; font-weight: bold; margin: 0 0 8px 0;">${property.title}</h3>
+            <p style="color: #7D6B58; font-size: 13px; margin: 0 0 8px 0;">${property.location}</p>
+            <p style="color: #3A4045; font-size: 12px; margin: 0 0 12px 0; line-height: 1.4;">${property.description}</p>
+            <div style="margin-bottom: 12px;">
+              <div style="font-size: 11px; color: #7D6B58; font-weight: 500;">Price Range</div>
+              <div style="font-size: 15px; color: #2F4F33; font-weight: bold;">${property.priceRange}</div>
+            </div>
+            <a
+              href="/properties/${property.slug}"
+              style="
+                display: block;
+                background: #2F4F33;
+                color: #F5EFD9;
+                text-align: center;
+                padding: 8px 16px;
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 13px;
+                border-radius: 4px;
+                transition: background 0.3s;
+              "
+              onmouseover="this.style.background='#1a2e1c'"
+              onmouseout="this.style.background='#2F4F33'"
+            >View Details</a>
+          </div>
+        `;
+
+        marker.bindPopup(popupContent, {
+          maxWidth: 280,
+          className: 'custom-property-popup'
+        });
+
+        // Draw boundary if available
+        if (property.boundary && Array.isArray(property.boundary)) {
+          const boundaryStyle = {
+            color: '#00FFFF',
+            weight: 3,
+            opacity: 0.9,
+            fillColor: '#00FFFF',
+            fillOpacity: 0.15
+          };
+
+          const isMultiPolygon = Array.isArray(property.boundary[0][0]);
+
+          if (isMultiPolygon) {
+            // Multiple parcels
+            property.boundary.forEach(polygonCoords => {
+              L.polygon(polygonCoords, boundaryStyle).addTo(map);
+              allBounds.push(...polygonCoords);
+            });
+          } else {
+            // Single parcel
+            L.polygon(property.boundary, boundaryStyle).addTo(map);
+            allBounds.push(...property.boundary);
+          }
+        }
+      });
+
+      // Fit map to show all properties
+      if (allBounds.length > 0) {
+        map.fitBounds(L.latLngBounds(allBounds), {
+          padding: [50, 50],
+          maxZoom: 14
+        });
+      }
+
+      // Invalidate size to ensure proper rendering
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
+
+      setMapLoaded(true);
+    }
+
+    return () => {
+      // Cleanup on unmount or view change
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        setMapLoaded(false);
+      }
+    };
+  }, [viewMode, sortedProperties]);
 
   return (
     <>
@@ -915,8 +1149,52 @@ export default function PropertiesPage() {
                 })}
               </div>
             ) : (
-              <div className="bg-white rounded-lg p-8 h-96 flex items-center justify-center">
-                <p className="text-[#7D6B58]">Map view coming soon - integrate with mapping service</p>
+              <div className="bg-white rounded-lg shadow-xl overflow-hidden border border-[#D2C6B2] sticky top-32">
+                <div className="bg-[#2F4F33] text-[#F5EFD9] p-4">
+                  <h2 className="text-xl font-serif font-bold">All Properties Map View</h2>
+                  <p className="text-sm text-[#D2C6B2] mt-1">
+                    Satellite view showing all {sortedProperties.length} properties with boundaries
+                  </p>
+                </div>
+                <div className="w-full relative" style={{ height: 'calc(100vh - 280px)', minHeight: '500px', maxHeight: '700px' }}>
+                  {!mapLoaded && (
+                    <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#F5EFD9] z-10">
+                      <div className="text-center">
+                        <div className="inline-flex items-center space-x-2 mb-4">
+                          <div className="w-3 h-3 bg-[#00FFFF] rounded-full animate-bounce"></div>
+                          <div className="w-3 h-3 bg-[#00FFFF] rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-3 h-3 bg-[#00FFFF] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                        <p className="text-[#2F4F33] font-serif text-lg">Loading satellite map...</p>
+                      </div>
+                    </div>
+                  )}
+                  <div
+                    ref={mapContainerRef}
+                    id="bulk-properties-map"
+                    className="w-full h-full"
+                    style={{
+                      visibility: mapLoaded ? 'visible' : 'hidden',
+                      opacity: mapLoaded ? 1 : 0,
+                      transition: 'opacity 0.3s ease-in'
+                    }}
+                  />
+                </div>
+                <div className="bg-[#F5EFD9] p-4 border-t border-[#D2C6B2]">
+                  <div className="flex items-center gap-4 text-sm text-[#2F4F33]">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-[#00FFFF] border-2 border-white shadow-lg"></div>
+                      <span>Property Location</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-1 bg-[#00FFFF]"></div>
+                      <span>Property Boundary</span>
+                    </div>
+                    <div className="ml-auto text-[#7D6B58] italic">
+                      Click markers for details
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
