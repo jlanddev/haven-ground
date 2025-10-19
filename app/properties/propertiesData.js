@@ -92,11 +92,11 @@ export const properties = [
         address: "235 WILLOW LN, FAIRPLAY, CO 80440"
       },
       features: {
-        access: "Willow Lane - Quiet Loop Road",
+        access: "Willow Lane - Public Road",
         power: "Electricity To Lot Line",
         utilities: "Natural Gas Available, High Speed Internet Available",
         water: "Water Well & Septic for Services",
-        topography: "Lodgepole Pine Forest"
+        topography: "Colorado's Southern Rocky Mountains characterized by dramatic peaks, valleys, and alpine meadows. Situated near the upper Colorado River watershed, the landscape features numerous streams cutting through mountainous terrain. Vegetation consists primarily of subalpine forests (lodgepole pine, Douglas fir, spruce, and aspen), with the tree line at approximately 11,500 feet."
       }
     },
     surroundingLandscape: {
