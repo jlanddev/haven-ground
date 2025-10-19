@@ -322,10 +322,10 @@ export const properties = [
     ],
     propertyDetails: {
       location: {
-        parcelId: "TBD",
+        parcelId: "13500041800",
         county: "Davidson County",
         coordinates: { lng: -86.6373, lat: 36.0883 },
-        address: "Nashville, TN"
+        address: "NASHBORO BLVD, NASHVILLE, TN 37217"
       },
       features: {
         access: "Public Road Access",
@@ -387,19 +387,26 @@ export const properties = [
         [38.82206437374046, -94.49647665023804]
       ]
     ],
+    specifications: {
+      lotSize: "158 Delivered Lots (0.14-0.38 Acres Each)",
+      zoning: "Planned Unit Development",
+      proposedUse: "Move-In Ready Single-Family Homes",
+      maxHeight: "Paved Roads & Sidewalks Throughout / Monument Entrances / Landscape Buffering Along Public Roads",
+      amenities: "Trail System to Elementary School, Walking Trails Throughout, Playground, Dog Parks, Picnic Areas, Landscaped Detention Ponds, Upgraded City Sewer Infrastructure"
+    },
     propertyDetails: {
       location: {
-        parcelId: "TBD",
+        parcelId: "2353300",
         county: "Cass County",
         coordinates: { lng: -94.494, lat: 38.8245 },
-        address: "Belton, MO"
+        address: "KENTUCKY RD, BELTON, MO 64012"
       },
       features: {
-        access: "Public Road Access",
-        power: "To Be Installed",
+        access: "Paved Public Roads",
+        power: "City Power",
         water: "City Water",
-        sewer: "City Sewer",
-        topography: "Planned Development"
+        sewer: "City Sewer (Upgraded)",
+        topography: "Delivered Finished Lots"
       }
     }
   },
@@ -597,10 +604,10 @@ export const properties = [
     ],
     propertyDetails: {
       location: {
-        parcelId: "TBD",
+        parcelId: "24600.02460.00000",
         county: "Ector County",
         coordinates: { lng: -102.4023, lat: 31.6683 },
-        address: "Odessa, TX"
+        address: "W APPLE ST, ODESSA, TX 79766"
       },
       features: {
         access: "Planned Road Infrastructure",

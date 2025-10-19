@@ -196,6 +196,10 @@ export default function PropertyDetailPage() {
   const [embeddedShowThankYou, setEmbeddedShowThankYou] = useState(false);
   const [embeddedSavedFormData, setEmbeddedSavedFormData] = useState(null);
 
+  // Import properties from centralized data file
+  const properties = propertiesData;
+  const property = properties.find(p => p.slug === propertySlug) || properties[0];
+
   // Modal functions
   const openModal = (images, startIndex) => {
     setModalImages(images);
@@ -232,11 +236,6 @@ export default function PropertyDetailPage() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [isModalOpen, modalImageIndex, modalImages.length]);
-
-  // Import properties from centralized data file
-  const properties = propertiesData;
-
-  const property = properties.find(p => p.slug === propertySlug) || properties[0];
 
   // Initialize property detail map for Mesquite Plains
   useEffect(() => {
@@ -675,12 +674,8 @@ export default function PropertyDetailPage() {
 
       {/* Full Width Photo Grid - Edge to Edge */}
       <div className="w-full mb-8 border-t border-[#2F4F33]">
-        {/* Special Map Display for Mesquite Plains */}
-        {property.slug === 'mesquite-plains' ? (
-          <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-white">
-            <div id="property-detail-map" style={{ height: '100%', width: '100%' }}></div>
-          </div>
-        ) : property.slug === 'desoto-estates' || property.slug === 'the-ranches' ? (
+        {/* Special Image Display */}
+        {property.slug === 'desoto-estates' || property.slug === 'the-ranches' || property.slug === 'mesquite-plains' ? (
           <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-white">
             <img
               src={property.images[0]}
@@ -1271,7 +1266,7 @@ export default function PropertyDetailPage() {
                     </div>
                   </div>
 
-                  {/* Right Column - Features */}
+                  {/* Right Column - Features or Project Specifications */}
                   <div className="p-8 md:p-10 bg-white">
                     <div className="flex items-center mb-8 pb-4 border-b-2 border-[#2F4F33]">
                       <div className="w-12 h-12 bg-[#2F4F33] rounded-lg flex items-center justify-center mr-4">
@@ -1279,9 +1274,87 @@ export default function PropertyDetailPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                         </svg>
                       </div>
-                      <h3 className="text-2xl font-bold text-[#2F4F33]">Features</h3>
+                      <h3 className="text-2xl font-bold text-[#2F4F33]">{property.specifications ? 'Project Scope' : 'Features'}</h3>
                     </div>
                     <div className="space-y-6">
+
+                    {/* High-Density Development Specifications */}
+                    {property.specifications ? (
+                      <>
+                        <div className="flex items-start">
+                          <div className="w-10 h-10 bg-[#2F4F33]/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+                            <svg className="w-5 h-5 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M3 7v1a3 3 0 003 3h12a3 3 0 003-3V7M3 7a2 2 0 012-2h14a2 2 0 012 2M3 7h18M5 10v10m14-10v10" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="text-xs uppercase tracking-wider text-[#7D6B58] font-semibold mb-1">Lot Size</div>
+                            <div className="text-[#2F4F33] font-semibold">{property.specifications.lotSize}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start">
+                          <div className="w-10 h-10 bg-[#2F4F33]/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+                            <svg className="w-5 h-5 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="text-xs uppercase tracking-wider text-[#7D6B58] font-semibold mb-1">Existing Zoning</div>
+                            <div className="text-[#2F4F33] font-semibold">{property.specifications.zoning}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start">
+                          <div className="w-10 h-10 bg-[#2F4F33]/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+                            <svg className="w-5 h-5 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="text-xs uppercase tracking-wider text-[#7D6B58] font-semibold mb-1">Proposed Use</div>
+                            <div className="text-[#2F4F33] font-semibold">{property.specifications.proposedUse}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start">
+                          <div className="w-10 h-10 bg-[#2F4F33]/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+                            <svg className="w-5 h-5 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="text-xs uppercase tracking-wider text-[#7D6B58] font-semibold mb-1">
+                              {property.specifications.maxHeight?.includes('Commercial') || property.specifications.maxHeight?.includes('Residential') ? 'Building Specs' : 'Site Improvements'}
+                            </div>
+                            <div className="text-[#2F4F33] font-semibold text-sm leading-relaxed">{property.specifications.maxHeight}</div>
+                          </div>
+                        </div>
+                        {property.specifications.parking && (
+                          <div className="flex items-start">
+                            <div className="w-10 h-10 bg-[#2F4F33]/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+                              <svg className="w-5 h-5 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                              </svg>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wider text-[#7D6B58] font-semibold mb-1">Parking</div>
+                              <div className="text-[#2F4F33] font-semibold text-sm leading-relaxed">{property.specifications.parking}</div>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-start">
+                          <div className="w-10 h-10 bg-[#2F4F33]/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+                            <svg className="w-5 h-5 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="text-xs uppercase tracking-wider text-[#7D6B58] font-semibold mb-1">Amenities</div>
+                            <div className="text-[#2F4F33] font-semibold text-sm leading-relaxed">{property.specifications.amenities}</div>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                      {/* Rural Development Features */}
                       <div className="flex items-start">
                         <div className="w-10 h-10 bg-[#2F4F33]/10 rounded-lg flex items-center justify-center mr-4 flex-shrink-0 mt-1">
                           <svg className="w-5 h-5 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1339,6 +1412,8 @@ export default function PropertyDetailPage() {
                           <div className="text-[#2F4F33] font-semibold">{property.propertyDetails.features.topography}</div>
                         </div>
                       </div>
+                      </>
+                    )}
                     </div>
                   </div>
                 </div>
@@ -1400,14 +1475,18 @@ export default function PropertyDetailPage() {
             <div className="bg-white rounded-lg shadow-xl p-8 mb-8">
               <div className="text-center mb-8">
                 <h2 className="text-3xl text-[#2F4F33] font-serif font-light mb-3">
-                  {property.type === 'community' || property.type === 'subdivision'
+                  {property.specifications
+                    ? 'Townhomes & Shopping'
+                    : property.type === 'community' || property.type === 'subdivision'
                     ? (property.homeTypes?.toLowerCase().includes('ranchette') || property.lots?.toLowerCase().includes('tract')
                       ? 'Residential & Recreational'
                       : 'Acreage Homesites')
                     : property.type === 'raw_land' ? 'Residential & Recreational Property' : 'Commercial Investment Opportunity'}
                 </h2>
                 <p className="text-[#7D6B58] font-serif italic">
-                  {property.type === 'community' || property.type === 'subdivision' ? property.targetBuyer || 'Sweet country living' : property.type === 'raw_land' ? 'Your perfect homesite or weekend retreat' : 'Prime location for your next business venture'}
+                  {property.specifications
+                    ? 'Modern urban living on the golf course'
+                    : property.type === 'community' || property.type === 'subdivision' ? property.targetBuyer || 'Sweet country living' : property.type === 'raw_land' ? 'Your perfect homesite or weekend retreat' : 'Prime location for your next business venture'}
                 </p>
               </div>
               
@@ -1812,11 +1891,11 @@ export default function PropertyDetailPage() {
                 <h2 className="text-2xl text-[#2F4F33] font-medium mb-4">Nearby Locations</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    { name: "Downtown Belton", type: "City Center", distance: "5 miles" },
-                    { name: "Temple", type: "Major City", distance: "10 miles" },
-                    { name: "Killeen", type: "Major City", distance: "15 miles" },
-                    { name: "Fort Hood", type: "Military Base", distance: "20 miles" },
-                    { name: "Austin", type: "State Capital", distance: "60 miles" }
+                    { name: "Downtown Belton", type: "City Center", distance: "2 miles" },
+                    { name: "Raymore", type: "City", distance: "5 miles" },
+                    { name: "Kansas City", type: "Major City", distance: "20 miles" },
+                    { name: "Kansas City International Airport", type: "Airport", distance: "35 miles" },
+                    { name: "Overland Park", type: "Major City", distance: "25 miles" }
                   ].map((location, index) => (
                     <div key={index} className="flex justify-between items-center p-3 border rounded-lg">
                       <div>
@@ -1848,7 +1927,7 @@ export default function PropertyDetailPage() {
                   ) : (property.type === 'community' || property.type === 'subdivision') ? (
                     <>
                       <h3 className="text-3xl text-[#2F4F33] font-light mb-2">{property.priceRange}</h3>
-                      <p className="text-[#7D6B58]">Lot Sizes: {property.lots}</p>
+                      <p className="text-[#7D6B58]">{property.slug === 'the-ranches' ? 'Tract Sizes' : 'Lot Sizes'}: {property.lots}</p>
                       <p className="text-xl text-[#2F4F33] mt-2">{property.homeTypes}</p>
                     </>
                   ) : (
