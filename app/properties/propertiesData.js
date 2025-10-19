@@ -350,7 +350,7 @@ export const properties = [
       "/images/kt images/kt images/kt model c.png"
     ],
     features: ["158 Paper Lots", "Planned Unit Development", "Coming 2026"],
-    lots: "40' x 100' to 70' x 110' (0.14 to 0.38 Acres)",
+    lots: "40' x 100' to 70' x 110'",
     homeTypes: "Single-Family",
     priceRange: "Coming 2026",
     type: "community",
@@ -573,7 +573,7 @@ export const properties = [
     images: ["/images/big-spring/Big Spring 6.png"],
     features: ["40 Homesites", "1-2 Acres", "Engineering Phase"],
     lots: "1-2 Acre Homesites",
-    homeTypes: "Custom Homes",
+    homeTypes: "Acreage Lots",
     priceRange: "Coming Soon",
     price: 0,
     pricePerAcre: 0,
