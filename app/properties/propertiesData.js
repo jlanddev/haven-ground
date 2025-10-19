@@ -3,6 +3,108 @@
 
 export const properties = [
   {
+    id: 10,
+    slug: "park-colorado",
+    title: "Park Colorado",
+    location: "Park County, CO",
+    description: "Mountain property in Park County, Colorado, located just 2 miles from downtown Alma and a short drive to Breckenridge. This 1.10-acre lot features predominantly lodgepole pine trees, creating a classic Colorado mountain forest setting.",
+    images: [
+      "/images/park-colorado/sunset-01.jpg",
+      "/images/park-colorado/sunset-02.jpg",
+      "/images/park-colorado/DJI_0439.JPG",
+      "/images/park-colorado/DJI_0440.JPG",
+      "/images/park-colorado/DJI_0441.JPG",
+      "/images/park-colorado/DJI_0442.JPG",
+      "/images/park-colorado/DJI_0445.JPG",
+      "/images/park-colorado/DJI_0446.JPG",
+      "/images/park-colorado/DJI_0447.JPG",
+      "/images/park-colorado/DJI_0449.JPG",
+      "/images/park-colorado/DJI_0450.JPG",
+      "/images/park-colorado/DJI_0452.JPG",
+      "/images/park-colorado/DJI_0454.JPG",
+      "/images/park-colorado/DJI_0455.JPG",
+      "/images/park-colorado/DJI_0456.JPG",
+      "/images/park-colorado/DJI_0457.JPG",
+      "/images/park-colorado/DJI_0458.JPG",
+      "/images/park-colorado/DJI_0442-Parcel Overlay.JPG",
+      "/images/park-colorado/DJI_0455-Parcel Overlay.JPG",
+      "/images/park-colorado/DJI_0457-Parcel Overlay.JPG",
+      "/images/park-colorado/DJI_0465-Parcel Overlay.JPG",
+      "/images/park-colorado/DJI_0475-Parcel Overlay.JPG",
+      "/images/park-colorado/DJI_0459.JPG",
+      "/images/park-colorado/DJI_0460.JPG",
+      "/images/park-colorado/DJI_0461.JPG",
+      "/images/park-colorado/DJI_0462.JPG",
+      "/images/park-colorado/DJI_0463.JPG",
+      "/images/park-colorado/DJI_0465.JPG",
+      "/images/park-colorado/DJI_0466.JPG",
+      "/images/park-colorado/DJI_0467.JPG",
+      "/images/park-colorado/DJI_0468.JPG",
+      "/images/park-colorado/DJI_0469.JPG",
+      "/images/park-colorado/DJI_0471.JPG",
+      "/images/park-colorado/DJI_0474.JPG",
+      "/images/park-colorado/DJI_0475.JPG",
+      "/images/park-colorado/DJI_0476.JPG",
+      "/images/park-colorado/DJI_0477.JPG",
+      "/images/park-colorado/DJI_0478.JPG",
+      "/images/park-colorado/DJI_0480.JPG",
+      "/images/park-colorado/DJI_0481.JPG",
+      "/images/park-colorado/DJI_0482.JPG",
+      "/images/park-colorado/DJI_0483.JPG",
+      "/images/park-colorado/DJI_0485.JPG",
+      "/images/park-colorado/DJI_0486.JPG",
+      "/images/park-colorado/DJI_0488.JPG"
+    ],
+    features: ["1.10 Acre Homesite", "Lodgepole Pine Forest", "Near Breckenridge"],
+    communityHighlights: [
+      "1.10 Acre Mountain Homesite",
+      "2 Miles from Downtown Alma",
+      "Lodgepole Pine Forest Setting",
+      "Electricity, Natural Gas & Internet Available",
+      "Near National Forest Access"
+    ],
+    lots: "1.10 Acres",
+    homeTypes: "Acreage Homesite",
+    priceRange: "$122,000",
+    price: 122000,
+    pricePerAcre: 110909,
+    acres: "1.10",
+    availableLots: 1,
+    type: "community",
+    template: "rural",
+    featured: true,
+    status: "Available",
+    lotTable: [
+      { lot: "Lot 1", size: "1.10 acres", price: "$122,000", status: "Available" }
+    ],
+    boundary: [
+      [39.2743660853308, -106.05798840522766],
+      [39.27367673007362, -106.0579776763916],
+      [39.27381792387138, -106.05863213539124],
+      [39.2743660853308, -106.0586428642273],
+      [39.2743660853308, -106.05798840522766]
+    ],
+    propertyDetails: {
+      location: {
+        parcelId: "7913",
+        county: "Park County",
+        coordinates: { lng: -106.0583, lat: 39.2740 },
+        address: "235 WILLOW LN, FAIRPLAY, CO 80440"
+      },
+      features: {
+        access: "Willow Lane - Quiet Loop Road",
+        power: "Electricity To Lot Line",
+        utilities: "Natural Gas Available, High Speed Internet Available",
+        water: "Water Well & Septic for Services",
+        topography: "Lodgepole Pine Forest"
+      }
+    },
+    surroundingLandscape: {
+      headline: "Mountain Living in Park County",
+      description: "Mountain property in Park County, Colorado, located just 2 miles from downtown Alma and a short drive to Breckenridge. This 1.10-acre lot features predominantly lodgepole pine trees, creating a classic Colorado mountain forest setting.\n\nThese tall, straight pines provide natural privacy while allowing filtered light to reach the forest floor. The property is situated on Willow Lane, a quiet loop road in the desirable Mosquito Gulch area.\n\nThe land offers potential mountain views of the Mosquito Range with strategic clearing of some trees. Wildlife regularly passes through the area, adding to the authentic Colorado mountain experience.\n\nElectricity is available at the lot line, with natural gas and high-speed internet also accessible. Water and sewer services would be handled through well and septic installation.\n\nGreat position for outdoor enthusiasts, the property is near National Forest access while remaining easily commutable to Breckenridge and Summit County amenities. Ideal for building a mountain cabin or year-round residence in one of Colorado's most charming high-altitude communities.\n\nThe lodgepole pines provide excellent building materials and create a quintessential Rocky Mountain backdrop for your future home."
+    }
+  },
+  {
     id: 3,
     slug: "oak-hill",
     title: "Oak Hill Reserve",

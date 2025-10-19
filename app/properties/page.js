@@ -66,6 +66,7 @@ export default function PropertiesPage() {
       if (property.location.includes('MS')) propertyState = 'Mississippi';
       else if (property.location.includes('Nashville') || property.location.includes('TN')) propertyState = 'Tennessee';
       else if (property.location.includes('MO')) propertyState = 'Missouri';
+      else if (property.location.includes('CO')) propertyState = 'Colorado';
 
       if (propertyState !== filters.state) return false;
     }
@@ -764,6 +765,7 @@ export default function PropertiesPage() {
                 >
                   <option value="all">All States</option>
                   <option value="Texas">Texas</option>
+                  <option value="Colorado">Colorado</option>
                   <option value="Mississippi">Mississippi</option>
                   <option value="Tennessee">Tennessee</option>
                   <option value="Missouri">Missouri</option>
