@@ -665,40 +665,42 @@ export default function PropertyDetailPage() {
               </div>
             </div>
 
-            {/* 4 Smaller Images - 25% width, 2x2 grid - Hidden on mobile */}
-            <div className="hidden lg:grid flex-1 grid-cols-2 grid-rows-2 gap-1">
-              {[1, 2, 3, 4].map((imageIndex) => {
-                const image = property.images[imageIndex];
-                return (
-                  <div
-                    key={imageIndex}
-                    className="overflow-hidden cursor-pointer hover:opacity-95 transition-opacity bg-white"
-                    onClick={() => openModal(property.images, imageIndex)}
-                  >
-                    {image && (
-                      <>
-                        {image.endsWith('.mp4') ? (
-                          <video
-                            src={image}
-                            className="w-full h-full object-cover"
-                            muted
-                            loop
-                          />
-                        ) : (
-                          <img
-                            src={image}
-                            alt={`${property.title} ${imageIndex + 1}`}
-                            className={`w-full h-full object-cover ${
-                              image.includes('plat') ? 'filter brightness-150 contrast-125' : ''
-                            }`}
-                          />
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            {/* 4 Smaller Images - Hidden on mobile and when only 1 image */}
+            {property.images.length > 1 && (
+              <div className="hidden lg:grid flex-1 grid-cols-2 grid-rows-2 gap-1">
+                {[1, 2, 3, 4].map((imageIndex) => {
+                  const image = property.images[imageIndex];
+                  return (
+                    <div
+                      key={imageIndex}
+                      className="overflow-hidden cursor-pointer hover:opacity-95 transition-opacity bg-white"
+                      onClick={() => openModal(property.images, imageIndex)}
+                    >
+                      {image && (
+                        <>
+                          {image.endsWith('.mp4') ? (
+                            <video
+                              src={image}
+                              className="w-full h-full object-cover"
+                              muted
+                              loop
+                            />
+                          ) : (
+                            <img
+                              src={image}
+                              alt={`${property.title} ${imageIndex + 1}`}
+                              className={`w-full h-full object-cover ${
+                                image.includes('plat') ? 'filter brightness-150 contrast-125' : ''
+                              }`}
+                            />
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 

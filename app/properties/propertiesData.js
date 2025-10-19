@@ -301,7 +301,7 @@ export const properties = [
     description: "Nashboro Village is a planned development in Nashville featuring 30 three-story townhomes, 13,000 square feet of commercial space including a restaurant, and a 12-acre public park. The project is currently in engineering and planning with completion anticipated in 2027.",
     images: ["/images/nashboro/Nashboro Village Plan.png"],
     features: ["Engineering Phase", "30 Townhomes Planned", "Coming 2027"],
-    lots: "18 x 40 and 20 x 40",
+    lots: "18' x 40' and 20' x 40'",
     homeTypes: "Townhomes & Commercial",
     priceRange: "Coming 2027",
     type: "community",
@@ -341,7 +341,7 @@ export const properties = [
     slug: "kentucky-trails",
     title: "Kentucky Trails",
     location: "Belton, MO",
-    description: "Kentucky Trails is a planned residential development in Belton, Missouri featuring single-family starter homes. The community will include a central pond, walking trails with direct access to the nearby elementary school, and cul-de-sac streets. Homes are expected to start in the mid-$300,000s.",
+    description: "Kentucky Trails is a planned residential development in Belton, Missouri featuring 158 paper lots ranging from 0.14 to 0.38 acres. The community will feature walking trails with direct access to the nearby elementary school, playground, dog parks, and beautifully maintained detention ponds.",
     images: [
       "/images/kt images/kt images/kt plat.png",
       "/images/kt images/kt images/kt entrance.png",
@@ -349,13 +349,13 @@ export const properties = [
       "/images/kt images/kt images/kt model b.png",
       "/images/kt images/kt images/kt model c.png"
     ],
-    features: ["Finished Lots", "40x120 & 50x120", "Starting Mid $300s"],
-    lots: "40 x 120 and 50 x 120",
+    features: ["158 Paper Lots", "Planned Unit Development", "Coming 2026"],
+    lots: "40' x 100' to 70' x 110' (0.14 to 0.38 Acres)",
     homeTypes: "Single-Family",
-    priceRange: "Starting Mid $300s",
+    priceRange: "Coming 2026",
     type: "community",
     template: "high-density",
-    status: "Engineering & Planning",
+    status: "Coming 2026",
     featured: true,
     boundary: [
       [
