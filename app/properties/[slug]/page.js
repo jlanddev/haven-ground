@@ -238,6 +238,106 @@ export default function PropertyDetailPage() {
 
   const property = properties.find(p => p.slug === propertySlug) || properties[0];
 
+  // Initialize property detail map for Mesquite Plains
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (property.slug !== 'mesquite-plains') return;
+    if (!property.boundary) return;
+
+    // Check if Leaflet is already loaded
+    if (window.L) {
+      initializePropertyMap();
+      return;
+    }
+
+    // Load Leaflet dynamically
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => initializePropertyMap();
+    document.body.appendChild(script);
+
+    function initializePropertyMap() {
+      const L = window.L;
+      const mapContainer = document.getElementById('property-detail-map');
+      if (!mapContainer) return;
+
+      // Clear any existing map
+      mapContainer.innerHTML = '';
+
+      const map = L.map('property-detail-map', {
+        scrollWheelZoom: false,
+        zoomControl: true,
+        dragging: true,
+        touchZoom: true,
+        doubleClickZoom: true,
+        attributionControl: false
+      });
+
+      // Esri satellite imagery
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: false,
+        maxZoom: 20
+      }).addTo(map);
+
+      // Add scroll zoom hint
+      const scrollHint = L.control({ position: 'topleft' });
+      scrollHint.onAdd = function() {
+        const div = L.DomUtil.create('div', 'scroll-zoom-hint');
+        div.innerHTML = `<div style="background: white; padding: 8px 12px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 12px; color: #2F4F33;">Click map to enable scroll zoom</div>`;
+        return div;
+      };
+      scrollHint.addTo(map);
+
+      map.once('click', () => {
+        map.scrollWheelZoom.enable();
+        scrollHint.remove();
+      });
+
+      // Draw boundary polygon(s)
+      const isMultiPolygon = Array.isArray(property.boundary[0][0]);
+      let allBounds = [];
+
+      if (isMultiPolygon) {
+        property.boundary.forEach(polygon => {
+          const coords = polygon.map(coord => [coord[0], coord[1]]);
+          allBounds.push(...coords);
+          L.polygon(coords, {
+            color: '#00FFFF',
+            weight: 3,
+            fillColor: '#00FFFF',
+            fillOpacity: 0.2
+          }).addTo(map);
+        });
+      } else {
+        const coords = property.boundary.map(coord => [coord[0], coord[1]]);
+        allBounds = coords;
+        L.polygon(coords, {
+          color: '#00FFFF',
+          weight: 3,
+          fillColor: '#00FFFF',
+          fillOpacity: 0.2
+        }).addTo(map);
+      }
+
+      // Fit map to bounds
+      if (allBounds.length > 0) {
+        map.fitBounds(L.latLngBounds(allBounds), { padding: [50, 50] });
+      }
+    }
+
+    return () => {
+      const mapContainer = document.getElementById('property-detail-map');
+      if (mapContainer) {
+        mapContainer.innerHTML = '';
+      }
+    };
+  }, [property.slug, property.boundary]);
+
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % property.images.length);
   };
@@ -575,8 +675,12 @@ export default function PropertyDetailPage() {
 
       {/* Full Width Photo Grid - Edge to Edge */}
       <div className="w-full mb-8 border-t border-[#2F4F33]">
-        {/* Special Image Display */}
-        {property.slug === 'desoto-estates' || property.slug === 'the-ranches' ? (
+        {/* Special Map Display for Mesquite Plains */}
+        {property.slug === 'mesquite-plains' ? (
+          <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-white">
+            <div id="property-detail-map" style={{ height: '100%', width: '100%' }}></div>
+          </div>
+        ) : property.slug === 'desoto-estates' || property.slug === 'the-ranches' ? (
           <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-white">
             <img
               src={property.images[0]}
