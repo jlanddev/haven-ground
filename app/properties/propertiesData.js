@@ -276,7 +276,7 @@ export const properties = [
     ],
     propertyDetails: {
       location: {
-        parcelId: "TBD",
+        parcelId: "134957",
         county: "Hill County",
         coordinates: { lng: -97.283, lat: 32.0257 },
         address: "Whitney, Texas"
@@ -354,7 +354,7 @@ export const properties = [
     homeTypes: "Single-Family",
     priceRange: "Coming 2026",
     type: "community",
-    template: "high-density",
+    template: "sfr",
     status: "Engineering & Planning",
     featured: true,
     boundary: [
