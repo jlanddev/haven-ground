@@ -674,13 +674,25 @@ export default function PropertyDetailPage() {
 
       {/* Full Width Photo Grid - Edge to Edge */}
       <div className="w-full mb-8 border-t border-[#2F4F33]">
-        {/* Special Image Display */}
-        {property.slug === 'desoto-estates' || property.slug === 'the-ranches' || property.slug === 'mesquite-plains' ? (
+        {/* Special Map Display for Mesquite Plains */}
+        {property.slug === 'mesquite-plains' ? (
+          <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-white">
+            <div id="property-detail-map" style={{ height: '100%', width: '100%' }}></div>
+          </div>
+        ) : property.slug === 'desoto-estates' ? (
           <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-white">
             <img
               src={property.images[0]}
               alt={`${property.title} Plat`}
               className="w-full h-full object-contain"
+            />
+          </div>
+        ) : property.slug === 'the-ranches' ? (
+          <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-white">
+            <img
+              src={property.images[0]}
+              alt={`${property.title} Plat`}
+              className="w-full h-full object-cover"
             />
           </div>
         ) : (

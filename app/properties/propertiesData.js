@@ -285,7 +285,7 @@ export const properties = [
         access: "Public Road Access",
         power: "Power On Site",
         water: "Water Wells",
-        topography: "Ranchland"
+        topography: "Gently Rolling Prairie"
       }
     },
     surroundingLandscape: {
@@ -349,13 +349,13 @@ export const properties = [
       "/images/kt images/kt images/kt model b.png",
       "/images/kt images/kt images/kt model c.png"
     ],
-    features: ["158 Paper Lots", "Planned Unit Development", "Coming 2026"],
+    features: ["158 Paper Lots", "Planned Unit Development", "Engineering Phase"],
     lots: "40' x 100' to 70' x 110'",
     homeTypes: "Single-Family",
     priceRange: "Coming 2026",
     type: "community",
     template: "high-density",
-    status: "Coming 2026",
+    status: "Engineering & Planning",
     featured: true,
     boundary: [
       [
