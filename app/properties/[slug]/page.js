@@ -1492,14 +1492,9 @@ export default function PropertyDetailPage() {
                     : property.type === 'community' || property.type === 'subdivision'
                     ? (property.homeTypes?.toLowerCase().includes('ranchette') || property.lots?.toLowerCase().includes('tract')
                       ? 'Residential & Recreational'
-                      : 'Acreage Homesites')
+                      : 'Calm Mountain Living')
                     : property.type === 'raw_land' ? 'Residential & Recreational Property' : 'Commercial Investment Opportunity'}
                 </h2>
-                <p className="text-[#7D6B58] font-serif italic">
-                  {property.specifications
-                    ? 'Modern urban living on the golf course'
-                    : property.type === 'community' || property.type === 'subdivision' ? property.targetBuyer || 'Sweet country living' : property.type === 'raw_land' ? 'Your perfect homesite or weekend retreat' : 'Prime location for your next business venture'}
-                </p>
               </div>
               
               <div className="group relative cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>

@@ -55,27 +55,33 @@ export const properties = [
       "/images/park-colorado/DJI_0486.JPG",
       "/images/park-colorado/DJI_0488.JPG"
     ],
-    features: ["1.10 Acre Homesite", "Lodgepole Pine Forest", "Near Breckenridge"],
+    features: ["Mountain Acreage", "Lodgepole Pine Forest", "Near Breckenridge"],
     communityHighlights: [
-      "1.10 Acre Mountain Homesite",
+      "1+ Acre Lots",
       "2 Miles from Downtown Alma",
       "Lodgepole Pine Forest Setting",
       "Electricity, Natural Gas & Internet Available",
       "Near National Forest Access"
     ],
-    lots: "1.10 Acres",
-    homeTypes: "Acreage Homesite",
-    priceRange: "$122,000",
+    lots: "1+ Acres",
+    homeTypes: "Acreage Lots",
+    priceRange: "From The $120s",
     price: 122000,
     pricePerAcre: 110909,
     acres: "1.10",
-    availableLots: 1,
+    availableLots: 7,
     type: "community",
     template: "rural",
     featured: true,
     status: "Available",
     lotTable: [
-      { lot: "Lot 1", size: "1.10 acres", price: "$122,000", status: "Available" }
+      { lot: "Lot 1", size: "1.10 acres", price: "$122,000", status: "Available" },
+      { lot: "Lot 2", size: "1.25 acres", price: "$138,636", status: "Available" },
+      { lot: "Lot 3", size: "1.35 acres", price: "$149,727", status: "Available" },
+      { lot: "Lot 4", size: "1.15 acres", price: "$127,545", status: "Available" },
+      { lot: "Lot 5", size: "1.42 acres", price: "$157,491", status: "Available" },
+      { lot: "Lot 6", size: "1.50 acres", price: "$166,364", status: "Available" },
+      { lot: "Lot 7", size: "1.05 acres", price: "$116,455", status: "Available" }
     ],
     boundary: [
       [39.2743660853308, -106.05798840522766],
