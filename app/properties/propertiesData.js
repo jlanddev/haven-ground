@@ -4,10 +4,10 @@
 export const properties = [
   {
     id: 10,
-    slug: "park-colorado",
-    title: "Park Colorado",
+    slug: "willow-valley",
+    title: "Willow Valley",
     location: "Park County, CO",
-    description: "Mountain property in Park County, Colorado, located just 2 miles from downtown Alma and a short drive to Breckenridge. This 1.10-acre lot features predominantly lodgepole pine trees, creating a classic Colorado mountain forest setting.",
+    description: "Mountain property in Park County, Colorado, located just 2 miles from downtown Alma and a short drive to Breckenridge. Featuring 1+ acre lots with predominantly lodgepole pine trees, creating a classic Colorado mountain forest setting.",
     images: [
       "/images/park-colorado/sunset-01.jpg",
       "/images/park-colorado/sunset-02.jpg",
@@ -68,7 +68,7 @@ export const properties = [
     priceRange: "From The $120s",
     price: 122000,
     pricePerAcre: 110909,
-    acres: "1.10",
+    acres: "1+",
     availableLots: 7,
     type: "community",
     template: "rural",
@@ -107,7 +107,7 @@ export const properties = [
     },
     surroundingLandscape: {
       headline: "Mountain Living in Park County",
-      description: "Mountain property in Park County, Colorado, located just 2 miles from downtown Alma and a short drive to Breckenridge. This 1.10-acre lot features predominantly lodgepole pine trees, creating a classic Colorado mountain forest setting.\n\nThese tall, straight pines provide natural privacy while allowing filtered light to reach the forest floor. The property is situated on Willow Lane, a quiet loop road in the desirable Mosquito Gulch area.\n\nThe land offers potential mountain views of the Mosquito Range with strategic clearing of some trees. Wildlife regularly passes through the area, adding to the authentic Colorado mountain experience.\n\nElectricity is available at the lot line, with natural gas and high-speed internet also accessible. Water and sewer services would be handled through well and septic installation.\n\nGreat position for outdoor enthusiasts, the property is near National Forest access while remaining easily commutable to Breckenridge and Summit County amenities. Ideal for building a mountain cabin or year-round residence in one of Colorado's most charming high-altitude communities.\n\nThe lodgepole pines provide excellent building materials and create a quintessential Rocky Mountain backdrop for your future home."
+      description: "Willow Valley is a mountain property in Park County, Colorado, located just 2 miles from downtown Alma and a short drive to Breckenridge. These 1+ acre lots feature predominantly lodgepole pine trees, creating a classic Colorado mountain forest setting.\n\nThese tall, straight pines provide natural privacy while allowing filtered light to reach the forest floor. The property is situated on Willow Lane, a quiet loop road in the desirable Mosquito Gulch area.\n\nThe land offers potential mountain views of the Mosquito Range with strategic clearing of some trees. Wildlife regularly passes through the area, adding to the authentic Colorado mountain experience.\n\nElectricity is available at the lot line, with natural gas and high-speed internet also accessible. Water and sewer services would be handled through well and septic installation.\n\nGreat position for outdoor enthusiasts, the property is near National Forest access while remaining easily commutable to Breckenridge and Summit County amenities. Ideal for building a mountain cabin or year-round residence in one of Colorado's most charming high-altitude communities.\n\nThe lodgepole pines provide excellent building materials and create a quintessential Rocky Mountain backdrop for your future home."
     }
   },
   {
