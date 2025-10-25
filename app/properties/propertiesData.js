@@ -467,6 +467,7 @@ export const properties = [
     template: "sfr",
     status: "Engineering & Planning",
     featured: true,
+    targetBuyer: "Planned Community",
     boundary: [
       [
         [38.827305148301065, -94.49320435523987],
