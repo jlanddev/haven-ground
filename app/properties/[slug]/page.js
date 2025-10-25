@@ -1487,13 +1487,12 @@ export default function PropertyDetailPage() {
             <div className="bg-white rounded-lg shadow-xl p-8 mb-8">
               <div className="text-center mb-8">
                 <h2 className="text-3xl text-[#2F4F33] font-serif font-light mb-3">
-                  {property.specifications
-                    ? 'Townhomes & Shopping'
-                    : property.type === 'community' || property.type === 'subdivision'
-                    ? (property.homeTypes?.toLowerCase().includes('ranchette') || property.lots?.toLowerCase().includes('tract')
-                      ? 'Residential & Recreational'
-                      : property.targetBuyer || 'Sweet country living')
-                    : property.type === 'raw_land' ? 'Residential & Recreational Property' : 'Commercial Investment Opportunity'}
+                  {property.targetBuyer ||
+                   (property.homeTypes?.toLowerCase().includes('ranchette') || property.lots?.toLowerCase().includes('tract')
+                    ? 'Ranchettes & Recreational'
+                    : property.homeTypes?.toLowerCase().includes('acreage')
+                    ? 'Sweet country living'
+                    : 'Sweet country living')}
                 </h2>
               </div>
               

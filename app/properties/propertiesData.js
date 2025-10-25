@@ -417,6 +417,7 @@ export const properties = [
     template: "high-density",
     status: "Engineering & Planning",
     featured: true,
+    targetBuyer: "Townhomes & Shopping",
     specifications: {
       lotSize: "3.46 Acres",
       zoning: "R10 (PUD)",
