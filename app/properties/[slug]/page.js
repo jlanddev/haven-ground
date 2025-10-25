@@ -2493,9 +2493,9 @@ export default function PropertyDetailPage() {
       {/* Sticky Bottom Bar - Desktop & Mobile */}
       {showStickyButton && (
         <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-gradient-to-r from-[#2F4F33] to-[#1a2e1c] shadow-2xl">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex items-center justify-between gap-4">
-              {/* Property Info - Horizontal Layout */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-3">
+            <div className="flex items-center justify-center md:justify-between gap-4">
+              {/* Property Info - Desktop Only */}
               <div className="hidden md:flex items-center gap-3 flex-1">
                 {property.template === 'high-density' ? (
                   // High-density communities (Nashboro, Kentucky) - Just show name
@@ -2538,24 +2538,7 @@ export default function PropertyDetailPage() {
                 )}
               </div>
 
-              {/* Mobile - Simplified Info */}
-              <div className="md:hidden flex items-center gap-2 flex-1 text-sm">
-                {property.template === 'high-density' ? (
-                  // High-density - just name on mobile
-                  <span className="font-bold text-white truncate">{property.title}</span>
-                ) : (
-                  // Regular properties - name + price on mobile
-                  <>
-                    <span className="font-medium text-white truncate">{property.title}</span>
-                    <span className="text-white/40">|</span>
-                    <span className="font-semibold text-white whitespace-nowrap">
-                      {selectedLot ? selectedLot.price : (property.type === 'community' || property.type === 'subdivision') ? property.priceRange : `$${property.price?.toLocaleString()}`}
-                    </span>
-                  </>
-                )}
-              </div>
-
-              {/* CTA Button */}
+              {/* CTA Button - Centered on mobile, right-aligned on desktop */}
               <button
                 type="button"
                 onClick={() => {
@@ -2564,7 +2547,7 @@ export default function PropertyDetailPage() {
                     contactForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }
                 }}
-                className="flex-shrink-0 bg-[#D4A574] text-white px-6 sm:px-8 py-3 text-sm sm:text-base font-bold hover:bg-[#C69A65] transition-all duration-300 shadow-lg shadow-orange-500/40 hover:shadow-xl hover:shadow-orange-500/60 rounded-md border-2 border-[#E8B86D] whitespace-nowrap"
+                className="bg-[#D4A574] text-white px-8 md:px-6 py-4 md:py-3 text-base font-bold hover:bg-[#C69A65] transition-all duration-300 shadow-lg shadow-orange-500/40 hover:shadow-xl hover:shadow-orange-500/60 rounded-md border-2 border-[#E8B86D] whitespace-nowrap"
               >
                 Get More Info
               </button>
