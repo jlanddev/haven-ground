@@ -178,8 +178,8 @@ export default function HomePage() {
       {/* Coming Soon Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-16 bg-gradient-to-br from-[#F5EFD9] to-[#D2C6B2] relative">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl text-[#2F4F33] font-serif font-bold mb-4 leading-tight whitespace-nowrap">
-            Our Land is Your Haven
+          <h1 className="text-4xl md:text-5xl lg:text-6xl text-[#2F4F33] font-serif font-bold mb-4 leading-tight">
+            Our Land is<br />Your Haven
           </h1>
           
           {/* Elegant Southern Separation Line */}
