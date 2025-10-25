@@ -1492,7 +1492,7 @@ export default function PropertyDetailPage() {
                     : property.type === 'community' || property.type === 'subdivision'
                     ? (property.homeTypes?.toLowerCase().includes('ranchette') || property.lots?.toLowerCase().includes('tract')
                       ? 'Residential & Recreational'
-                      : 'Calm Mountain Living')
+                      : property.targetBuyer || 'Sweet country living')
                     : property.type === 'raw_land' ? 'Residential & Recreational Property' : 'Commercial Investment Opportunity'}
                 </h2>
               </div>

@@ -74,6 +74,7 @@ export const properties = [
     template: "rural",
     featured: true,
     status: "Available",
+    targetBuyer: "Calm Mountain Living",
     lotTable: [
       { lot: "Lot 1", size: "1.10 acres", price: "$122,000", status: "Available" },
       { lot: "Lot 2", size: "1.25 acres", price: "$138,636", status: "Available" },
