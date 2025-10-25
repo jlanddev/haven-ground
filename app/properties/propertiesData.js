@@ -625,7 +625,7 @@ export const properties = [
     ],
     features: ["2 Tracts Available", "20 & 23 Acres", "Spring-Fed Pond"],
     lots: "20-43 Acres",
-    homeTypes: "Ranchettes",
+    homeTypes: "Ranchette Tracts",
     priceRange: "From the $150s",
     price: 150000,
     pricePerAcre: 7209,
