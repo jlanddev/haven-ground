@@ -245,12 +245,12 @@ export default function HomePage() {
               <h4 className="text-lg font-semibold text-[#F5EFD9] mb-4">Get in Touch</h4>
               <div className="space-y-3">
                 <p className="text-[#D2C6B2] text-sm ">Find your homesite that feels the most like home</p>
-                <button
-                  onClick={() => setShowFooterContactModal(true)}
+                <a
+                  href="/sell-your-land#contact-form"
                   className="inline-block bg-[#F5EFD9] text-[#2F4F33] px-4 py-2 rounded-md hover:bg-[#D2C6B2] active:bg-[#D2C6B2] transition-all duration-200 text-sm font-medium transform hover:scale-105 active:scale-95"
                 >
                   Contact Us
-                </button>
+                </a>
               </div>
             </div>
           </div>

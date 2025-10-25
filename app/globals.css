@@ -41,23 +41,8 @@ table, th, td, .lot-table, [class*="lot"], [class*="Lot"] {
   font-variant-numeric: lining-nums tabular-nums !important;
 }
 
-/* Modern 2025 text rendering and wrapping */
-p {
-  text-rendering: optimizeLegibility;
+/* Simple, clean text rendering - no bullshit */
+* {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-wrap: pretty;
-  overflow-wrap: break-word;
-  word-break: normal;
-}
-
-/* Balance headings */
-h1, h2, h3, h4, h5, h6 {
-  text-wrap: balance;
-}
-
-/* Better spacing */
-p, li {
-  line-height: 1.7;
-  letter-spacing: 0.01em;
 }

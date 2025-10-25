@@ -51,12 +51,7 @@ function ThankDispoContent() {
       {/* Navigation */}
       <header className="bg-[#2F4F33] text-[#F5EFD9] py-4 px-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <a href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#F5EFD9] rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 sm:w-7 sm:h-7 text-[#2F4F33]" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.18l6 3.75v7.57l-6 3.75-6-3.75V7.93l6-3.75z"/>
-              </svg>
-            </div>
+          <a href="/" className="flex items-center">
             <span className="text-2xl sm:text-3xl font-serif text-[#F5EFD9] font-bold italic">Haven Ground</span>
           </a>
           <a href="/" className="text-[#F5EFD9] hover:text-white transition-colors">
@@ -68,15 +63,6 @@ function ThankDispoContent() {
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center">
-          {/* Success Icon */}
-          <div className="mb-6">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          </div>
-
           {/* Thank You Message */}
           <h1 className="text-3xl md:text-4xl font-serif text-[#2F4F33] mb-4">
             Visit Scheduled!
@@ -99,7 +85,7 @@ function ThankDispoContent() {
               </li>
               <li className="flex items-start">
                 <span className="text-[#2F4F33] mr-2">3.</span>
-                <span>Our team will meet you at the property with keys</span>
+                <span>We'll meet you out there</span>
               </li>
             </ul>
           </div>
@@ -112,7 +98,7 @@ function ThankDispoContent() {
 
       {/* Footer */}
       <footer className="bg-[#2F4F33] text-[#F5EFD9] py-6 px-6 text-center">
-        <p className="text-sm">© 2024 Haven Ground. All rights reserved.</p>
+        <p className="text-sm">© 2025 Haven Ground. All rights reserved.</p>
       </footer>
     </div>
     </>

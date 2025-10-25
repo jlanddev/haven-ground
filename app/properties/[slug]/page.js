@@ -154,6 +154,7 @@ export default function PropertyDetailPage() {
   const [modalImageIndex, setModalImageIndex] = useState(0);
   const [modalImages, setModalImages] = useState([]);
   const [selectedLot, setSelectedLot] = useState(null);
+  const [showStickyButton, setShowStickyButton] = useState(true);
 
   // SMS Verification states
   const [otpSent, setOtpSent] = useState(false);
@@ -236,6 +237,28 @@ export default function PropertyDetailPage() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [isModalOpen, modalImageIndex, modalImages.length]);
+
+  // Handle sticky bar visibility on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const contactForm = document.querySelector('.contact-form-section');
+      if (contactForm) {
+        const rect = contactForm.getBoundingClientRect();
+        // Show sticky bar when form is NOT in view
+        // Hide when form is in the viewport (user can see it)
+        const formInView = rect.top < window.innerHeight - 100 && rect.bottom > 100;
+        setShowStickyButton(!formInView);
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      window.addEventListener('scroll', handleScroll);
+      handleScroll(); // Check initial state
+    }, 100);
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Initialize property detail map for Mesquite Plains
   useEffect(() => {
@@ -628,15 +651,15 @@ export default function PropertyDetailPage() {
   return (
     <div className="flex flex-col min-h-screen font-serif bg-stone-50 max-w-full">
       {/* Navigation */}
-      <nav className="bg-[#F5EFD9] py-4 border-b border-[#D2C6B2] sticky top-0 z-50">
+      <nav className="bg-[#F5EFD9] py-2 border-b border-[#D2C6B2] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center relative z-20">
               <a href="/" className="relative">
-                <img 
-                  src="/images/Haven LOGO Use.png" 
-                  alt="Haven Ground Logo" 
-                  className="h-16 sm:h-20 md:h-24 w-auto hover:opacity-90 transition-opacity duration-300"
+                <img
+                  src="/images/Haven LOGO Use.png"
+                  alt="Haven Ground Logo"
+                  className="h-12 sm:h-14 md:h-16 w-auto hover:opacity-90 transition-opacity duration-300"
                 />
               </a>
             </div>
@@ -840,27 +863,17 @@ export default function PropertyDetailPage() {
         )}
       </div>
 
-      {/* Two Column Layout - Details and Sidebar */}
-      <div className="flex-1 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+      {/* Main Content - Optimized Width for Conversions */}
+      <div className="flex-1 max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div>
 
-          {/* Left Column - Details */}
-          <div className="lg:col-span-2">
+          {/* Property Details */}
+          <div>
 
             {/* Property Title and Location */}
             <div className="mb-6">
               <h1 className="text-3xl md:text-4xl lg:text-5xl text-[#2F4F33] font-light mb-2">{property.title}</h1>
               <p className="text-[#7D6B58] text-lg md:text-xl">{property.location}</p>
-            </div>
-
-            {/* Call to Action - Contact Info */}
-            <div className="bg-gradient-to-r from-[#2F4F33] to-[#1a2e1c] rounded-lg p-6 mb-8 text-center">
-              <p className="text-[#F5EFD9] text-lg md:text-xl font-medium mb-2">
-                Questions about {property.title}?
-              </p>
-              <p className="text-[#D2C6B2] text-base md:text-lg">
-                Give us a call at <a href="tel:469-640-3864" className="text-[#F5EFD9] font-semibold hover:underline">(469) 640-3864</a>
-              </p>
             </div>
 
             {/* Seller Financing Badge - Only for Longhorn */}
@@ -1696,29 +1709,9 @@ export default function PropertyDetailPage() {
                       </div>
                     )}
                     <div className="bg-[#F5EFD9] rounded-lg p-6">
-                      <p className="text-[#2F4F33] font-serif leading-relaxed mb-4">
+                      <p className="text-[#2F4F33] font-serif leading-relaxed">
                         {property.detailedDescription ? property.detailedDescription.split('\n\n')[0] : property.description}
                       </p>
-                      <div className="flex flex-col sm:flex-row gap-4">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowContactForm(true);
-                          }}
-                          className="flex-1 bg-[#2F4F33] text-[#F5EFD9] py-4 px-6 hover:bg-[#1a2e1c] transition duration-300 font-serif text-lg shadow-lg hover:shadow-xl"
-                        >
-                          Inquire About This Property
-                        </button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowCalendar(true);
-                          }}
-                          className="flex-1 border-2 border-[#2F4F33] text-[#2F4F33] py-4 px-6 hover:bg-[#2F4F33] hover:text-white transition duration-300 font-serif"
-                        >
-                          Schedule Site Visit
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1726,7 +1719,7 @@ export default function PropertyDetailPage() {
             </div>
 
             {/* Contact Form */}
-            <div className="bg-white rounded-lg shadow-xl border-2 border-[#2F4F33] p-6 sm:p-8 mb-8">
+            <div id="contact-form" className="contact-form-section bg-[#FDFCF8] rounded-lg shadow-xl border-2 border-[#2F4F33] p-6 sm:p-8 mb-8">
               {embeddedShowThankYou ? (
                 <div className="text-center py-12">
                   <div className="w-20 h-20 bg-[#2F4F33] rounded-full mx-auto mb-6 flex items-center justify-center">
@@ -1741,8 +1734,8 @@ export default function PropertyDetailPage() {
                 <>
                   <div className="text-center mb-6">
                     <h2 className="text-2xl sm:text-3xl text-[#2F4F33] font-medium mb-3">Interested in This Property?</h2>
-                    <p className="text-[#7D6B58] text-base sm:text-lg leading-relaxed">
-                      {property.contactFormText || "Get in touch with our team to learn more about this exceptional property opportunity."}
+                    <p className="text-[#7D6B58] text-base sm:text-lg leading-relaxed max-w-3xl mx-auto">
+                      {property.contactFormText || "Get all your questions answered or schedule a visit to the property."}
                     </p>
                   </div>
 
@@ -1816,15 +1809,9 @@ export default function PropertyDetailPage() {
                   <button
                     type="submit"
                     disabled={embeddedIsLoading}
-                    className="w-full bg-[#2F4F33] text-white py-4 px-6 rounded-lg hover:bg-[#1a2e1c] focus:bg-[#1a2e1c] focus:ring-4 focus:ring-[#2F4F33] focus:ring-opacity-30 transition-all duration-300 font-medium text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50"
+                    className="w-full bg-[#D4A574] text-white py-5 px-8 rounded-lg hover:bg-[#C69A65] focus:bg-[#C69A65] focus:ring-4 focus:ring-orange-500/50 transition-all duration-300 font-bold text-lg sm:text-xl shadow-xl shadow-orange-500/40 hover:shadow-2xl hover:shadow-orange-500/60 transform hover:scale-[1.02] disabled:opacity-50 border-2 border-[#E8B86D]"
                   >
-                    {embeddedIsLoading ? 'Submitting...' :
-                      property.id === 1
-                        ? "Learn More About Nashboro Village"
-                        : (property.type === 'community' || property.type === 'subdivision')
-                        ? "Let's Talk About Your Future Home"
-                        : "Inquire About This Property"
-                    }
+                    {embeddedIsLoading ? 'Submitting...' : "Get More Info"}
                   </button>
                 </div>
                 {embeddedOtpError && <p className="text-red-600 text-sm text-center">{embeddedOtpError}</p>}
@@ -1916,59 +1903,6 @@ export default function PropertyDetailPage() {
             )}
           </div>
 
-          {/* Right Column - Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-32 space-y-6">
-              
-              {/* Price Summary */}
-              <div className="bg-white rounded-lg shadow-lg p-6 transition-all duration-300">
-                <div className="text-center mb-6">
-                  {selectedLot ? (
-                    <>
-                      <h3 className="text-2xl text-[#2F4F33] font-medium mb-1">{selectedLot.lot}</h3>
-                      <h4 className="text-3xl text-[#2F4F33] font-light mb-2">{selectedLot.price}</h4>
-                      <p className="text-[#7D6B58]">{selectedLot.size}</p>
-                      <p className="text-xl text-[#2F4F33] mt-2">{selectedLot.status}</p>
-                    </>
-                  ) : (property.type === 'community' || property.type === 'subdivision') ? (
-                    <>
-                      <h3 className="text-3xl text-[#2F4F33] font-light mb-2">{property.priceRange}</h3>
-                      <p className="text-[#7D6B58]">{property.slug === 'the-ranches' ? 'Tract Sizes' : 'Lot Sizes'}: {property.lots}</p>
-                      <p className="text-xl text-[#2F4F33] mt-2">{property.homeTypes}</p>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="text-3xl text-[#2F4F33] font-light mb-2">${property.price?.toLocaleString()}</h3>
-                      <p className="text-[#7D6B58]">${property.pricePerAcre?.toLocaleString()} per acre</p>
-                      <p className="text-xl text-[#2F4F33] mt-2">{property.acres} acres</p>
-                    </>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setShowContactForm(true)}
-                    className="w-full bg-[#2F4F33] text-[#F5EFD9] py-3 px-6 hover:bg-[#1a2e1c] transition duration-300 font-medium"
-                  >
-                    {selectedLot ? `Inquire About ${selectedLot.lot}` : 'Get More Info'}
-                  </button>
-                  <button
-                    onClick={() => setShowCalendar(true)}
-                    className="w-full border-2 border-[#2F4F33] text-[#2F4F33] py-3 px-6 hover:bg-[#2F4F33] hover:text-white transition duration-300 font-medium"
-                  >
-                    {selectedLot ? `Schedule Tour of ${selectedLot.lot}` : 'Schedule a Visit'}
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    className="w-full bg-stone-200 text-[#2F4F33] py-3 px-6 hover:bg-stone-300 transition duration-300 font-medium"
-                  >
-                    Share This Property
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          </div>
         </div>
       </div>
 
@@ -2551,6 +2485,89 @@ export default function PropertyDetailPage() {
             {/* Image Counter */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black bg-opacity-50 px-4 py-2 rounded-lg">
               {modalImageIndex + 1} / {modalImages.length}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sticky Bottom Bar - Desktop & Mobile */}
+      {showStickyButton && (
+        <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-gradient-to-r from-[#2F4F33] to-[#1a2e1c] shadow-2xl">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between gap-4">
+              {/* Property Info - Horizontal Layout */}
+              <div className="hidden md:flex items-center gap-3 flex-1">
+                {property.template === 'high-density' ? (
+                  // High-density communities (Nashboro, Kentucky) - Just show name
+                  <>
+                    <span className="font-bold text-lg text-white">{property.title}</span>
+                  </>
+                ) : selectedLot ? (
+                  // Individual lot selected
+                  <>
+                    <span className="font-bold text-base text-white whitespace-nowrap">{property.title}</span>
+                    <span className="text-white/40 text-sm">|</span>
+                    <span className="text-sm text-white whitespace-nowrap">{property.location}</span>
+                    <span className="text-white/40 text-sm">|</span>
+                    <span className="text-sm text-white whitespace-nowrap">{selectedLot.lot}</span>
+                    <span className="text-white/40 text-sm">|</span>
+                    <span className="font-bold text-base text-white whitespace-nowrap">{selectedLot.price}</span>
+                  </>
+                ) : (property.type === 'community' || property.type === 'subdivision') ? (
+                  // Regular subdivisions with lots
+                  <>
+                    <span className="font-bold text-base text-white whitespace-nowrap">{property.title}</span>
+                    <span className="text-white/40 text-sm">|</span>
+                    <span className="text-sm text-white whitespace-nowrap">{property.location}</span>
+                    <span className="text-white/40 text-sm">|</span>
+                    <span className="text-sm text-white whitespace-nowrap">{property.specifications?.lotSize || property.lots || '40+ Lots'}</span>
+                    <span className="text-white/40 text-sm">|</span>
+                    <span className="font-bold text-base text-white whitespace-nowrap">{property.priceRange}</span>
+                  </>
+                ) : (
+                  // Single land parcels
+                  <>
+                    <span className="font-bold text-base text-white whitespace-nowrap">{property.title}</span>
+                    <span className="text-white/40 text-sm">|</span>
+                    <span className="text-sm text-white whitespace-nowrap">{property.location}</span>
+                    <span className="text-white/40 text-sm">|</span>
+                    <span className="text-sm text-white whitespace-nowrap">{property.acres} acres</span>
+                    <span className="text-white/40 text-sm">|</span>
+                    <span className="font-bold text-base text-white whitespace-nowrap">${property.price?.toLocaleString()}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Mobile - Simplified Info */}
+              <div className="md:hidden flex items-center gap-2 flex-1 text-sm">
+                {property.template === 'high-density' ? (
+                  // High-density - just name on mobile
+                  <span className="font-bold text-white truncate">{property.title}</span>
+                ) : (
+                  // Regular properties - name + price on mobile
+                  <>
+                    <span className="font-medium text-white truncate">{property.title}</span>
+                    <span className="text-white/40">|</span>
+                    <span className="font-semibold text-white whitespace-nowrap">
+                      {selectedLot ? selectedLot.price : (property.type === 'community' || property.type === 'subdivision') ? property.priceRange : `$${property.price?.toLocaleString()}`}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* CTA Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  const contactForm = document.getElementById('contact-form');
+                  if (contactForm) {
+                    contactForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                }}
+                className="flex-shrink-0 bg-[#D4A574] text-white px-6 sm:px-8 py-3 text-sm sm:text-base font-bold hover:bg-[#C69A65] transition-all duration-300 shadow-lg shadow-orange-500/40 hover:shadow-xl hover:shadow-orange-500/60 rounded-md border-2 border-[#E8B86D] whitespace-nowrap"
+              >
+                Get More Info
+              </button>
             </div>
           </div>
         </div>
