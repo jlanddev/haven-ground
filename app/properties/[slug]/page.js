@@ -795,6 +795,9 @@ export default function PropertyDetailPage() {
                       : ''
                   }`}
                   onClick={() => openModal(property.images, currentImageIndex)}
+                  decoding="sync"
+                  fetchpriority="high"
+                  style={{ willChange: 'auto' }}
                 />
               )}
 
@@ -2514,6 +2517,9 @@ export default function PropertyDetailPage() {
                     ? 'filter brightness-150 contrast-125 bg-white'
                     : ''
                 }`}
+                decoding="sync"
+                fetchpriority="high"
+                style={{ willChange: 'auto' }}
               />
             )}
             
