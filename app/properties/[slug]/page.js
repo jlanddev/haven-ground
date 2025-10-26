@@ -220,6 +220,31 @@ export default function PropertyDetailPage() {
     setModalImageIndex(modalImageIndex === 0 ? modalImages.length - 1 : modalImageIndex - 1);
   };
 
+  // Preload adjacent images for instant navigation
+  useEffect(() => {
+    if (!isModalOpen || modalImages.length === 0) return;
+
+    // Preload next and previous images
+    const preloadImages = [];
+    const nextIndex = (modalImageIndex + 1) % modalImages.length;
+    const prevIndex = modalImageIndex === 0 ? modalImages.length - 1 : modalImageIndex - 1;
+
+    [nextIndex, prevIndex].forEach(index => {
+      const img = modalImages[index];
+      if (img && !img.endsWith('.mp4')) {
+        const preloadImg = new Image();
+        preloadImg.src = img;
+        preloadImages.push(preloadImg);
+      }
+    });
+
+    return () => {
+      preloadImages.forEach(img => {
+        img.src = '';
+      });
+    };
+  }, [isModalOpen, modalImageIndex, modalImages]);
+
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -359,6 +384,30 @@ export default function PropertyDetailPage() {
       }
     };
   }, [property.slug, property.boundary]);
+
+  // Preload adjacent images in main carousel for instant navigation
+  useEffect(() => {
+    if (!property.images || property.images.length === 0) return;
+
+    const preloadImages = [];
+    const nextIndex = (currentImageIndex + 1) % property.images.length;
+    const prevIndex = currentImageIndex === 0 ? property.images.length - 1 : currentImageIndex - 1;
+
+    [nextIndex, prevIndex].forEach(index => {
+      const img = property.images[index];
+      if (img && !img.endsWith('.mp4')) {
+        const preloadImg = new Image();
+        preloadImg.src = img;
+        preloadImages.push(preloadImg);
+      }
+    });
+
+    return () => {
+      preloadImages.forEach(img => {
+        img.src = '';
+      });
+    };
+  }, [currentImageIndex, property.images]);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % property.images.length);
