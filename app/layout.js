@@ -63,7 +63,7 @@ fbq('track', 'PageView');`,
           />
         </noscript>
         {/* Attrios AI Visitor Tracking */}
-        <script src="https://attrios.netlify.app/track.js?id=client_o4zayw0f6v" />
+        <script src="https://attrios.netlify.app/track.js?id=client_vp1wfzhcd5e" />
       </head>
       <body>
         {/* Google Tag Manager (noscript) */}
