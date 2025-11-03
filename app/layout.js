@@ -62,6 +62,16 @@ fbq('track', 'PageView');`,
             src="https://www.facebook.com/tr?id=858117033546335&ev=PageView&noscript=1"
           />
         </noscript>
+        {/* Hyros Tracking */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `var head = document.head;
+var script = document.createElement('script');
+script.type = 'text/javascript';
+script.src = "https://213419.t.hyros.com/v1/lst/universal-script?ph=84bfa7108c8c1acd1100d55c35a96a2224bfa37ad4a7cc4c0329d9d34cd2e9cd&tag=!clicked&ref_url=" + encodeURI(document.URL);
+head.appendChild(script);`,
+          }}
+        />
         {/* Attrios AI Visitor Tracking */}
         <script src="https://attrios.netlify.app/track.js?id=client_vp1wfzhcd5e" />
       </head>
