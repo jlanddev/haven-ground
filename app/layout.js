@@ -7,14 +7,14 @@ export const metadata = {
   authors: [{ name: "Haven Ground" }],
   creator: "Haven Ground",
   publisher: "Haven Ground",
-  metadataBase: new URL('https://havenground.netlify.app'),
+  metadataBase: new URL('https://havenground.com'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: "Haven Ground - Land and community, one meaningful handshake at a time",
     description: "Discover exceptional rural properties in Texas. Beautiful land for sale perfect for building your legacy.",
-    url: 'https://havenground.netlify.app',
+    url: 'https://havenground.com',
     siteName: 'Haven Ground',
     locale: 'en_US',
     type: 'website',
@@ -123,8 +123,8 @@ head.appendChild(script);`,
               "@type": "RealEstateAgent",
               "name": "Haven Ground",
               "description": "Discover exceptional rural properties in Texas. Beautiful land for sale perfect for building your legacy.",
-              "url": "https://havenground.netlify.app",
-              "logo": "https://havenground.netlify.app/favicon.png",
+              "url": "https://havenground.com",
+              "logo": "https://havenground.com/favicon.png",
               "sameAs": [],
               "address": {
                 "@type": "PostalAddress",
@@ -171,10 +171,10 @@ head.appendChild(script);`,
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "Haven Ground",
-              "url": "https://havenground.netlify.app",
+              "url": "https://havenground.com",
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://havenground.netlify.app/properties?search={search_term_string}",
+                "target": "https://havenground.com/properties?search={search_term_string}",
                 "query-input": "required name=search_term_string"
               }
             })

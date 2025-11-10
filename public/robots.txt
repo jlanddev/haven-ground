@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://havenground.netlify.app/sitemap.xml
+Sitemap: https://havenground.com/sitemap.xml

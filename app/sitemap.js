@@ -1,5 +1,5 @@
 export default function sitemap() {
-  const baseUrl = 'https://havenground.netlify.app';
+  const baseUrl = 'https://havenground.com';
 
   // All property slugs from propertiesData.js
   const properties = [
