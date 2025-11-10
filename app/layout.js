@@ -1,10 +1,49 @@
 import "./globals.css";
 
 export const metadata = {
-  title:
-    "Haven Ground - Land and community, one meaningful handshake at a time",
-  description:
-    "Discover exceptional rural properties in Texas. Beautiful land for sale perfect for building your legacy.",
+  title: "Haven Ground - Land and community, one meaningful handshake at a time",
+  description: "Discover exceptional rural properties in Texas. Beautiful land for sale perfect for building your legacy. Haven Ground specializes in premium Texas land investments.",
+  keywords: "Texas land for sale, rural property Texas, land investment, Texas acreage, Haven Ground, buy land Texas, ranch land for sale, Texas real estate",
+  authors: [{ name: "Haven Ground" }],
+  creator: "Haven Ground",
+  publisher: "Haven Ground",
+  metadataBase: new URL('https://havenground.netlify.app'),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: "Haven Ground - Land and community, one meaningful handshake at a time",
+    description: "Discover exceptional rural properties in Texas. Beautiful land for sale perfect for building your legacy.",
+    url: 'https://havenground.netlify.app',
+    siteName: 'Haven Ground',
+    locale: 'en_US',
+    type: 'website',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Haven Ground - Texas Land for Sale',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Haven Ground - Land and community',
+    description: 'Discover exceptional rural properties in Texas. Beautiful land for sale perfect for building your legacy.',
+    images: ['/og-image.jpg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
