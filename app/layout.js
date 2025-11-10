@@ -113,6 +113,73 @@ head.appendChild(script);`,
         />
         {/* Attrios AI Visitor Tracking */}
         <script src="https://attrios.netlify.app/track.js?id=client_vp1wfzhcd5e" />
+
+        {/* Structured Data for SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "RealEstateAgent",
+              "name": "Haven Ground",
+              "description": "Discover exceptional rural properties in Texas. Beautiful land for sale perfect for building your legacy.",
+              "url": "https://havenground.netlify.app",
+              "logo": "https://havenground.netlify.app/favicon.png",
+              "sameAs": [],
+              "address": {
+                "@type": "PostalAddress",
+                "addressRegion": "TX",
+                "addressCountry": "US"
+              },
+              "areaServed": [
+                {
+                  "@type": "State",
+                  "name": "Texas"
+                },
+                {
+                  "@type": "State",
+                  "name": "Colorado"
+                },
+                {
+                  "@type": "State",
+                  "name": "Mississippi"
+                },
+                {
+                  "@type": "State",
+                  "name": "Tennessee"
+                },
+                {
+                  "@type": "State",
+                  "name": "Missouri"
+                }
+              ],
+              "knowsAbout": [
+                "Land Sales",
+                "Rural Properties",
+                "Acreage",
+                "Real Estate Development",
+                "Ranch Land",
+                "Residential Lots"
+              ]
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "Haven Ground",
+              "url": "https://havenground.netlify.app",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://havenground.netlify.app/properties?search={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
+        />
       </head>
       <body>
         {/* Google Tag Manager (noscript) */}

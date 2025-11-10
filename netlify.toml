@@ -17,6 +17,20 @@ command = "npm install && npm run build"
 [build.environment]
 NODE_VERSION = "20"
 
+# Block branch deploys and deploy previews from search engines
+[context.branch-deploy]
+  [context.branch-deploy.environment]
+    ROBOTS = "noindex, nofollow"
+
+[context.deploy-preview]
+  [context.deploy-preview.environment]
+    ROBOTS = "noindex, nofollow"
+
+# Production only - allow indexing
+[context.production]
+  [context.production.environment]
+    ROBOTS = "index, follow"
+
 [[headers]]
 for = "/*"
 
