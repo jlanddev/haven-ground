@@ -1013,7 +1013,7 @@ export default function SellYourLandPage() {
                 )}
 
                 {/* Back Button */}
-                {!selectedParcel && (
+                {availableParcels.length === 0 && (
                   <div className="flex gap-4 mt-6">
                     <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg">
                       ← Back
