@@ -133,11 +133,13 @@ export default function SellYourLandPage() {
         setAvailableParcels(parcels);
         setLocateError('');
       } else {
-        setLocateError('Property not found. Please verify your information and try again.');
+        // No results found - just proceed to next step
+        handleNext();
       }
     } catch (error) {
       console.error('Error locating property:', error);
-      setLocateError('Error locating property. Please try again.');
+      // On error, just proceed to next step
+      handleNext();
     } finally {
       setLocatingProperty(false);
     }
