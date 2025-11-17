@@ -33,7 +33,8 @@ export default function SellYourLandPage() {
   const [e164Phone, setE164Phone] = useState('');
 
   // Property location states
-  const [selectedParcel, setSelectedParcel] = useState(null);
+  const [availableParcels, setAvailableParcels] = useState([]);
+  const [selectedParcels, setSelectedParcels] = useState([]);
   const [locatingProperty, setLocatingProperty] = useState(false);
   const [locateError, setLocateError] = useState('');
 
@@ -117,15 +118,19 @@ export default function SellYourLandPage() {
       const data = await response.json();
 
       if (data.success && data.results && data.results.length > 0) {
-        const parcel = data.results[0];
-        setSelectedParcel({
+        // Store all available parcels
+        const parcels = data.results.map((parcel, index) => ({
+          id: index,
           acres: parcel.properties.acres || 'Unknown',
           owner: parcel.properties.owner || formData.nameOnTitle || 'Unknown',
           address: parcel.properties.address || formData.streetAddress || 'Unknown',
+          city: parcel.properties.city || '',
           county: parcel.properties.county || formData.propertyCounty,
           state: parcel.properties.state || formData.propertyState,
+          zip: parcel.properties.zip || '',
           apn: parcel.properties.apn || formData.parcelId || 'Unknown'
-        });
+        }));
+        setAvailableParcels(parcels);
         setLocateError('');
       } else {
         setLocateError('Property not found. Please verify your information and try again.');
@@ -149,13 +154,24 @@ export default function SellYourLandPage() {
   };
 
   const handleBack = () => {
-    // If going back from step 5, clear selected parcel
+    // If going back from step 5, clear selected parcels
     if (currentStep === 5) {
-      setSelectedParcel(null);
+      setAvailableParcels([]);
+      setSelectedParcels([]);
       setLocateError('');
     }
     setCurrentStep(currentStep - 1);
     window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
+  };
+
+  const toggleParcelSelection = (parcelId) => {
+    setSelectedParcels(prev => {
+      if (prev.includes(parcelId)) {
+        return prev.filter(id => id !== parcelId);
+      } else {
+        return [...prev, parcelId];
+      }
+    });
   };
 
   const handleFormFocus = () => {
@@ -223,6 +239,10 @@ export default function SellYourLandPage() {
   const submitToGHL = async () => {
     console.log('🚀 Starting submitToGHL...');
 
+    // Get selected parcel data
+    const selectedParcelData = availableParcels.filter(p => selectedParcels.includes(p.id));
+    const firstParcel = selectedParcelData[0];
+
     // Prepare data for GHL webhook
     const webhookData = {
       full_name: `${formData.firstName} ${formData.lastName}`,
@@ -235,12 +255,21 @@ export default function SellYourLandPage() {
       property_listed: formData.propertyListed,
       ownership_length: formData.ownershipLength,
       property_state: formData.propertyState,
-      street_address: formData.streetAddress || selectedParcel?.address || '',
+      street_address: formData.streetAddress || firstParcel?.address || '',
       property_county: formData.propertyCounty,
       zip_code: formData.zipCode,
       name_on_title: formData.nameOnTitle,
-      parcel_id: formData.parcelId || selectedParcel?.apn || '',
-      acres: selectedParcel?.acres || '',
+      parcel_id: formData.parcelId || firstParcel?.apn || '',
+      acres: firstParcel?.acres || '',
+      selected_parcels: selectedParcelData.map(p => ({
+        address: p.address,
+        acres: p.acres,
+        apn: p.apn,
+        owner: p.owner,
+        county: p.county,
+        state: p.state
+      })),
+      parcel_count: selectedParcelData.length,
       phone_verified: true,
       lead_source: 'Website - Sell Your Land Form',
       submitted_at: new Date().toISOString()
@@ -892,7 +921,7 @@ export default function SellYourLandPage() {
                 )}
 
                 {/* Locate Property Button */}
-                {!selectedParcel && (
+                {availableParcels.length === 0 && (
                   <button
                     type="button"
                     onClick={locateProperty}
@@ -913,40 +942,64 @@ export default function SellYourLandPage() {
                   </button>
                 )}
 
-                {/* Property Confirmation Card */}
-                {selectedParcel && (
-                  <div className="bg-[#F5EFD9] border-2 border-[#2F4F33] rounded-lg p-6 animate-fadeIn">
-                    <div className="flex items-start gap-3 mb-4">
-                      <svg className="w-6 h-6 text-[#2F4F33] flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div className="flex-1">
-                        <h4 className="font-serif text-lg text-[#2F4F33] font-semibold mb-3">Property Found!</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-[#3A4045]">Address:</span>
-                            <span className="font-medium text-[#2F4F33]">{selectedParcel.address}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#3A4045]">County:</span>
-                            <span className="font-medium text-[#2F4F33]">{selectedParcel.county}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#3A4045]">State:</span>
-                            <span className="font-medium text-[#2F4F33]">{selectedParcel.state}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#3A4045]">Acreage:</span>
-                            <span className="font-medium text-[#2F4F33]">{selectedParcel.acres} acres</span>
-                          </div>
-                          {selectedParcel.owner !== 'Unknown' && (
-                            <div className="flex justify-between">
-                              <span className="text-[#3A4045]">Owner:</span>
-                              <span className="font-medium text-[#2F4F33]">{selectedParcel.owner}</span>
+                {/* Property Selection Cards */}
+                {availableParcels.length > 0 && (
+                  <div className="space-y-4 animate-fadeIn">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-serif text-lg text-[#2F4F33] font-semibold">
+                        {availableParcels.length === 1 ? 'Property Found!' : `${availableParcels.length} Properties Found`}
+                      </h4>
+                      {selectedParcels.length > 0 && (
+                        <span className="text-sm text-[#2F4F33] font-medium">
+                          {selectedParcels.length} selected
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-[#3A4045] mb-4">
+                      {availableParcels.length === 1 ? 'Is this your property?' : 'Select all properties you own:'}
+                    </p>
+
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {availableParcels.map((parcel) => (
+                        <label
+                          key={parcel.id}
+                          className={`block cursor-pointer transition-all ${
+                            selectedParcels.includes(parcel.id)
+                              ? 'bg-[#2F4F33] text-[#F5EFD9] border-[#2F4F33]'
+                              : 'bg-[#F5EFD9] text-[#3A4045] border-[#D2C6B2] hover:border-[#2F4F33]'
+                          } border-2 rounded-lg p-4`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedParcels.includes(parcel.id)}
+                              onChange={() => toggleParcelSelection(parcel.id)}
+                              className="mt-1 w-5 h-5 text-[#2F4F33] border-2 border-[#D2C6B2] rounded focus:ring-2 focus:ring-[#2F4F33]"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium mb-2">{parcel.address}</div>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                  <span className="opacity-75">Acres:</span> <span className="font-medium">{parcel.acres}</span>
+                                </div>
+                                <div>
+                                  <span className="opacity-75">County:</span> <span className="font-medium">{parcel.county}</span>
+                                </div>
+                                {parcel.owner !== 'Unknown' && (
+                                  <div className="col-span-2">
+                                    <span className="opacity-75">Owner:</span> <span className="font-medium">{parcel.owner}</span>
+                                  </div>
+                                )}
+                                {parcel.apn !== 'Unknown' && (
+                                  <div className="col-span-2">
+                                    <span className="opacity-75">Parcel ID:</span> <span className="font-medium">{parcel.apn}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
+                          </div>
+                        </label>
+                      ))}
                     </div>
 
                     <button
