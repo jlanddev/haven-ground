@@ -30,6 +30,22 @@ export default function SellYourLandPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [e164Phone, setE164Phone] = useState('');
 
+  // Parcel search states
+  const [parcelSuggestions, setParcelSuggestions] = useState([]);
+  const [selectedParcel, setSelectedParcel] = useState(null);
+  const [searchingParcels, setSearchingParcels] = useState(false);
+  const [showParcelMap, setShowParcelMap] = useState(false);
+
+  // Debounced parcel search
+  useEffect(() => {
+    if (currentStep === 6 && formData.streetAddress) {
+      const timer = setTimeout(() => {
+        searchParcels(formData.streetAddress);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.streetAddress, currentStep]);
+
   // Lock body scroll when modal is open OR form is focused
   useEffect(() => {
     if (showDisqualifiedModal || formFocused) {
@@ -71,6 +87,44 @@ export default function SellYourLandPage() {
         [name]: value
       });
     }
+  };
+
+  // Search for parcels using Regrid
+  const searchParcels = async (address) => {
+    if (!address || address.length < 5) {
+      setParcelSuggestions([]);
+      return;
+    }
+
+    setSearchingParcels(true);
+    try {
+      const response = await fetch(`/api/regrid/lookup?address=${encodeURIComponent(address)}`);
+      const data = await response.json();
+
+      if (data.results && data.results.length > 0) {
+        setParcelSuggestions(data.results);
+      } else {
+        setParcelSuggestions([]);
+      }
+    } catch (error) {
+      console.error('Error searching parcels:', error);
+      setParcelSuggestions([]);
+    } finally {
+      setSearchingParcels(false);
+    }
+  };
+
+  // Handle selecting a parcel from suggestions
+  const handleSelectParcel = (parcel) => {
+    setSelectedParcel(parcel);
+    setFormData({
+      ...formData,
+      streetAddress: parcel.properties.address || '',
+      propertyCounty: parcel.properties.county || '',
+      acres: parcel.properties.acres || ''
+    });
+    setParcelSuggestions([]);
+    setShowParcelMap(true);
   };
 
   const handleNext = () => {
@@ -775,22 +829,78 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 6: Street Address */}
+            {/* Step 6: Street Address with Parcel Search */}
             {currentStep === 6 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is the street address?
                 </h3>
 
-                <input
-                  type="text"
-                  name="streetAddress"
-                  value={formData.streetAddress}
-                  onChange={handleChange}
-                  placeholder="Street Address"
-                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                  autoFocus
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="streetAddress"
+                    value={formData.streetAddress}
+                    onChange={handleChange}
+                    placeholder="Start typing your address..."
+                    className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                    autoFocus
+                  />
+
+                  {searchingParcels && (
+                    <div className="absolute right-4 top-5 text-[#2F4F33]">
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
+
+                  {/* Parcel Suggestions Dropdown */}
+                  {parcelSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-2 bg-white border-2 border-[#D2C6B2] rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {parcelSuggestions.map((parcel, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleSelectParcel(parcel)}
+                          className="w-full px-6 py-4 text-left hover:bg-[#F5EFD9] transition-colors border-b border-[#D2C6B2] last:border-b-0"
+                        >
+                          <div className="font-medium text-[#2F4F33]">
+                            {parcel.properties.address || 'Address not available'}
+                          </div>
+                          <div className="text-sm text-[#3A4045] mt-1">
+                            {parcel.properties.city}, {parcel.properties.state} {parcel.properties.zip}
+                            {parcel.properties.acres && ` • ${parcel.properties.acres} acres`}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Selected Parcel Info */}
+                {selectedParcel && (
+                  <div className="bg-[#F5EFD9] border-2 border-[#2F4F33] rounded-lg p-6">
+                    <h4 className="font-serif text-lg text-[#2F4F33] mb-3">Selected Parcel</h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-[#3A4045]">County:</span>
+                        <span className="ml-2 font-medium text-[#2F4F33]">{selectedParcel.properties.county}</span>
+                      </div>
+                      <div>
+                        <span className="text-[#3A4045]">Acres:</span>
+                        <span className="ml-2 font-medium text-[#2F4F33]">{selectedParcel.properties.acres || 'N/A'}</span>
+                      </div>
+                      {selectedParcel.properties.apn && (
+                        <div className="col-span-2">
+                          <span className="text-[#3A4045]">APN:</span>
+                          <span className="ml-2 font-medium text-[#2F4F33]">{selectedParcel.properties.apn}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-4 mt-6">
                   <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
