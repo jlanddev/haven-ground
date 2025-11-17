@@ -21,7 +21,7 @@ export async function GET(request) {
       `https://app.regrid.com/api/v1/search.json?query=${encodeURIComponent(query)}`,
       {
         headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_REGRID_TOKEN}`
+          'Authorization': `Bearer ${process.env.REGRID_TOKEN || process.env.NEXT_PUBLIC_REGRID_TOKEN}`
         }
       }
     );
