@@ -1,15 +1,20 @@
 import { NextResponse } from 'next/server';
 
-export async function POST(request) {
+export async function GET(request) {
   try {
-    const { address, city, state, county } = await request.json();
+    const { searchParams } = new URL(request.url);
+    const address = searchParams.get('address');
 
-    // Construct search query
-    const query = `${address}, ${city || county}, ${state}`;
+    if (!address) {
+      return NextResponse.json({
+        success: false,
+        message: 'Address is required'
+      }, { status: 400 });
+    }
 
-    // Call Regrid API - ONLY for this specific address
+    // Call Regrid API
     const response = await fetch(
-      `https://app.regrid.com/api/v1/search/parcels?query=${encodeURIComponent(query)}&limit=1`,
+      `https://app.regrid.com/api/v1/search/parcels?query=${encodeURIComponent(address)}&limit=10`,
       {
         headers: {
           'Authorization': `Bearer ${process.env.NEXT_PUBLIC_REGRID_TOKEN}`,
@@ -24,35 +29,36 @@ export async function POST(request) {
 
     const data = await response.json();
 
-    // Return ONLY the first matching parcel (not all results)
+    // Return results in the format expected by frontend
     if (data.parcels && data.parcels.length > 0) {
-      const parcel = data.parcels[0];
+      const results = data.parcels.map(parcel => ({
+        properties: {
+          address: parcel.address || '',
+          city: parcel.fields?.city || '',
+          state: parcel.fields?.state || '',
+          zip: parcel.fields?.zip || '',
+          county: parcel.fields?.county || '',
+          acres: parcel.fields?.acres || '',
+          apn: parcel.fields?.apn || ''
+        }
+      }));
 
       return NextResponse.json({
         success: true,
-        parcel: {
-          id: parcel.id,
-          address: parcel.address,
-          county: parcel.fields.county,
-          state: parcel.fields.state,
-          acres: parcel.fields.acres,
-          apn: parcel.fields.apn,
-          owner: parcel.fields.owner,
-          geometry: parcel.geometry, // GeoJSON for map display
-          center: parcel.geometry.coordinates[0][0] // Center point for map
-        }
+        results
       });
     } else {
       return NextResponse.json({
-        success: false,
-        message: 'No parcel found for this address'
+        success: true,
+        results: []
       });
     }
   } catch (error) {
     console.error('Regrid lookup error:', error);
     return NextResponse.json({
       success: false,
-      message: error.message
+      message: error.message,
+      results: []
     }, { status: 500 });
   }
 }
