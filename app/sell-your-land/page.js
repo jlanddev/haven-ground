@@ -642,7 +642,7 @@ export default function SellYourLandPage() {
           <form
             onSubmit={handleSubmit}
             onClick={handleFormFocus}
-            className={`bg-white rounded-2xl shadow-2xl p-6 sm:p-8 md:p-12 max-w-2xl mx-auto transition-all duration-500 ${
+            className={`bg-white rounded-2xl shadow-2xl p-6 sm:p-8 md:p-12 max-w-3xl mx-auto transition-all duration-500 ${
               formFocused ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 scale-105 max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto' : ''
             }`}
           >
