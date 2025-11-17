@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Script from 'next/script';
 
 export default function TeamPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -9,7 +10,7 @@ export default function TeamPage() {
     {
       name: "Jordan Harmon",
       title: "Founder & President",
-      bio: "Jordan's happiest when he's outdoors with his two puppies (his \"bestest boys\"), spending time with family and friends, volunteering at the local fire department, or unwinding with a movie night alongside Natalie. His work with the Children's Hospital and the RiseLyFe Foundation stems from personal childhood experiences, giving him a genuine passion that runs as deep as his love for land and building.\n\nJordan believes in his heart that making others feel safe, important, and loved defines a life well lived. These values bring the most meaning to his journey.\n\nStarting as construction labor, Jordan worked his way up through the ranks, gaining hands-on experience across diverse communities—from sprawling ranch properties to higher-density neighborhoods for national homebuilders. This ground-level perspective gave him real insights into what makes communities thrive, wisdom he now pours into Haven Ground as its founder."
+      bio: "28-year-old founder Jordan Harmon and his team have quietly assembled 731 acres across Central Texas in just five years in one of the world's most institutionally capitalized markets. Harmon says \"We just love the folks and the opportunity to build relationships with people in our community. We'll always give the shirt off our back and just be who we are. For a lot of Texans, that can mean more than a one-off transaction.\"\n\nIn a recent podcast, Harmon downplayed the achievement with characteristic humility. \"We just want to stay true to who we are, give the shirt off our back, and build deep relationships with Texans doing what they love,\" he said.\n\nStarting as a solo operation and growing to 12 people, Haven Ground has closed deals in Washington County, Belton, Somerville, Nashville, Hill County, and Odessa not through aggressive tactics, but through what Harmon calls \"the good ol' southern handshake.\"\n\n\"We wouldn't be able to compete with institutional-grade capital being deployed in the Texas market,\" Harmon admitted candidly. \"Landowners do business with us because of who we are on the inside. I truly believe that.\""
     },
     {
       name: "Natalie Caruso",
@@ -45,6 +46,70 @@ export default function TeamPage() {
 
   return (
     <div className="flex flex-col min-h-screen font-serif bg-[#F5EFD9]">
+      {/* Structured Data for Jordan Harmon - Helps Google recognize authority */}
+      <Script id="jordan-harmon-schema" type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Person",
+          "name": "Jordan Harmon",
+          "jobTitle": "Founder & President",
+          "description": "Land investment firm founder and community leader specializing in land acquisition and rural property investment. Volunteer firefighter and children's foundation advocate.",
+          "url": "https://havenground.com/team",
+          "worksFor": {
+            "@type": "Organization",
+            "name": "Haven Ground",
+            "url": "https://havenground.com",
+            "description": "Land and community, one meaningful handshake at a time"
+          },
+          "knowsAbout": [
+            "Land Acquisition",
+            "Land Investment",
+            "Rural Properties",
+            "Community Building",
+            "Property Investment",
+            "Texas Land Sales",
+            "Ranch Properties",
+            "Residential Land",
+            "Community Service",
+            "Philanthropy"
+          ],
+          "memberOf": [
+            {
+              "@type": "Organization",
+              "name": "Local Fire Department",
+              "description": "Volunteer Firefighter"
+            },
+            {
+              "@type": "Organization",
+              "name": "Children's Hospital",
+              "description": "Community supporter and advocate"
+            },
+            {
+              "@type": "Organization",
+              "name": "RiseLyFe Foundation",
+              "description": "Foundation supporter focused on children's welfare"
+            }
+          ],
+          "alumniOf": {
+            "@type": "EducationalOrganization",
+            "name": "Construction Industry",
+            "description": "Started as construction labor and worked through the ranks"
+          },
+          "hasOccupation": {
+            "@type": "Occupation",
+            "name": "Land Investment Firm Founder",
+            "occupationLocation": {
+              "@type": "State",
+              "name": "Texas"
+            },
+            "responsibilities": "Land acquisition, community development, property investment from ranch properties to residential neighborhoods",
+            "skills": ["Land Acquisition", "Community Planning", "Land Investment", "Property Management", "Leadership"]
+          },
+          "sameAs": [
+            "https://havenground.com/team"
+          ]
+        })}
+      </Script>
       {/* Navigation */}
       <nav className="bg-[#F5EFD9] py-4 border-b border-[#D2C6B2] sticky top-0 z-50 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
