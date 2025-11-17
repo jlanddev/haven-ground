@@ -823,10 +823,10 @@ export default function SellYourLandPage() {
                     />
                   </div>
 
-                  {/* Address - Optional */}
+                  {/* Address */}
                   <div>
                     <label className="block text-sm font-medium text-[#3A4045] mb-2">
-                      Address (optional)
+                      Address
                     </label>
                     <input
                       type="text"
@@ -838,10 +838,10 @@ export default function SellYourLandPage() {
                     />
                   </div>
 
-                  {/* Zip Code - Optional */}
+                  {/* Zip Code */}
                   <div>
                     <label className="block text-sm font-medium text-[#3A4045] mb-2">
-                      Zip Code (optional)
+                      Zip Code
                     </label>
                     <input
                       type="text"
@@ -853,10 +853,10 @@ export default function SellYourLandPage() {
                     />
                   </div>
 
-                  {/* Name on Title - Optional */}
+                  {/* Name on Title */}
                   <div>
                     <label className="block text-sm font-medium text-[#3A4045] mb-2">
-                      Name on Title (optional)
+                      Name on Title
                     </label>
                     <input
                       type="text"
@@ -868,10 +868,10 @@ export default function SellYourLandPage() {
                     />
                   </div>
 
-                  {/* Parcel ID or APN - Optional */}
+                  {/* Parcel ID or APN */}
                   <div>
                     <label className="block text-sm font-medium text-[#3A4045] mb-2">
-                      Parcel ID or APN (optional)
+                      Parcel ID or APN
                     </label>
                     <input
                       type="text"

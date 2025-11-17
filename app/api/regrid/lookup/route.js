@@ -4,21 +4,24 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const address = searchParams.get('address');
+    const apn = searchParams.get('apn');
 
-    if (!address) {
+    if (!address && !apn) {
       return NextResponse.json({
         success: false,
-        message: 'Address is required'
+        message: 'Address or APN is required'
       }, { status: 400 });
     }
 
-    // Call Regrid API
+    // Build query - use APN if provided, otherwise use address
+    const query = apn || address;
+
+    // Call Regrid API with correct endpoint
     const response = await fetch(
-      `https://app.regrid.com/api/v1/search/parcels?query=${encodeURIComponent(address)}&limit=10`,
+      `https://app.regrid.com/api/v1/search.json?query=${encodeURIComponent(query)}`,
       {
         headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_REGRID_TOKEN}`,
-          'Accept': 'application/json'
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_REGRID_TOKEN}`
         }
       }
     );
@@ -30,16 +33,17 @@ export async function GET(request) {
     const data = await response.json();
 
     // Return results in the format expected by frontend
-    if (data.parcels && data.parcels.length > 0) {
-      const results = data.parcels.map(parcel => ({
+    if (data.results && data.results.length > 0) {
+      const results = data.results.slice(0, 10).map(result => ({
         properties: {
-          address: parcel.address || '',
-          city: parcel.fields?.city || '',
-          state: parcel.fields?.state || '',
-          zip: parcel.fields?.zip || '',
-          county: parcel.fields?.county || '',
-          acres: parcel.fields?.acres || '',
-          apn: parcel.fields?.apn || ''
+          address: result.properties?.fields?.address || '',
+          city: result.properties?.fields?.city || result.properties?.fields?.scity || '',
+          state: result.properties?.fields?.state2 || '',
+          zip: result.properties?.fields?.szip5 || result.properties?.fields?.szip || '',
+          county: result.properties?.fields?.county || '',
+          acres: result.properties?.fields?.ll_gisacre || result.properties?.fields?.gisacre || '',
+          apn: result.properties?.fields?.parcelnumb || result.properties?.fields?.alt_parcelnumb1 || '',
+          owner: result.properties?.fields?.owner || ''
         }
       }));
 
