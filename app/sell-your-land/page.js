@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Script from 'next/script';
+import { supabase } from '../../lib/supabase';
 
 export default function SellYourLandPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -10,17 +11,15 @@ export default function SellYourLandPage() {
   const [showDisqualifiedModal, setShowDisqualifiedModal] = useState(false);
   const [formData, setFormData] = useState({
     position: '',
-    firstName: '',
-    lastName: '',
-    propertyState: '',
-    propertyCounty: '',
-    streetAddress: '',
-    zipCode: '',
-    nameOnTitle: '',
-    parcelId: '',
     homeOnProperty: '',
     propertyListed: '',
-    ownershipLength: '',
+    ownedFourYears: '',
+    propertyState: '',
+    streetAddress: '',
+    propertyCounty: '',
+    acres: '',
+    fullName: '',
+    namesOnDeed: '',
     email: '',
     phone: '',
     smsConsent: false
@@ -31,12 +30,6 @@ export default function SellYourLandPage() {
   const [otpError, setOtpError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [e164Phone, setE164Phone] = useState('');
-
-  // Property location states
-  const [availableParcels, setAvailableParcels] = useState([]);
-  const [selectedParcels, setSelectedParcels] = useState([]);
-  const [locatingProperty, setLocatingProperty] = useState(false);
-  const [locateError, setLocateError] = useState('');
 
   // Lock body scroll when modal is open OR form is focused
   useEffect(() => {
@@ -81,99 +74,42 @@ export default function SellYourLandPage() {
     }
   };
 
-  // Locate property using Regrid API
-  const locateProperty = async () => {
-    setLocateError('');
-
-    // Validate required fields
-    if (!formData.propertyState || !formData.propertyCounty) {
-      setLocateError('Please provide both state and county.');
-      return;
-    }
-
-    // Check that at least one optional field is filled
-    if (!formData.streetAddress && !formData.zipCode && !formData.nameOnTitle && !formData.parcelId) {
-      setLocateError('Please provide at least one: address, zip code, name on title, or parcel ID.');
-      return;
-    }
-
-    setLocatingProperty(true);
-
-    try {
-      // Build query string with available data
-      const queryParts = [];
-      if (formData.streetAddress) queryParts.push(formData.streetAddress);
-      if (formData.propertyCounty) queryParts.push(formData.propertyCounty);
-      if (formData.propertyState) queryParts.push(formData.propertyState);
-      if (formData.zipCode) queryParts.push(formData.zipCode);
-
-      const query = queryParts.join(', ');
-
-      // Build URL with query params
-      const params = new URLSearchParams();
-      if (query) params.append('address', query);
-      if (formData.parcelId) params.append('apn', formData.parcelId);
-
-      const response = await fetch(`/api/regrid/lookup?${params.toString()}`);
-      const data = await response.json();
-
-      if (data.success && data.results && data.results.length > 0) {
-        // Store all available parcels
-        const parcels = data.results.map((parcel, index) => ({
-          id: index,
-          acres: parcel.properties.acres || 'Unknown',
-          owner: parcel.properties.owner || formData.nameOnTitle || 'Unknown',
-          address: parcel.properties.address || formData.streetAddress || 'Unknown',
-          city: parcel.properties.city || '',
-          county: parcel.properties.county || formData.propertyCounty,
-          state: parcel.properties.state || formData.propertyState,
-          zip: parcel.properties.zip || '',
-          apn: parcel.properties.apn || formData.parcelId || 'Unknown'
-        }));
-        setAvailableParcels(parcels);
-        setLocateError('');
-      } else {
-        // No results found - just proceed to next step
-        handleNext();
-      }
-    } catch (error) {
-      console.error('Error locating property:', error);
-      // On error, just proceed to next step
-      handleNext();
-    } finally {
-      setLocatingProperty(false);
-    }
-  };
-
   const handleNext = () => {
     // Check if user selected realtor or wholesaler on step 1
     if (currentStep === 1 && (formData.position === 'realtor' || formData.position === 'wholesaler')) {
       setShowDisqualifiedModal(true);
       return;
     }
+
+    // Check if user selected 0-2 acres on step 2
+    if (currentStep === 2 && formData.acres === '0-2 Acres') {
+      setShowDisqualifiedModal(true);
+      return;
+    }
+
+    // Check if user selected YES for home on property (Step 3)
+    // BUT allow if they have 50+ acres
+    if (currentStep === 3 && formData.homeOnProperty === 'yes') {
+      const hasLargeAcreage = formData.acres === '50-100 Acres' || formData.acres === '100+ Acres';
+      if (!hasLargeAcreage) {
+        setShowDisqualifiedModal(true);
+        return;
+      }
+    }
+
+    // Check if user selected YES for property listed (Step 4)
+    if (currentStep === 4 && formData.propertyListed === 'yes') {
+      setShowDisqualifiedModal(true);
+      return;
+    }
+
     setCurrentStep(currentStep + 1);
     window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
-    // If going back from step 5, clear selected parcels
-    if (currentStep === 5) {
-      setAvailableParcels([]);
-      setSelectedParcels([]);
-      setLocateError('');
-    }
     setCurrentStep(currentStep - 1);
     window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
-  };
-
-  const toggleParcelSelection = (parcelId) => {
-    setSelectedParcels(prev => {
-      if (prev.includes(parcelId)) {
-        return prev.filter(id => id !== parcelId);
-      } else {
-        return [...prev, parcelId];
-      }
-    });
   };
 
   const handleFormFocus = () => {
@@ -199,7 +135,7 @@ export default function SellYourLandPage() {
 
       if (data.success) {
         setOtpSent(true);
-        // Stay on step 9, just show OTP input
+        setCurrentStep(13); // Move to OTP verification step
       } else {
         setOtpError(data.error || 'Failed to send code');
       }
@@ -241,37 +177,22 @@ export default function SellYourLandPage() {
   const submitToGHL = async () => {
     console.log('🚀 Starting submitToGHL...');
 
-    // Get selected parcel data
-    const selectedParcelData = availableParcels.filter(p => selectedParcels.includes(p.id));
-    const firstParcel = selectedParcelData[0];
-
     // Prepare data for GHL webhook
     const webhookData = {
-      full_name: `${formData.firstName} ${formData.lastName}`,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
+      full_name: formData.fullName,
+      firstName: formData.fullName ? formData.fullName.split(' ')[0] : '',
+      lastName: formData.fullName ? formData.fullName.split(' ').slice(1).join(' ') : '',
       email: formData.email,
       phone: e164Phone,
       position: formData.position,
       home_on_property: formData.homeOnProperty,
       property_listed: formData.propertyListed,
-      ownership_length: formData.ownershipLength,
+      owned_four_years: formData.ownedFourYears,
       property_state: formData.propertyState,
-      street_address: formData.streetAddress || firstParcel?.address || '',
+      street_address: formData.streetAddress,
       property_county: formData.propertyCounty,
-      zip_code: formData.zipCode,
-      name_on_title: formData.nameOnTitle,
-      parcel_id: formData.parcelId || firstParcel?.apn || '',
-      acres: firstParcel?.acres || '',
-      selected_parcels: selectedParcelData.map(p => ({
-        address: p.address,
-        acres: p.acres,
-        apn: p.apn,
-        owner: p.owner,
-        county: p.county,
-        state: p.state
-      })),
-      parcel_count: selectedParcelData.length,
+      acres: formData.acres,
+      names_on_deed: formData.namesOnDeed,
       phone_verified: true,
       lead_source: 'Website - Sell Your Land Form',
       submitted_at: new Date().toISOString()
@@ -280,6 +201,57 @@ export default function SellYourLandPage() {
     console.log('📦 Webhook data:', webhookData);
 
     try {
+      // Get user's IP address
+      let userIp = null;
+      try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        userIp = ipData.ip;
+      } catch (ipError) {
+        console.error('Could not fetch IP:', ipError);
+      }
+
+      // Submit to Parcel Reach (Supabase) first
+      console.log('💾 Saving to Parcel Reach database...');
+      const { error: supabaseError } = await supabase
+        .from('leads')
+        .insert([{
+          name: formData.fullName,
+          email: formData.email,
+          phone: e164Phone,
+          address: `${formData.streetAddress}, ${formData.propertyCounty}, ${formData.propertyState}`,
+          county: formData.propertyCounty,
+          state: formData.propertyState,
+          acres: parseFloat(formData.acres) || null,
+          status: 'new',
+          source: 'Haven Ground - Sell Your Land Form',
+          notes: `Position: ${formData.position}\nHome on property: ${formData.homeOnProperty}\nProperty listed: ${formData.propertyListed}\nOwned 4+ years: ${formData.ownedFourYears}\nNames on deed: ${formData.namesOnDeed}`,
+          phone_verified: true,
+          ip_address: userIp,
+          form_data: {
+            position: formData.position,
+            homeOnProperty: formData.homeOnProperty,
+            propertyListed: formData.propertyListed,
+            ownedFourYears: formData.ownedFourYears,
+            propertyState: formData.propertyState,
+            streetAddress: formData.streetAddress,
+            propertyCounty: formData.propertyCounty,
+            acres: formData.acres,
+            fullName: formData.fullName,
+            namesOnDeed: formData.namesOnDeed,
+            email: formData.email,
+            phone: e164Phone
+          }
+        }]);
+
+      if (supabaseError) {
+        console.error('❌ Supabase error:', supabaseError);
+        // Continue anyway - don't block GHL submission
+      } else {
+        console.log('✅ Saved to Parcel Reach');
+      }
+
+      // Submit to GHL webhook
       console.log('📡 Sending webhook to GHL...');
       const response = await fetch('https://services.leadconnectorhq.com/hooks/wLaNbf44RqmPNhV1IEev/webhook-trigger/32643373-57f4-47c1-9b89-c4ecf9143beb', {
         method: 'POST',
@@ -299,9 +271,10 @@ export default function SellYourLandPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Redirect to thank you page
-      // Qualified leads: no home + not listed
+      // Qualified leads: no home + owned 4+ years + not listed = go to /thank-you (Google conversion fires)
       const isQualified = (
         formData.homeOnProperty === 'no' &&
+        formData.ownedFourYears === 'yes' &&
         formData.propertyListed === 'no'
       );
       console.log('🎯 Redirecting to:', isQualified ? '/thank-you' : '/thank-you-dq');
@@ -311,6 +284,7 @@ export default function SellYourLandPage() {
       // Still redirect even if webhook fails
       const isQualified = (
         formData.homeOnProperty === 'no' &&
+        formData.ownedFourYears === 'yes' &&
         formData.propertyListed === 'no'
       );
       console.log('🎯 Redirecting anyway to:', isQualified ? '/thank-you' : '/thank-you-dq');
@@ -355,24 +329,36 @@ export default function SellYourLandPage() {
                 Thanks for Your Interest
               </h3>
 
-              <p className="text-[#3A4045] mb-6 leading-relaxed">
-                We appreciate you reaching out. For professional inquiries, please send your potential deal information directly to our acquisitions team:
-              </p>
+              {/* Message for realtors/wholesalers */}
+              {(formData.position === 'realtor' || formData.position === 'wholesaler') ? (
+                <>
+                  <p className="text-[#3A4045] mb-6 leading-relaxed">
+                    We appreciate you reaching out. For professional inquiries, please send your potential deal information directly to our acquisitions team:
+                  </p>
 
-              <div className="bg-[#F5EFD9] rounded-lg p-6 mb-6">
-                <div className="mb-4">
-                  <p className="text-sm text-[#3A4045] mb-2">Email us at:</p>
-                  <a href="mailto:acquisitions@havenground.com" className="text-lg font-semibold text-[#2F4F33] hover:underline">
-                    acquisitions@havenground.com
-                  </a>
-                </div>
-                <div className="border-t border-[#D2C6B2] pt-4">
-                  <p className="text-sm text-[#3A4045] mb-2">Or call us:</p>
-                  <a href="tel:555-555-5555" className="text-lg font-semibold text-[#2F4F33] hover:underline">
-                    (469) 640-3864
-                  </a>
-                </div>
-              </div>
+                  <div className="bg-[#F5EFD9] rounded-lg p-6 mb-6">
+                    <div className="mb-4">
+                      <p className="text-sm text-[#3A4045] mb-2">Email us at:</p>
+                      <a href="mailto:acquisitions@havenground.com" className="text-lg font-semibold text-[#2F4F33] hover:underline">
+                        acquisitions@havenground.com
+                      </a>
+                    </div>
+                    <div className="border-t border-[#D2C6B2] pt-4">
+                      <p className="text-sm text-[#3A4045] mb-2">Or call us:</p>
+                      <a href="tel:555-555-5555" className="text-lg font-semibold text-[#2F4F33] hover:underline">
+                        (469) 640-3864
+                      </a>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Message for all other disqualifications (home on property, listed, small acreage) */
+                <p className="text-[#3A4045] mb-6 leading-relaxed">
+                  Our current investment criteria doesn't allow for further application at this time. We are here to help in any other way. Thank you.
+                  <br /><br />
+                  <span className="font-semibold text-[#2F4F33]">- Haven Team</span>
+                </p>
+              )}
 
               <div className="flex gap-4">
                 <button
@@ -638,24 +624,24 @@ export default function SellYourLandPage() {
             </p>
           </div>
 
-          {/* Beautiful 9-Step Form */}
+          {/* Beautiful 12-Step Form */}
           <form
             onSubmit={handleSubmit}
             onClick={handleFormFocus}
-            className={`bg-white rounded-2xl shadow-2xl p-6 sm:p-8 md:p-12 max-w-3xl mx-auto transition-all duration-500 ${
+            className={`bg-white rounded-2xl shadow-2xl p-6 sm:p-8 md:p-12 max-w-2xl mx-auto transition-all duration-500 ${
               formFocused ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 scale-105 max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto' : ''
             }`}
           >
             {/* Progress Bar */}
             <div className="mb-8">
               <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep} of 9</span>
-                <span className="text-sm font-medium text-[#2F4F33]">{Math.round((currentStep / 9) * 100)}%</span>
+                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep} of 13</span>
+                <span className="text-sm font-medium text-[#2F4F33]">{Math.round((currentStep / 13) * 100)}%</span>
               </div>
               <div className="w-full bg-[#D2C6B2] rounded-full h-2">
                 <div
                   className="bg-[#2F4F33] h-2 rounded-full transition-all duration-500"
-                  style={{width: `${(currentStep / 9) * 100}%`}}
+                  style={{width: `${(currentStep / 13) * 100}%`}}
                 ></div>
               </div>
             </div>
@@ -710,323 +696,60 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 2: First Name */}
+            {/* Step 2: Acres */}
             {currentStep === 2 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                  What is your first name?
+                  How many acres?
                 </h3>
 
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  placeholder="First Name"
-                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                  autoFocus
-                />
-
-                <div className="flex gap-4 mt-6">
-                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg">
-                    ← Back
-                  </button>
-                  <button type="button" onClick={handleNext} disabled={!formData.firstName} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg">
-                    Continue →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Last Name */}
-            {currentStep === 3 && (
-              <div className="space-y-6 animate-fadeIn">
-                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                  What is your last name?
-                </h3>
-
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="Last Name"
-                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                  autoFocus
-                />
-
-                <div className="flex gap-4 mt-6">
-                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg">
-                    ← Back
-                  </button>
-                  <button type="button" onClick={handleNext} disabled={!formData.lastName} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg">
-                    Continue →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Let's Locate Your Land */}
-            {currentStep === 4 && (
-              <div className="space-y-6 animate-fadeIn">
-                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                  Let's Locate Your Land
-                </h3>
-
-                <div className="space-y-4">
-                  {/* State - Required */}
-                  <div>
-                    <label className="block text-sm font-medium text-[#2F4F33] mb-2">
-                      State <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="propertyState"
-                      value={formData.propertyState}
-                      onChange={handleChange}
-                      className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-white text-[#3A4045] transition-colors"
-                    >
-                      <option value="">Select State</option>
-                      <option value="Alabama">Alabama</option>
-                      <option value="Alaska">Alaska</option>
-                      <option value="Arizona">Arizona</option>
-                      <option value="Arkansas">Arkansas</option>
-                      <option value="California">California</option>
-                      <option value="Colorado">Colorado</option>
-                      <option value="Connecticut">Connecticut</option>
-                      <option value="Delaware">Delaware</option>
-                      <option value="Florida">Florida</option>
-                      <option value="Georgia">Georgia</option>
-                      <option value="Hawaii">Hawaii</option>
-                      <option value="Idaho">Idaho</option>
-                      <option value="Illinois">Illinois</option>
-                      <option value="Indiana">Indiana</option>
-                      <option value="Iowa">Iowa</option>
-                      <option value="Kansas">Kansas</option>
-                      <option value="Kentucky">Kentucky</option>
-                      <option value="Louisiana">Louisiana</option>
-                      <option value="Maine">Maine</option>
-                      <option value="Maryland">Maryland</option>
-                      <option value="Massachusetts">Massachusetts</option>
-                      <option value="Michigan">Michigan</option>
-                      <option value="Minnesota">Minnesota</option>
-                      <option value="Mississippi">Mississippi</option>
-                      <option value="Missouri">Missouri</option>
-                      <option value="Montana">Montana</option>
-                      <option value="Nebraska">Nebraska</option>
-                      <option value="Nevada">Nevada</option>
-                      <option value="New Hampshire">New Hampshire</option>
-                      <option value="New Jersey">New Jersey</option>
-                      <option value="New Mexico">New Mexico</option>
-                      <option value="New York">New York</option>
-                      <option value="North Carolina">North Carolina</option>
-                      <option value="North Dakota">North Dakota</option>
-                      <option value="Ohio">Ohio</option>
-                      <option value="Oklahoma">Oklahoma</option>
-                      <option value="Oregon">Oregon</option>
-                      <option value="Pennsylvania">Pennsylvania</option>
-                      <option value="Rhode Island">Rhode Island</option>
-                      <option value="South Carolina">South Carolina</option>
-                      <option value="South Dakota">South Dakota</option>
-                      <option value="Tennessee">Tennessee</option>
-                      <option value="Texas">Texas</option>
-                      <option value="Utah">Utah</option>
-                      <option value="Vermont">Vermont</option>
-                      <option value="Virginia">Virginia</option>
-                      <option value="Washington">Washington</option>
-                      <option value="West Virginia">West Virginia</option>
-                      <option value="Wisconsin">Wisconsin</option>
-                      <option value="Wyoming">Wyoming</option>
-                    </select>
-                  </div>
-
-                  {/* County - Required */}
-                  <div>
-                    <label className="block text-sm font-medium text-[#2F4F33] mb-2">
-                      County <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="propertyCounty"
-                      value={formData.propertyCounty}
-                      onChange={handleChange}
-                      placeholder="e.g., Dallas County"
-                      className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                    />
-                  </div>
-
-                  {/* Address */}
-                  <div>
-                    <label className="block text-sm font-medium text-[#3A4045] mb-2">
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      name="streetAddress"
-                      value={formData.streetAddress}
-                      onChange={handleChange}
-                      placeholder="123 Main St"
-                      className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                    />
-                  </div>
-
-                  {/* Zip Code */}
-                  <div>
-                    <label className="block text-sm font-medium text-[#3A4045] mb-2">
-                      Zip Code
-                    </label>
-                    <input
-                      type="text"
-                      name="zipCode"
-                      value={formData.zipCode}
-                      onChange={handleChange}
-                      placeholder="75001"
-                      className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                    />
-                  </div>
-
-                  {/* Name on Title */}
-                  <div>
-                    <label className="block text-sm font-medium text-[#3A4045] mb-2">
-                      Name on Title
-                    </label>
-                    <input
-                      type="text"
-                      name="nameOnTitle"
-                      value={formData.nameOnTitle}
-                      onChange={handleChange}
-                      placeholder="Name as it appears on deed"
-                      className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                    />
-                  </div>
-
-                  {/* Parcel ID or APN */}
-                  <div>
-                    <label className="block text-sm font-medium text-[#3A4045] mb-2">
-                      Parcel ID or APN
-                    </label>
-                    <input
-                      type="text"
-                      name="parcelId"
-                      value={formData.parcelId}
-                      onChange={handleChange}
-                      placeholder="1234-567-890"
-                      className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                    />
-                  </div>
-                </div>
-
-                {/* Locate Error */}
-                {locateError && (
-                  <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                    {locateError}
-                  </div>
-                )}
-
-                {/* Locate Property Button */}
-                {availableParcels.length === 0 && (
-                  <button
-                    type="button"
-                    onClick={locateProperty}
-                    disabled={locatingProperty}
-                    className="w-full bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-semibold hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg flex items-center justify-center gap-3"
-                  >
-                    {locatingProperty ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Locating...
-                      </>
-                    ) : (
-                      'Locate Property'
-                    )}
-                  </button>
-                )}
-
-                {/* Property Selection Cards */}
-                {availableParcels.length > 0 && (
-                  <div className="space-y-4 animate-fadeIn">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-serif text-lg text-[#2F4F33] font-semibold">
-                        {availableParcels.length === 1 ? 'Property Found!' : `${availableParcels.length} Properties Found`}
-                      </h4>
-                      {selectedParcels.length > 0 && (
-                        <span className="text-sm text-[#2F4F33] font-medium">
-                          {selectedParcels.length} selected
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-[#3A4045] mb-4">
-                      {availableParcels.length === 1 ? 'Is this your property?' : 'Select all properties you own:'}
-                    </p>
-
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {availableParcels.map((parcel) => (
-                        <label
-                          key={parcel.id}
-                          className={`block cursor-pointer transition-all ${
-                            selectedParcels.includes(parcel.id)
-                              ? 'bg-[#2F4F33] text-[#F5EFD9] border-[#2F4F33]'
-                              : 'bg-[#F5EFD9] text-[#3A4045] border-[#D2C6B2] hover:border-[#2F4F33]'
-                          } border-2 rounded-lg p-4`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedParcels.includes(parcel.id)}
-                              onChange={() => toggleParcelSelection(parcel.id)}
-                              className="mt-1 w-5 h-5 text-[#2F4F33] border-2 border-[#D2C6B2] rounded focus:ring-2 focus:ring-[#2F4F33]"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium mb-2">{parcel.address}</div>
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div>
-                                  <span className="opacity-75">Acres:</span> <span className="font-medium">{parcel.acres}</span>
-                                </div>
-                                <div>
-                                  <span className="opacity-75">County:</span> <span className="font-medium">{parcel.county}</span>
-                                </div>
-                                {parcel.owner !== 'Unknown' && (
-                                  <div className="col-span-2">
-                                    <span className="opacity-75">Owner:</span> <span className="font-medium">{parcel.owner}</span>
-                                  </div>
-                                )}
-                                {parcel.apn !== 'Unknown' && (
-                                  <div className="col-span-2">
-                                    <span className="opacity-75">Parcel ID:</span> <span className="font-medium">{parcel.apn}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    '0-2 Acres',
+                    '2-5 Acres',
+                    '5-10 Acres',
+                    '10-20 Acres',
+                    '20-50 Acres',
+                    '50-100 Acres',
+                    '100+ Acres'
+                  ].map((range) => (
                     <button
+                      key={range}
                       type="button"
-                      onClick={handleNext}
-                      className="w-full bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-semibold hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl rounded-lg"
+                      onClick={() => setFormData({...formData, acres: range})}
+                      className={`p-5 border-2 rounded-lg text-center transition-all transform hover:scale-102 ${
+                        formData.acres === range
+                          ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                          : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045] hover:bg-[#F5EFD9]/50'
+                      }`}
                     >
-                      Confirm Property →
+                      <div className="flex items-center justify-center gap-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          formData.acres === range ? 'border-[#2F4F33] bg-[#2F4F33]' : 'border-[#D2C6B2]'
+                        }`}>
+                          {formData.acres === range && (
+                            <div className="w-3 h-3 bg-[#F5EFD9] rounded-full"></div>
+                          )}
+                        </div>
+                        <span className="text-base font-medium">{range}</span>
+                      </div>
                     </button>
-                  </div>
-                )}
+                  ))}
+                </div>
 
-                {/* Back Button */}
-                {availableParcels.length === 0 && (
-                  <div className="flex gap-4 mt-6">
-                    <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg">
-                      ← Back
-                    </button>
-                  </div>
-                )}
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.acres} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg">
+                    Continue →
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Step 5: Home on Property */}
-            {currentStep === 5 && (
+            {/* Step 3: Home on Property */}
+            {currentStep === 3 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   Is there a home on the property?
@@ -1061,7 +784,7 @@ export default function SellYourLandPage() {
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg"
+                    className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300"
                   >
                     ← Back
                   </button>
@@ -1069,7 +792,7 @@ export default function SellYourLandPage() {
                     type="button"
                     onClick={handleNext}
                     disabled={!formData.homeOnProperty}
-                    className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                    className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Continue →
                   </button>
@@ -1077,8 +800,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 6: Property Listed */}
-            {currentStep === 6 && (
+            {/* Step 4: Property Listed */}
+            {currentStep === 4 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   Is the property currently listed with a realtor?
@@ -1110,46 +833,201 @@ export default function SellYourLandPage() {
                 </div>
 
                 <div className="flex gap-4 mt-6">
-                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
                     ← Back
                   </button>
-                  <button type="button" onClick={handleNext} disabled={!formData.propertyListed} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg">
+                  <button type="button" onClick={handleNext} disabled={!formData.propertyListed} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
                     Continue →
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Step 7: Ownership Length */}
-            {currentStep === 7 && (
+            {/* Step 5: Owned 4 Years */}
+            {currentStep === 5 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                  How long have you owned it?
+                  Have you owned the property for at least 4 years?
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, ownedFourYears: 'yes'})}
+                    className={`p-6 border-2 rounded-lg text-center transition-all ${
+                      formData.ownedFourYears === 'yes'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-4xl font-bold">Yes</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, ownedFourYears: 'no'})}
+                    className={`p-6 border-2 rounded-lg text-center transition-all ${
+                      formData.ownedFourYears === 'no'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-4xl font-bold">No</span>
+                  </button>
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.ownedFourYears} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Property State */}
+            {currentStep === 6 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What state is the property located in?
                 </h3>
 
                 <input
                   type="text"
-                  name="ownershipLength"
-                  value={formData.ownershipLength}
+                  name="propertyState"
+                  value={formData.propertyState}
                   onChange={handleChange}
-                  placeholder="e.g., 5 years, 18 months"
+                  placeholder="e.g., Texas"
                   className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
                   autoFocus
                 />
 
                 <div className="flex gap-4 mt-6">
-                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
                     ← Back
                   </button>
-                  <button type="button" onClick={handleNext} disabled={!formData.ownershipLength} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg">
+                  <button type="button" onClick={handleNext} disabled={!formData.propertyState} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
                     Continue →
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Step 8: Email */}
+            {/* Step 7: Street Address */}
+            {currentStep === 7 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What is the street address?
+                </h3>
+
+                <input
+                  type="text"
+                  name="streetAddress"
+                  value={formData.streetAddress}
+                  onChange={handleChange}
+                  placeholder="Street Address"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  autoFocus
+                />
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.streetAddress} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 8: County */}
             {currentStep === 8 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What county is the property in?
+                </h3>
+
+                <input
+                  type="text"
+                  name="propertyCounty"
+                  value={formData.propertyCounty}
+                  onChange={handleChange}
+                  placeholder="County Name"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  autoFocus
+                />
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.propertyCounty} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 9: Full Name */}
+            {currentStep === 9 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What is your full name?
+                </h3>
+
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  placeholder="First and Last Name"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  autoFocus
+                />
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.fullName} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 10: Names on Deed */}
+            {currentStep === 10 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What names are on the deed?
+                </h3>
+
+                <input
+                  type="text"
+                  name="namesOnDeed"
+                  value={formData.namesOnDeed}
+                  onChange={handleChange}
+                  placeholder="All names on the property deed"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  autoFocus
+                />
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.namesOnDeed} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 11: Email */}
+            {currentStep === 11 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is your email address?
@@ -1166,128 +1044,128 @@ export default function SellYourLandPage() {
                 />
 
                 <div className="flex gap-4 mt-6">
-                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
                     ← Back
                   </button>
-                  <button type="button" onClick={handleNext} disabled={!formData.email} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg">
+                  <button type="button" onClick={handleNext} disabled={!formData.email} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
                     Continue →
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Step 9: Phone + SMS Consent + OTP */}
-            {currentStep === 9 && (
+            {/* Step 12: Phone */}
+            {currentStep === 12 && (
               <div className="space-y-6 animate-fadeIn">
-                {!otpSent ? (
-                  <>
-                    <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                      What is your phone number?
-                    </h3>
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What is your phone number?
+                </h3>
 
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="(469) 640-3864"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  autoFocus
+                />
+
+                <div className="bg-[#F5EFD9] p-4 rounded-lg">
+                  <label className="flex items-start gap-3 cursor-pointer">
                     <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="(469) 640-3864"
-                      className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                      autoFocus
+                      type="checkbox"
+                      name="smsConsent"
+                      checked={formData.smsConsent}
+                      onChange={(e) => setFormData({...formData, smsConsent: e.target.checked})}
+                      className="mt-1 w-5 h-5 text-[#2F4F33] border-[#D2C6B2] rounded focus:ring-[#2F4F33]"
                     />
+                    <span className="text-sm text-[#3A4045]">
+                      By continuing, you agree to receive SMS updates about your property inquiry. Message and data rates may apply.
+                    </span>
+                  </label>
+                </div>
 
-                    <div className="bg-[#F5EFD9] p-4 rounded-lg">
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          name="smsConsent"
-                          checked={formData.smsConsent}
-                          onChange={(e) => setFormData({...formData, smsConsent: e.target.checked})}
-                          className="mt-1 w-5 h-5 text-[#2F4F33] border-[#D2C6B2] rounded focus:ring-[#2F4F33]"
-                        />
-                        <span className="text-sm text-[#3A4045]">
-                          By continuing, you agree to receive SMS updates about your property inquiry. Message and data rates may apply.
-                        </span>
-                      </label>
-                    </div>
-
-                    {otpError && (
-                      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                        {otpError}
-                      </div>
-                    )}
-
-                    <div className="flex gap-4 mt-6">
-                      <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg">
-                        ← Back
-                      </button>
-                      <button
-                        type="button"
-                        onClick={sendOTP}
-                        disabled={!formData.phone || !formData.smsConsent || isLoading}
-                        className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
-                      >
-                        {isLoading ? 'Sending...' : 'Send Verification Code →'}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                      Enter verification code
-                    </h3>
-
-                    <p className="text-[#3A4045] mb-4">
-                      We sent a 6-digit code to <strong>{formData.phone}</strong>
-                    </p>
-
-                    <input
-                      type="text"
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value)}
-                      placeholder="000000"
-                      maxLength="6"
-                      className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors text-center tracking-widest font-bold"
-                      autoFocus
-                    />
-
-                    {otpError && (
-                      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                        {otpError}
-                      </div>
-                    )}
-
-                    <div className="flex gap-4 mt-6">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOtpSent(false);
-                          setOtpCode('');
-                          setOtpError('');
-                        }}
-                        className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg"
-                      >
-                        ← Change Number
-                      </button>
-                      <button
-                        type="button"
-                        onClick={verifyOTP}
-                        disabled={otpCode.length !== 6 || isLoading}
-                        className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
-                      >
-                        {isLoading ? 'Verifying...' : 'Verify & Submit →'}
-                      </button>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={sendOTP}
-                      disabled={isLoading}
-                      className="w-full text-[#2F4F33] underline hover:text-[#7D6B58] transition-colors"
-                    >
-                      Didn't receive code? Resend
-                    </button>
-                  </>
+                {otpError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {otpError}
+                  </div>
                 )}
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={sendOTP}
+                    disabled={!formData.phone || !formData.smsConsent || isLoading}
+                    className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Sending...' : 'Send Verification Code →'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 13: OTP Verification */}
+            {currentStep === 13 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  Enter verification code
+                </h3>
+
+                <p className="text-[#3A4045] mb-4">
+                  We sent a 6-digit code to <strong>{formData.phone}</strong>
+                </p>
+
+                <input
+                  type="text"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  placeholder="000000"
+                  maxLength="6"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors text-center tracking-widest font-bold"
+                  autoFocus
+                />
+
+                {otpError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {otpError}
+                  </div>
+                )}
+
+                <div className="flex gap-4 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentStep(12);
+                      setOtpSent(false);
+                      setOtpCode('');
+                      setOtpError('');
+                    }}
+                    className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300"
+                  >
+                    ← Change Number
+                  </button>
+                  <button
+                    type="button"
+                    onClick={verifyOTP}
+                    disabled={otpCode.length !== 6 || isLoading}
+                    className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Verifying...' : 'Verify & Submit →'}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={sendOTP}
+                  disabled={isLoading}
+                  className="w-full text-[#2F4F33] underline hover:text-[#7D6B58] transition-colors"
+                >
+                  Didn't receive code? Resend
+                </button>
               </div>
             )}
           </form>
