@@ -984,14 +984,14 @@ export default function PropertyDetailPage() {
                             <p className="text-sm text-gray-600">{lot.size}</p>
                           </div>
                           <div className="text-right ml-4">
-                            {lot.status?.toLowerCase() === 'sold' ? (
-                              <p className="font-bold text-red-600 text-lg">SOLD</p>
-                            ) : (
-                              <>
-                                <p className="font-semibold text-[#2F4F33]">{lot.price}</p>
-                                <p className="text-xs text-gray-600">{lot.status}</p>
-                              </>
-                            )}
+                            <p className="font-semibold text-[#2F4F33]">{lot.price}</p>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              lot.status?.toLowerCase() === 'sold'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {lot.status?.toLowerCase() === 'sold' ? 'SOLD' : lot.status}
+                            </span>
                           </div>
                         </div>
                         {lot.features && lot.features.length > 0 && (
@@ -1096,24 +1096,20 @@ export default function PropertyDetailPage() {
                             </td>
                             <td className="px-6 py-4 text-[#2F4F33] font-semibold">{lot.size}</td>
                             <td className="px-6 py-4 text-[#2F4F33] font-bold text-lg">
-                              {lot.status?.toLowerCase() === 'sold' ? (
-                                <span className="font-bold text-red-600 text-lg">SOLD</span>
-                              ) : (
-                                lot.price
-                              )}
+                              {lot.price}
                             </td>
                             <td className="px-4 py-3">
-                              {lot.status?.toLowerCase() !== 'sold' && (
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  lot.status === 'Available'
-                                    ? 'bg-green-100 text-green-800'
-                                    : lot.status === 'Move-In Ready'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : 'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {lot.status}
-                                </span>
-                              )}
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                lot.status?.toLowerCase() === 'sold'
+                                  ? 'bg-red-100 text-red-800'
+                                  : lot.status === 'Available'
+                                  ? 'bg-green-100 text-green-800'
+                                  : lot.status === 'Move-In Ready'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {lot.status?.toLowerCase() === 'sold' ? 'SOLD' : lot.status}
+                              </span>
                             </td>
                           </tr>
                           {expandedLot === index && lot.hasDetails && (
