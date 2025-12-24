@@ -69,7 +69,7 @@ export const properties = [
     price: 122000,
     pricePerAcre: 110909,
     acres: "1+",
-    availableLots: 7,
+    availableLots: 1,
     type: "community",
     template: "rural",
     featured: true,
@@ -77,12 +77,12 @@ export const properties = [
     targetBuyer: "Calm Mountain Living",
     lotTable: [
       { lot: "Lot 1", size: "1.10 acres", price: "$122,000", status: "Available" },
-      { lot: "Lot 2", size: "1.25 acres", price: "$138,636", status: "Available" },
-      { lot: "Lot 3", size: "1.35 acres", price: "$149,727", status: "Available" },
-      { lot: "Lot 4", size: "1.15 acres", price: "$127,545", status: "Available" },
-      { lot: "Lot 5", size: "1.42 acres", price: "$157,491", status: "Available" },
-      { lot: "Lot 6", size: "1.50 acres", price: "$166,364", status: "Available" },
-      { lot: "Lot 7", size: "1.05 acres", price: "$116,455", status: "Available" }
+      { lot: "Lot 2", size: "1.25 acres", price: "$138,636", status: "Sold" },
+      { lot: "Lot 3", size: "1.35 acres", price: "$149,727", status: "Sold" },
+      { lot: "Lot 4", size: "1.15 acres", price: "$127,545", status: "Sold" },
+      { lot: "Lot 5", size: "1.42 acres", price: "$157,491", status: "Sold" },
+      { lot: "Lot 6", size: "1.50 acres", price: "$166,364", status: "Sold" },
+      { lot: "Lot 7", size: "1.05 acres", price: "$116,455", status: "Sold" }
     ],
     boundary: [
       [39.2743660853308, -106.05798840522766],
@@ -154,7 +154,7 @@ export const properties = [
     price: 158000,
     pricePerAcre: 79000,
     acres: "1.805-2.0",
-    availableLots: 8,
+    availableLots: 3,
     type: "community",
     template: "rural",
     featured: true,
@@ -162,11 +162,11 @@ export const properties = [
       { lot: "Lot 1", size: "1.805 acres", price: "$142,595", status: "Available" },
       { lot: "Lot 2", size: "2.000 acres", price: "$158,000", status: "Available" },
       { lot: "Lot 3", size: "2.000 acres", price: "$158,000", status: "Available" },
-      { lot: "Lot 4", size: "2.000 acres", price: "$158,000", status: "Available" },
-      { lot: "Lot 5", size: "2.000 acres", price: "$158,000", status: "Available" },
-      { lot: "Lot 6", size: "2.000 acres", price: "$158,000", status: "Available" },
-      { lot: "Lot 7", size: "2.000 acres", price: "$158,000", status: "Available" },
-      { lot: "Lot 8", size: "2.000 acres", price: "$158,000", status: "Available" }
+      { lot: "Lot 4", size: "2.000 acres", price: "$158,000", status: "Sold" },
+      { lot: "Lot 5", size: "2.000 acres", price: "$158,000", status: "Sold" },
+      { lot: "Lot 6", size: "2.000 acres", price: "$158,000", status: "Sold" },
+      { lot: "Lot 7", size: "2.000 acres", price: "$158,000", status: "Sold" },
+      { lot: "Lot 8", size: "2.000 acres", price: "$158,000", status: "Sold" }
     ],
     mapEmbed: "https://www.acres.com/embed?savedId=339554&layers=elevation&boundaryColor=00FFFF",
     boundary: [
