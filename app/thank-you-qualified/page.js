@@ -127,7 +127,7 @@ export default function ThankYouQualified() {
       {/* Footer */}
       <footer className="bg-[#2F4F33] text-white py-8 mt-16">
         <div className="container mx-auto px-4 text-center">
-          <p className="mb-2">&copy; 2025 Haven Ground. All rights reserved.</p>
+          <p className="mb-2">&copy; 2026 Haven Ground. All rights reserved.</p>
           <div className="text-sm">
             <a href="/privacy-policy" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200 underline">Privacy Policy</a>
             <span className="mx-2">|</span>

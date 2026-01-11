@@ -98,7 +98,7 @@ function ThankDispoContent() {
 
       {/* Footer */}
       <footer className="bg-[#2F4F33] text-[#F5EFD9] py-6 px-6 text-center">
-        <p className="text-sm">© 2025 Haven Ground. All rights reserved.</p>
+        <p className="text-sm">© 2026 Haven Ground. All rights reserved.</p>
       </footer>
     </div>
     </>
