@@ -1116,15 +1116,15 @@ export default function SellYourLandPage() {
                 </h3>
 
                 <p className="text-[#3A4045] mb-4">
-                  We sent a 6-digit code to <strong>{formData.phone}</strong>
+                  We sent a code to <strong>{formData.phone}</strong>
                 </p>
 
                 <input
                   type="text"
                   value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
-                  placeholder="000000"
-                  maxLength="6"
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Enter code"
+                  maxLength="8"
                   className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors text-center tracking-widest font-bold"
                   autoFocus
                 />
@@ -1151,7 +1151,7 @@ export default function SellYourLandPage() {
                   <button
                     type="button"
                     onClick={verifyOTP}
-                    disabled={otpCode.length !== 6 || isLoading}
+                    disabled={otpCode.length < 4 || isLoading}
                     className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? 'Verifying...' : 'Verify & Submit →'}
