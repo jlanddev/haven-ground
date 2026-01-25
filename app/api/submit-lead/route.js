@@ -20,28 +20,21 @@ Phone: ${leadData.phone}
 Email: ${leadData.email}`;
 
   try {
-    const payload = {
-      from: '+18336323257',
-      to: '+17139315872',
-      text: message,
-      messaging_profile_id: '4900019b-f641-a09b-8f35-d3bea0b04192'
-    };
-
-    console.log('Sending SMS notification:', JSON.stringify(payload, null, 2));
-
     const response = await fetch('https://api.telnyx.com/v2/messages', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        from: '+18336323257',
+        to: '+17139315872',
+        text: message
+      })
     });
 
-    const data = await response.json();
-    console.log('Telnyx SMS response:', response.status, JSON.stringify(data, null, 2));
-
     if (!response.ok) {
+      const data = await response.json();
       console.error('Telnyx SMS error:', data);
     }
     return response.ok;
@@ -98,8 +91,8 @@ export async function POST(request) {
       throw error;
     }
 
-    // Send SMS notification (don't block on failure)
-    sendLeadNotification(leadData);
+    // Send SMS notification (must await or serverless function terminates before it sends)
+    await sendLeadNotification(leadData);
 
     return NextResponse.json({
       success: true,
