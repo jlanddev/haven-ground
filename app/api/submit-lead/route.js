@@ -6,6 +6,44 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+// Send SMS notification via Telnyx
+async function sendLeadNotification(leadData) {
+  const message = `New Lead 🏡
+
+Acreage Range: ${leadData.acres || 'N/A'} acres
+Seller Name: ${leadData.fullName}
+County: ${leadData.propertyCounty}
+State: ${leadData.propertyState}
+
+Seller Contact Info
+Phone: ${leadData.phone}
+Email: ${leadData.email}`;
+
+  try {
+    const response = await fetch('https://api.telnyx.com/v2/messages', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: '+18336323257',
+        to: '+17139315872',
+        text: message
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('Telnyx SMS error:', data);
+    }
+    return response.ok;
+  } catch (error) {
+    console.error('SMS notification error:', error);
+    return false;
+  }
+}
+
 export async function POST(request) {
   try {
     const leadData = await request.json();
@@ -52,6 +90,9 @@ export async function POST(request) {
       console.error('Supabase error:', error);
       throw error;
     }
+
+    // Send SMS notification (don't block on failure)
+    sendLeadNotification(leadData);
 
     return NextResponse.json({
       success: true,
