@@ -8,8 +8,6 @@ export async function POST(request) {
   }
   formattedPhone = '+' + formattedPhone;
 
-  console.log('Verifying OTP for:', formattedPhone, 'code:', code);
-
   try {
     const response = await fetch(
       `https://api.telnyx.com/v2/verifications/by_phone_number/${encodeURIComponent(formattedPhone)}/actions/verify`,
@@ -27,22 +25,15 @@ export async function POST(request) {
     );
 
     const data = await response.json();
-    console.log('Telnyx verify response:', JSON.stringify(data, null, 2));
 
-    // Check multiple possible success conditions
-    const isAccepted =
-      data.data?.response_code === 'accepted' ||
-      data.response_code === 'accepted' ||
-      response.ok;
-
-    if (isAccepted && !data.errors) {
+    // Telnyx returns 200 OK with response_code "accepted" or "rejected"
+    if (data.data?.response_code === 'accepted') {
       return Response.json({ success: true, verified: true });
     } else {
-      console.error('Telnyx verify failed:', data);
       return Response.json({
         success: false,
         verified: false,
-        error: data.errors?.[0]?.detail || data.message || 'Invalid code'
+        error: 'Invalid verification code'
       }, { status: 400 });
     }
   } catch (error) {
