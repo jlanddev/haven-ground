@@ -45,17 +45,14 @@ function ThankYouContent() {
       </Script>
     <div className="flex flex-col min-h-screen font-serif bg-[#F5EFD9]">
       {/* Navigation */}
-      <header className="bg-[#2F4F33] text-[#F5EFD9] py-4 px-6">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <header className="bg-[#F5EFD9] border-b border-[#D2C6B2] py-4 px-6">
+        <div className="max-w-7xl mx-auto flex justify-center items-center">
           <a href="/">
             <img
               src="/images/Haven LOGO Use.png"
               alt="Haven Ground Logo"
-              className="h-12 sm:h-14 w-auto hover:opacity-90 transition-opacity duration-300"
+              className="h-16 sm:h-20 w-auto hover:opacity-90 transition-opacity duration-300"
             />
-          </a>
-          <a href="/" className="text-[#F5EFD9] hover:text-white transition-colors">
-            ← Back to Home
           </a>
         </div>
       </header>
@@ -65,9 +62,9 @@ function ThankYouContent() {
         <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center">
           {/* Success Icon */}
           <div className="mb-6">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <div className="w-20 h-20 bg-[#2F4F33] rounded-full flex items-center justify-center mx-auto">
+              <svg className="w-10 h-10 text-[#F5EFD9]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
           </div>
@@ -99,9 +96,16 @@ function ThankYouContent() {
             </ul>
           </div>
 
-          <p className="text-sm text-[#7D6B58]">
+          <p className="text-sm text-[#7D6B58] mb-8">
             Questions? Call us at <a href="tel:+14696403864" className="text-[#2F4F33] hover:underline font-semibold">(469) 640-3864</a>
           </p>
+
+          <a
+            href="/"
+            className="inline-block bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 rounded-lg font-semibold text-lg hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            Return Home
+          </a>
         </div>
       </main>
 

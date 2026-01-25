@@ -8,7 +8,7 @@ const supabase = createClient(
 
 // Send SMS notification via Telnyx
 async function sendLeadNotification(leadData) {
-  const message = `New Lead 🏡
+  const message = `New Lead
 
 Acreage Range: ${leadData.acres || 'N/A'} acres
 Seller Name: ${leadData.fullName}
