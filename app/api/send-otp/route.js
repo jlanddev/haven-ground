@@ -1,18 +1,25 @@
 export async function POST(request) {
   const { phone } = await request.json();
 
+  // Format phone to E.164 if needed
+  let formattedPhone = phone.replace(/\D/g, '');
+  if (!formattedPhone.startsWith('1')) {
+    formattedPhone = '1' + formattedPhone;
+  }
+  formattedPhone = '+' + formattedPhone;
+
   try {
     const response = await fetch(
-      'https://verify.twilio.com/v2/Services/VAd757ec84f669072e193dc6bbb87330f3/Verifications',
+      'https://api.telnyx.com/v2/verifications/sms',
       {
         method: 'POST',
         headers: {
-          'Authorization': 'Basic ' + Buffer.from('AC9b195544dc974c5c95dee7b71549a9fc:694f23afdc3ab3d35eaea4502c91d876').toString('base64'),
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
+          'Content-Type': 'application/json',
         },
-        body: new URLSearchParams({
-          To: phone,
-          Channel: 'sms'
+        body: JSON.stringify({
+          phone_number: formattedPhone,
+          verify_profile_id: process.env.TELNYX_VERIFY_PROFILE_ID
         })
       }
     );
@@ -22,9 +29,11 @@ export async function POST(request) {
     if (response.ok) {
       return Response.json({ success: true });
     } else {
-      return Response.json({ success: false, error: data.message }, { status: 400 });
+      console.error('Telnyx error:', data);
+      return Response.json({ success: false, error: data.errors?.[0]?.detail || 'Failed to send code' }, { status: 400 });
     }
   } catch (error) {
+    console.error('Send OTP error:', error);
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }

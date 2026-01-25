@@ -1,30 +1,39 @@
 export async function POST(request) {
   const { phone, code } = await request.json();
 
+  // Format phone to E.164 if needed
+  let formattedPhone = phone.replace(/\D/g, '');
+  if (!formattedPhone.startsWith('1')) {
+    formattedPhone = '1' + formattedPhone;
+  }
+  formattedPhone = '+' + formattedPhone;
+
   try {
     const response = await fetch(
-      'https://verify.twilio.com/v2/Services/VAd757ec84f669072e193dc6bbb87330f3/VerificationCheck',
+      `https://api.telnyx.com/v2/verifications/by_phone_number/${encodeURIComponent(formattedPhone)}/actions/verify`,
       {
         method: 'POST',
         headers: {
-          'Authorization': 'Basic ' + Buffer.from('AC9b195544dc974c5c95dee7b71549a9fc:694f23afdc3ab3d35eaea4502c91d876').toString('base64'),
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
+          'Content-Type': 'application/json',
         },
-        body: new URLSearchParams({
-          To: phone,
-          Code: code
+        body: JSON.stringify({
+          code: code,
+          verify_profile_id: process.env.TELNYX_VERIFY_PROFILE_ID
         })
       }
     );
 
     const data = await response.json();
 
-    if (response.ok && data.status === 'approved') {
+    if (response.ok && data.data?.response_code === 'accepted') {
       return Response.json({ success: true, verified: true });
     } else {
+      console.error('Telnyx verify error:', data);
       return Response.json({ success: false, verified: false, error: 'Invalid code' }, { status: 400 });
     }
   } catch (error) {
+    console.error('Verify OTP error:', error);
     return Response.json({ success: false, verified: false, error: error.message }, { status: 500 });
   }
 }
