@@ -4,6 +4,40 @@ import { useState, useEffect, useRef } from 'react';
 import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
 
+// Email validation - checks format and blocks fake/disposable domains
+const validateEmail = (email) => {
+  if (!email) return { valid: false, error: 'Email is required' };
+
+  // Basic format check
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    return { valid: false, error: 'Please enter a valid email address' };
+  }
+
+  const domain = email.split('@')[1].toLowerCase();
+
+  // Block disposable/temporary email domains
+  const disposableDomains = [
+    'tempmail.com', 'throwaway.com', 'guerrillamail.com', 'mailinator.com',
+    'temp-mail.org', '10minutemail.com', 'fakeinbox.com', 'trashmail.com',
+    'yopmail.com', 'sharklasers.com', 'getnada.com', 'tempail.com',
+    'emailondeck.com', 'mohmal.com', 'dispostable.com', 'maildrop.cc',
+    'getairmail.com', 'temp-mail.io', 'burnermail.io', 'spamgourmet.com'
+  ];
+
+  if (disposableDomains.includes(domain)) {
+    return { valid: false, error: 'Please use a permanent email address' };
+  }
+
+  // Check for obviously fake domains (no dot, too short, etc.)
+  const domainParts = domain.split('.');
+  if (domainParts.length < 2 || domainParts[0].length < 2 || domainParts[domainParts.length - 1].length < 2) {
+    return { valid: false, error: 'Please enter a valid email domain' };
+  }
+
+  return { valid: true, error: null };
+};
+
 export default function SellYourLandPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -36,6 +70,7 @@ export default function SellYourLandPage() {
   const [showStateSuggestions, setShowStateSuggestions] = useState(false);
   const [countySuggestions, setCountySuggestions] = useState([]);
   const [showCountySuggestions, setShowCountySuggestions] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const US_STATES = [
     'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
@@ -344,14 +379,16 @@ export default function SellYourLandPage() {
           acres: parseFloat(formData.acres) || null,
           status: 'new',
           source: 'Haven Ground - Sell Your Land Form',
-          notes: `Position: ${formData.position}\nHome on property: ${formData.homeOnProperty}\nProperty listed: ${formData.propertyListed}\nOwned 4+ years: ${formData.ownedFourYears}\nNames on deed: ${formData.namesOnDeed}`,
+          notes: `Position: ${formData.position}\nHome on property: ${formData.homeOnProperty}\nProperty listed: ${formData.propertyListed}\nInherited: ${formData.isInherited}\nOwned 4+ years: ${formData.ownedFourYears || 'N/A (inherited)'}\nWhy selling: ${formData.whySelling}\nNames on deed: ${formData.namesOnDeed}`,
           phone_verified: true,
           ip_address: userIp,
           form_data: {
             position: formData.position,
             homeOnProperty: formData.homeOnProperty,
             propertyListed: formData.propertyListed,
+            isInherited: formData.isInherited,
             ownedFourYears: formData.ownedFourYears,
+            whySelling: formData.whySelling,
             propertyState: formData.propertyState,
             streetAddress: formData.streetAddress,
             propertyCounty: formData.propertyCounty,
@@ -1266,17 +1303,27 @@ export default function SellYourLandPage() {
                   type="email"
                   name="email"
                   value={formData.email}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (emailError) setEmailError('');
+                  }}
+                  onBlur={(e) => {
+                    const result = validateEmail(e.target.value);
+                    if (!result.valid) setEmailError(result.error);
+                  }}
                   placeholder="your@email.com"
-                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  className={`w-full px-6 py-4 text-lg border-2 rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors ${emailError ? 'border-red-400 bg-red-50' : 'border-[#D2C6B2]'}`}
                   autoFocus
                 />
+                {emailError && (
+                  <p className="text-red-500 text-sm mt-2">{emailError}</p>
+                )}
 
                 <div className="flex gap-4 mt-6">
                   <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
                     ← Back
                   </button>
-                  <button type="button" onClick={handleNext} disabled={!formData.email} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button type="button" onClick={handleNext} disabled={!formData.email || !validateEmail(formData.email).valid} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
                     Continue →
                   </button>
                 </div>
