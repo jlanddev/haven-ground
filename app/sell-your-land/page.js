@@ -15,6 +15,7 @@ export default function SellYourLandPage() {
     propertyListed: '',
     isInherited: '',
     ownedFourYears: '',
+    whySelling: '',
     propertyState: '',
     streetAddress: '',
     propertyCounty: '',
@@ -211,7 +212,7 @@ export default function SellYourLandPage() {
 
     // If property is inherited (Step 5), skip the ownership length question (Step 6)
     if (currentStep === 5 && formData.isInherited === 'yes') {
-      setCurrentStep(7); // Skip to state question
+      setCurrentStep(7); // Skip to why selling question
       window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
       return;
     }
@@ -221,7 +222,7 @@ export default function SellYourLandPage() {
   };
 
   const handleBack = () => {
-    // If on step 7 (state) and property was inherited, go back to step 5 (skip step 6)
+    // If on step 7 (why selling) and property was inherited, go back to step 5 (skip step 6)
     if (currentStep === 7 && formData.isInherited === 'yes') {
       setCurrentStep(5);
     } else {
@@ -253,7 +254,7 @@ export default function SellYourLandPage() {
 
       if (data.success) {
         setOtpSent(true);
-        setCurrentStep(14); // Move to OTP verification step
+        setCurrentStep(15); // Move to OTP verification step
       } else {
         setOtpError(data.error || 'Failed to send code');
       }
@@ -747,7 +748,7 @@ export default function SellYourLandPage() {
             {/* Progress Bar */}
             <div className="mb-8">
               <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep} of 14</span>
+                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep} of 15</span>
                 <span className="text-sm font-medium text-[#2F4F33]">{Math.round((currentStep / 13) * 100)}%</span>
               </div>
               <div className="w-full bg-[#D2C6B2] rounded-full h-2">
@@ -1041,8 +1042,42 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 7: Property State */}
+            {/* Step 7: Why Selling */}
             {currentStep === 7 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  In a few words, why are you looking to sell?
+                </h3>
+                <p className="text-sm text-[#7D6B58] -mt-4 mb-4">
+                  We've bought hundreds of properties — we understand every situation. Feel free to be open and honest.
+                </p>
+
+                <textarea
+                  name="whySelling"
+                  value={formData.whySelling}
+                  onChange={handleChange}
+                  placeholder="Tell us a bit about your situation..."
+                  rows={3}
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors resize-none"
+                  autoFocus
+                />
+                <p className={`text-sm ${formData.whySelling.length >= 50 ? 'text-green-600' : 'text-[#7D6B58]'}`}>
+                  {formData.whySelling.length}/50 characters minimum
+                </p>
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={formData.whySelling.length < 50} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 8: Property State */}
+            {currentStep === 8 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What state is the property located in?
@@ -1088,8 +1123,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 8: County */}
-            {currentStep === 8 && (
+            {/* Step 9: County */}
+            {currentStep === 9 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What county is the property in?
@@ -1135,8 +1170,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 9: Street Address */}
-            {currentStep === 9 && (
+            {/* Step 10: Street Address */}
+            {currentStep === 10 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is the street address or APN?
@@ -1164,8 +1199,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 10: Full Name */}
-            {currentStep === 10 && (
+            {/* Step 11: Full Name */}
+            {currentStep === 11 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is your full name?
@@ -1192,8 +1227,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 11: Names on Deed */}
-            {currentStep === 11 && (
+            {/* Step 12: Names on Deed */}
+            {currentStep === 12 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What names are on the deed?
@@ -1220,8 +1255,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 12: Email */}
-            {currentStep === 12 && (
+            {/* Step 13: Email */}
+            {currentStep === 13 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is your email address?
@@ -1248,8 +1283,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 13: Phone */}
-            {currentStep === 13 && (
+            {/* Step 14: Phone */}
+            {currentStep === 14 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is your phone number?
@@ -1302,8 +1337,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 14: OTP Verification */}
-            {currentStep === 14 && (
+            {/* Step 15: OTP Verification */}
+            {currentStep === 15 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   Enter verification code
@@ -1333,7 +1368,7 @@ export default function SellYourLandPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setCurrentStep(13);
+                      setCurrentStep(14);
                       setOtpSent(false);
                       setOtpCode('');
                       setOtpError('');
