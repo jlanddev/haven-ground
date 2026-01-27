@@ -337,16 +337,10 @@ export default function SellYourLandPage() {
                   </p>
 
                   <div className="bg-[#F5EFD9] rounded-lg p-6 mb-6">
-                    <div className="mb-4">
+                    <div>
                       <p className="text-sm text-[#3A4045] mb-2">Email us at:</p>
                       <a href="mailto:acquisitions@havenground.com" className="text-lg font-semibold text-[#2F4F33] hover:underline">
                         acquisitions@havenground.com
-                      </a>
-                    </div>
-                    <div className="border-t border-[#D2C6B2] pt-4">
-                      <p className="text-sm text-[#3A4045] mb-2">Or call us:</p>
-                      <a href="tel:555-555-5555" className="text-lg font-semibold text-[#2F4F33] hover:underline">
-                        (469) 640-3864
                       </a>
                     </div>
                   </div>
@@ -1188,9 +1182,6 @@ export default function SellYourLandPage() {
           <h2 className="text-3xl text-[#F5EFD9] font-serif font-light mb-6">No Pressure, Just Honest Conversation</h2>
           <p className="text-xl text-[#D2C6B2] mb-8 leading-relaxed">
             We know selling land is a big decision. Take your time, ask questions, and make the choice that's right for you. We'll be here either way.
-          </p>
-          <p className="text-lg text-[#D2C6B2]">
-            Prefer to talk? Call us at <a href="tel:469-640-3864" className="text-[#E8B86D] font-bold underline hover:text-[#D4A574] transition-colors">(469) 640-3864</a>
           </p>
         </div>
       </div>

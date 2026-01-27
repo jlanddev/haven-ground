@@ -96,9 +96,6 @@ function ThankYouContent() {
             </ul>
           </div>
 
-          <p className="text-sm text-[#7D6B58] mb-8">
-            Questions? Call us at <a href="tel:+14696403864" className="text-[#2F4F33] hover:underline font-semibold">(469) 640-3864</a>
-          </p>
 
           <a
             href="/"
