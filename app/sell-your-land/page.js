@@ -1088,37 +1088,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 8: Street Address */}
+            {/* Step 8: County */}
             {currentStep === 8 && (
-              <div className="space-y-6 animate-fadeIn">
-                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                  What is the street address or APN?
-                </h3>
-                <p className="text-sm text-[#7D6B58] -mt-4 mb-4">(Check your tax bill for APN)</p>
-
-                <input
-                  type="text"
-                  name="streetAddress"
-                  value={formData.streetAddress}
-                  onChange={handleChange}
-                  placeholder="Ex: Riverway Rd or R102777"
-                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                  autoFocus
-                />
-
-                <div className="flex gap-4 mt-6">
-                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
-                    ← Back
-                  </button>
-                  <button type="button" onClick={handleNext} disabled={!formData.streetAddress} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
-                    Continue →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 9: County */}
-            {currentStep === 9 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What county is the property in?
@@ -1158,6 +1129,35 @@ export default function SellYourLandPage() {
                     ← Back
                   </button>
                   <button type="button" onClick={handleNext} disabled={!formData.propertyCounty} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 9: Street Address */}
+            {currentStep === 9 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What is the street address or APN?
+                </h3>
+                <p className="text-sm text-[#7D6B58] -mt-4 mb-4">(Check your tax bill for APN)</p>
+
+                <input
+                  type="text"
+                  name="streetAddress"
+                  value={formData.streetAddress}
+                  onChange={handleChange}
+                  placeholder="Ex: Riverway Rd or R102777"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  autoFocus
+                />
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.streetAddress} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
                     Continue →
                   </button>
                 </div>
