@@ -13,6 +13,7 @@ export default function SellYourLandPage() {
     position: '',
     homeOnProperty: '',
     propertyListed: '',
+    isInherited: '',
     ownedFourYears: '',
     propertyState: '',
     streetAddress: '',
@@ -103,12 +104,24 @@ export default function SellYourLandPage() {
       return;
     }
 
+    // If property is inherited (Step 5), skip the ownership length question (Step 6)
+    if (currentStep === 5 && formData.isInherited === 'yes') {
+      setCurrentStep(7); // Skip to state question
+      window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
+      return;
+    }
+
     setCurrentStep(currentStep + 1);
     window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
-    setCurrentStep(currentStep - 1);
+    // If on step 7 (state) and property was inherited, go back to step 5 (skip step 6)
+    if (currentStep === 7 && formData.isInherited === 'yes') {
+      setCurrentStep(5);
+    } else {
+      setCurrentStep(currentStep - 1);
+    }
     window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
   };
 
@@ -135,7 +148,7 @@ export default function SellYourLandPage() {
 
       if (data.success) {
         setOtpSent(true);
-        setCurrentStep(13); // Move to OTP verification step
+        setCurrentStep(14); // Move to OTP verification step
       } else {
         setOtpError(data.error || 'Failed to send code');
       }
@@ -629,7 +642,7 @@ export default function SellYourLandPage() {
             {/* Progress Bar */}
             <div className="mb-8">
               <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep} of 13</span>
+                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep} of 14</span>
                 <span className="text-sm font-medium text-[#2F4F33]">{Math.round((currentStep / 13) * 100)}%</span>
               </div>
               <div className="w-full bg-[#D2C6B2] rounded-full h-2">
@@ -837,8 +850,51 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 5: Owned 4 Years */}
+            {/* Step 5: Is Property Inherited */}
             {currentStep === 5 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  Is the property inherited?
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, isInherited: 'yes'})}
+                    className={`p-6 border-2 rounded-lg text-center transition-all ${
+                      formData.isInherited === 'yes'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-4xl font-bold">Yes</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, isInherited: 'no'})}
+                    className={`p-6 border-2 rounded-lg text-center transition-all ${
+                      formData.isInherited === 'no'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-4xl font-bold">No</span>
+                  </button>
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.isInherited} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Owned 4 Years (skipped if inherited) */}
+            {currentStep === 6 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   Have you owned the property for at least 4 years?
@@ -880,8 +936,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 6: Property State */}
-            {currentStep === 6 && (
+            {/* Step 7: Property State */}
+            {currentStep === 7 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What state is the property located in?
@@ -908,8 +964,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 7: Street Address */}
-            {currentStep === 7 && (
+            {/* Step 8: Street Address */}
+            {currentStep === 8 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is the street address?
@@ -936,8 +992,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 8: County */}
-            {currentStep === 8 && (
+            {/* Step 9: County */}
+            {currentStep === 9 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What county is the property in?
@@ -964,8 +1020,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 9: Full Name */}
-            {currentStep === 9 && (
+            {/* Step 10: Full Name */}
+            {currentStep === 10 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is your full name?
@@ -992,8 +1048,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 10: Names on Deed */}
-            {currentStep === 10 && (
+            {/* Step 11: Names on Deed */}
+            {currentStep === 11 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What names are on the deed?
@@ -1020,8 +1076,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 11: Email */}
-            {currentStep === 11 && (
+            {/* Step 12: Email */}
+            {currentStep === 12 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is your email address?
@@ -1048,8 +1104,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 12: Phone */}
-            {currentStep === 12 && (
+            {/* Step 13: Phone */}
+            {currentStep === 13 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is your phone number?
@@ -1102,8 +1158,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 13: OTP Verification */}
-            {currentStep === 13 && (
+            {/* Step 14: OTP Verification */}
+            {currentStep === 14 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   Enter verification code
@@ -1133,7 +1189,7 @@ export default function SellYourLandPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setCurrentStep(12);
+                      setCurrentStep(13);
                       setOtpSent(false);
                       setOtpCode('');
                       setOtpError('');
