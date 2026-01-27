@@ -31,6 +31,35 @@ export default function SellYourLandPage() {
   const [otpError, setOtpError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [e164Phone, setE164Phone] = useState('');
+  const [stateSuggestions, setStateSuggestions] = useState([]);
+  const [showStateSuggestions, setShowStateSuggestions] = useState(false);
+
+  const US_STATES = [
+    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
+    'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland',
+    'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
+    'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina',
+    'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+  ];
+
+  const handleStateChange = (value) => {
+    setFormData({...formData, propertyState: value});
+    if (value.length > 0) {
+      const filtered = US_STATES.filter(state =>
+        state.toLowerCase().startsWith(value.toLowerCase())
+      );
+      setStateSuggestions(filtered);
+      setShowStateSuggestions(filtered.length > 0);
+    } else {
+      setStateSuggestions([]);
+      setShowStateSuggestions(false);
+    }
+  };
+
+  const selectState = (state) => {
+    setFormData({...formData, propertyState: state});
+    setShowStateSuggestions(false);
+  };
 
   // Lock body scroll when modal is open OR form is focused
   useEffect(() => {
@@ -943,15 +972,34 @@ export default function SellYourLandPage() {
                   What state is the property located in?
                 </h3>
 
-                <input
-                  type="text"
-                  name="propertyState"
-                  value={formData.propertyState}
-                  onChange={handleChange}
-                  placeholder="e.g., Texas"
-                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
-                  autoFocus
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="propertyState"
+                    value={formData.propertyState}
+                    onChange={(e) => handleStateChange(e.target.value)}
+                    onFocus={() => formData.propertyState && handleStateChange(formData.propertyState)}
+                    onBlur={() => setTimeout(() => setShowStateSuggestions(false), 200)}
+                    placeholder="Start typing..."
+                    className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                    autoFocus
+                    autoComplete="off"
+                  />
+                  {showStateSuggestions && stateSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border-2 border-[#D2C6B2] rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {stateSuggestions.map((state) => (
+                        <button
+                          key={state}
+                          type="button"
+                          onClick={() => selectState(state)}
+                          className="w-full px-6 py-3 text-left text-lg text-[#3A4045] hover:bg-[#F5EFD9] transition-colors border-b border-[#D2C6B2] last:border-b-0"
+                        >
+                          {state}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex gap-4 mt-6">
                   <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
@@ -968,15 +1016,16 @@ export default function SellYourLandPage() {
             {currentStep === 8 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                  What is the street address?
+                  What is the street address or APN?
                 </h3>
+                <p className="text-sm text-[#7D6B58] -mt-4 mb-4">(Check your tax bill for APN)</p>
 
                 <input
                   type="text"
                   name="streetAddress"
                   value={formData.streetAddress}
                   onChange={handleChange}
-                  placeholder="Street Address"
+                  placeholder="Ex: Riverway Rd or R102777"
                   className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
                   autoFocus
                 />
