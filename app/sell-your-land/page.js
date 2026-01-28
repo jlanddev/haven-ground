@@ -72,6 +72,13 @@ export default function SellYourLandPage() {
   const [showCountySuggestions, setShowCountySuggestions] = useState(false);
   const [emailError, setEmailError] = useState('');
 
+  // Direct link to step: ?step=14
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const step = params.get('step');
+    if (step) setCurrentStep(parseInt(step, 10));
+  }, []);
+
   const US_STATES = [
     'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
     'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland',
