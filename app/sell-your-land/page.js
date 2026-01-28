@@ -1357,7 +1357,7 @@ export default function SellYourLandPage() {
                       className="mt-1 w-5 h-5 text-[#2F4F33] border-[#D2C6B2] rounded focus:ring-[#2F4F33]"
                     />
                     <span className="text-sm text-[#3A4045]">
-                      By continuing, you agree to receive SMS updates about your property inquiry. Msg & data rates may apply. Msg frequency varies. Reply STOP to opt out, HELP for help. View our <a href="https://havenground.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#2F4F33]">Privacy Policy</a>.
+                      By continuing, you agree to receive SMS messages from Haven Ground about your property inquiry. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help. <a href="https://havenground.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#2F4F33]">Privacy Policy</a> | <a href="https://havenground.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#2F4F33]">Terms of Service</a>
                     </span>
                   </label>
                 </div>
