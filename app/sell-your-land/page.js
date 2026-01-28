@@ -76,7 +76,10 @@ export default function SellYourLandPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const step = params.get('step');
-    if (step) setCurrentStep(parseInt(step, 10));
+    if (step) {
+      setCurrentStep(parseInt(step, 10));
+      setFormFocused(true);
+    }
   }, []);
 
   const US_STATES = [
