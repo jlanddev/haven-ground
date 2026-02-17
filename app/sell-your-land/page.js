@@ -1096,15 +1096,26 @@ export default function SellYourLandPage() {
                   What price range would you accept for your property?
                 </h3>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto">
                   {[
                     { value: 'under-10k', label: 'Under $10,000' },
                     { value: '10k-25k', label: '$10,000 – $25,000' },
                     { value: '25k-50k', label: '$25,000 – $50,000' },
                     { value: '50k-100k', label: '$50,000 – $100,000' },
-                    { value: '100k-250k', label: '$100,000 – $250,000' },
-                    { value: '250k-500k', label: '$250,000 – $500,000' },
-                    { value: '500k-1m', label: '$500,000 – $1,000,000' },
+                    { value: '100k-150k', label: '$100,000 – $150,000' },
+                    { value: '150k-200k', label: '$150,000 – $200,000' },
+                    { value: '200k-250k', label: '$200,000 – $250,000' },
+                    { value: '250k-300k', label: '$250,000 – $300,000' },
+                    { value: '300k-350k', label: '$300,000 – $350,000' },
+                    { value: '350k-400k', label: '$350,000 – $400,000' },
+                    { value: '400k-450k', label: '$400,000 – $450,000' },
+                    { value: '450k-500k', label: '$450,000 – $500,000' },
+                    { value: '500k-550k', label: '$500,000 – $550,000' },
+                    { value: '550k-600k', label: '$550,000 – $600,000' },
+                    { value: '600k-650k', label: '$600,000 – $650,000' },
+                    { value: '650k-700k', label: '$650,000 – $700,000' },
+                    { value: '700k-750k', label: '$700,000 – $750,000' },
+                    { value: '750k-1m', label: '$750,000 – $1,000,000' },
                     { value: '1m-plus', label: '$1,000,000+' },
                   ].map((option) => (
                     <button
@@ -1114,13 +1125,13 @@ export default function SellYourLandPage() {
                         setFormData({...formData, priceRange: option.value});
                         setTimeout(() => setCurrentStep(8), 200);
                       }}
-                      className={`p-4 text-left border-2 rounded-lg transition-all duration-200 ${
+                      className={`p-3 text-left border-2 rounded-lg transition-all duration-200 ${
                         formData.priceRange === option.value
                           ? 'border-[#2F4F33] bg-[#2F4F33]/10'
                           : 'border-[#D2C6B2] hover:border-[#2F4F33] bg-white'
                       }`}
                     >
-                      <span className="text-base font-medium text-[#3A4045]">{option.label}</span>
+                      <span className="text-sm font-medium text-[#3A4045]">{option.label}</span>
                     </button>
                   ))}
                 </div>
