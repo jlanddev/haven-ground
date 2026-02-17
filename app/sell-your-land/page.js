@@ -49,7 +49,7 @@ export default function SellYourLandPage() {
     propertyListed: '',
     isInherited: '',
     ownedFourYears: '',
-    whySelling: '',
+    priceRange: '',
     propertyState: '',
     streetAddress: '',
     propertyCounty: '',
@@ -267,7 +267,7 @@ export default function SellYourLandPage() {
   };
 
   const handleBack = () => {
-    // If on step 7 (why selling) and property was inherited, go back to step 5 (skip step 6)
+    // If on step 7 (price range) and property was inherited, go back to step 5 (skip step 6)
     if (currentStep === 7 && formData.isInherited === 'yes') {
       setCurrentStep(5);
     } else {
@@ -389,7 +389,7 @@ export default function SellYourLandPage() {
           acres: parseFloat(formData.acres) || null,
           status: 'new',
           source: 'Haven Ground - Sell Your Land Form',
-          notes: `Position: ${formData.position}\nHome on property: ${formData.homeOnProperty}\nProperty listed: ${formData.propertyListed}\nInherited: ${formData.isInherited}\nOwned 4+ years: ${formData.ownedFourYears || 'N/A (inherited)'}\nWhy selling: ${formData.whySelling}\nNames on deed: ${formData.namesOnDeed}`,
+          notes: `Position: ${formData.position}\nHome on property: ${formData.homeOnProperty}\nProperty listed: ${formData.propertyListed}\nInherited: ${formData.isInherited}\nOwned 4+ years: ${formData.ownedFourYears || 'N/A (inherited)'}\nPrice range: ${formData.priceRange}\nNames on deed: ${formData.namesOnDeed}`,
           phone_verified: true,
           ip_address: userIp,
           form_data: {
@@ -398,7 +398,7 @@ export default function SellYourLandPage() {
             propertyListed: formData.propertyListed,
             isInherited: formData.isInherited,
             ownedFourYears: formData.ownedFourYears,
-            whySelling: formData.whySelling,
+            priceRange: formData.priceRange,
             propertyState: formData.propertyState,
             streetAddress: formData.streetAddress,
             propertyCounty: formData.propertyCounty,
@@ -1089,35 +1089,45 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 7: Why Selling */}
+            {/* Step 7: Price Range */}
             {currentStep === 7 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                  In a few words, why are you looking to sell?
+                  What price range would you accept for your property?
                 </h3>
-                <p className="text-sm text-[#7D6B58] -mt-4 mb-4">
-                  We've bought hundreds of properties — we understand every situation. Feel free to be open and honest.
-                </p>
 
-                <textarea
-                  name="whySelling"
-                  value={formData.whySelling}
-                  onChange={handleChange}
-                  placeholder="Tell us a bit about your situation..."
-                  rows={3}
-                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors resize-none"
-                  autoFocus
-                />
-                <p className={`text-sm ${formData.whySelling.length >= 50 ? 'text-green-600' : 'text-[#7D6B58]'}`}>
-                  {formData.whySelling.length}/50 characters minimum
-                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: 'under-10k', label: 'Under $10,000' },
+                    { value: '10k-25k', label: '$10,000 – $25,000' },
+                    { value: '25k-50k', label: '$25,000 – $50,000' },
+                    { value: '50k-100k', label: '$50,000 – $100,000' },
+                    { value: '100k-250k', label: '$100,000 – $250,000' },
+                    { value: '250k-500k', label: '$250,000 – $500,000' },
+                    { value: '500k-1m', label: '$500,000 – $1,000,000' },
+                    { value: '1m-plus', label: '$1,000,000+' },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setFormData({...formData, priceRange: option.value});
+                        setTimeout(() => setCurrentStep(8), 200);
+                      }}
+                      className={`p-4 text-left border-2 rounded-lg transition-all duration-200 ${
+                        formData.priceRange === option.value
+                          ? 'border-[#2F4F33] bg-[#2F4F33]/10'
+                          : 'border-[#D2C6B2] hover:border-[#2F4F33] bg-white'
+                      }`}
+                    >
+                      <span className="text-base font-medium text-[#3A4045]">{option.label}</span>
+                    </button>
+                  ))}
+                </div>
 
                 <div className="flex gap-4 mt-6">
                   <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
                     ← Back
-                  </button>
-                  <button type="button" onClick={handleNext} disabled={formData.whySelling.length < 50} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
-                    Continue →
                   </button>
                 </div>
               </div>
