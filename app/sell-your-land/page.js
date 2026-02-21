@@ -121,6 +121,7 @@ export default function SellYourLandPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formFocused, setFormFocused] = useState(false);
   const [showDisqualifiedModal, setShowDisqualifiedModal] = useState(false);
+  const [realtorExit, setRealtorExit] = useState(false);
   const [formData, setFormData] = useState({
     position: '',
     homeOnProperty: '',
@@ -348,7 +349,7 @@ export default function SellYourLandPage() {
   };
 
   const handleBack = () => {
-    // If on step 7 (why selling) and property was inherited, go back to step 5 (skip step 6)
+    // If on step 7 (honest statement) and property was inherited, go back to step 5 (skip step 6)
     if (currentStep === 7 && formData.isInherited === 'yes') {
       setCurrentStep(5);
     } else {
@@ -559,7 +560,10 @@ export default function SellYourLandPage() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 relative animate-fadeIn my-8">
             <button
-              onClick={() => setShowDisqualifiedModal(false)}
+              onClick={() => {
+                setShowDisqualifiedModal(false);
+                setRealtorExit(false);
+              }}
               className="absolute top-4 right-4 text-[#3A4045] hover:text-[#2F4F33] text-2xl"
             >
               ×
@@ -576,8 +580,15 @@ export default function SellYourLandPage() {
                 Thanks for Your Interest
               </h3>
 
-              {/* Message for realtors/wholesalers */}
-              {(formData.position === 'realtor' || formData.position === 'wholesaler') ? (
+              {/* Message based on exit reason */}
+              {realtorExit ? (
+                /* Message for self-selected realtor preference */
+                <p className="text-[#3A4045] mb-6 leading-relaxed">
+                  No hard feelings — we respect that. If anything changes, we're here. Good luck with your sale!
+                  <br /><br />
+                  <span className="font-semibold text-[#2F4F33]">- The Haven Team</span>
+                </p>
+              ) : (formData.position === 'realtor' || formData.position === 'wholesaler') ? (
                 <>
                   <p className="text-[#3A4045] mb-6 leading-relaxed">
                     We appreciate you reaching out. For professional inquiries, please send your potential deal information directly to our acquisitions team:
@@ -1170,8 +1181,51 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 7: Why Selling */}
+            {/* Step 7: Honest Statement */}
             {currentStep === 7 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  Before we go further — a little honesty.
+                </h3>
+                <div className="text-[#3A4045] space-y-4">
+                  <p>
+                    If you're looking for top dollar and don't mind waiting 6 to 12 months, working with a realtor might be your best move. We'll be the first to tell you that.
+                  </p>
+                  <p>
+                    We're for the landowner who wants it done. Cash in hand, closed in 30 days, zero fees, zero hassle. We take on the risk so you don't have to. For that, we need the deal to make sense for both sides.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 mt-8">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(8)}
+                    className="w-full bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl"
+                  >
+                    This sounds like what I need →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRealtorExit(true);
+                      setShowDisqualifiedModal(true);
+                    }}
+                    className="w-full bg-white border-2 border-[#D2C6B2] text-[#7D6B58] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300"
+                  >
+                    I'd rather work with a realtor
+                  </button>
+                </div>
+
+                <div className="flex gap-4 mt-4">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 8: Why Selling */}
+            {currentStep === 8 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   In a few words, why are you looking to sell?
@@ -1212,7 +1266,7 @@ export default function SellYourLandPage() {
                       const result = validateWhySelling(formData.whySelling, whySellingAttempts, wholesalerBlocks);
                       if (result.pass) {
                         setWhySellingError('');
-                        setCurrentStep(8);
+                        setCurrentStep(9);
                       } else if (result.wholesaler) {
                         setWholesalerBlocks(prev => prev + 1);
                         setWhySellingError(result.error);
@@ -1234,8 +1288,8 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 8: Property State */}
-            {currentStep === 8 && (
+            {/* Step 9: Property State */}
+            {currentStep === 9 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What state is the property located in?
@@ -1282,7 +1336,7 @@ export default function SellYourLandPage() {
             )}
 
             {/* Step 9: County */}
-            {currentStep === 9 && (
+            {currentStep === 10 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What county is the property in?
@@ -1329,7 +1383,7 @@ export default function SellYourLandPage() {
             )}
 
             {/* Step 10: Street Address */}
-            {currentStep === 10 && (
+            {currentStep === 11 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is the street address or APN?
@@ -1358,7 +1412,7 @@ export default function SellYourLandPage() {
             )}
 
             {/* Step 11: Full Name */}
-            {currentStep === 11 && (
+            {currentStep === 12 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is your full name?
@@ -1386,7 +1440,7 @@ export default function SellYourLandPage() {
             )}
 
             {/* Step 12: Names on Deed */}
-            {currentStep === 12 && (
+            {currentStep === 13 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What names are on the deed?
@@ -1414,7 +1468,7 @@ export default function SellYourLandPage() {
             )}
 
             {/* Step 13: Email */}
-            {currentStep === 13 && (
+            {currentStep === 14 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is your email address?
@@ -1452,7 +1506,7 @@ export default function SellYourLandPage() {
             )}
 
             {/* Step 14: Phone */}
-            {currentStep === 14 && (
+            {currentStep === 15 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   What is your phone number?
@@ -1506,7 +1560,7 @@ export default function SellYourLandPage() {
             )}
 
             {/* Step 15: OTP Verification */}
-            {currentStep === 15 && (
+            {currentStep === 16 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
                   Enter verification code
