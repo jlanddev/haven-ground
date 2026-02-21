@@ -38,6 +38,84 @@ const validateEmail = (email) => {
   return { valid: true, error: null };
 };
 
+// Why Selling validation - 3-step priority system
+const validateWhySelling = (text, attempts, wholesalerBlocks) => {
+  const lower = text.toLowerCase();
+
+  // STEP 1: Check motivation words FIRST - if found, PASS immediately
+  const motivationWords = [
+    'inherited', 'inheritance', 'heir', 'estate', 'passed away', 'died', 'death', 'deceased',
+    'divorce', 'custody', 'separation',
+    'relocating', 'relocate', 'moving', 'moved',
+    'retiring', 'retired', 'retirement',
+    'taxes', 'tax burden', "can't afford", 'need cash', 'need money', 'financial', 'medical', 'health',
+    'downsizing', "don't use", 'never built', "can't maintain", 'too far', "don't live there", 'no longer interested',
+    'want to sell', 'ready to sell', 'need to sell', 'looking to sell', 'selling because',
+    'moving on', 'let it go', 'getting older', "can't take care of", "don't need it", 'tired of paying', 'not using',
+    'family situation', 'life change', 'starting a business', 'buying a house', 'having a baby', 'opening a business', 'pay off debt'
+  ];
+
+  for (const word of motivationWords) {
+    if (lower.includes(word)) {
+      return { pass: true };
+    }
+  }
+
+  // STEP 2: No motivation found - check disqualifiers
+  const wholesalerWords = [
+    'wholesale', 'wholesaler', 'wholesaling', 'assign', 'assignment', 'flip contract',
+    'double close', 'double closing', 'disposition', 'dispo', 'end buyer', 'bird dog',
+    'joint venture', 'jv deal', 'looking to assign', "i'm an investor looking to"
+  ];
+
+  for (const word of wholesalerWords) {
+    if (lower.includes(word)) {
+      if (wholesalerBlocks >= 1) {
+        return {
+          pass: false,
+          blocked: true,
+          error: "It looks like this form isn't the right fit. Feel free to reach out directly at jordan@havenground.com"
+        };
+      }
+      return {
+        pass: false,
+        wholesaler: true,
+        error: "We appreciate your interest, but Haven Ground works directly with landowners. If you own property and are looking to sell, we'd love to help!"
+      };
+    }
+  }
+
+  const tireKickerWords = [
+    'testing the waters', 'just curious', 'just looking', 'just seeing',
+    'gauging price', 'gauge the price', "what it's worth", 'what its worth',
+    'not selling cheap', "won't sell cheap", 'no lowball', 'no low ball',
+    'serious offers only', "don't want a lowball", 'not going to sell for cheap',
+    "won't take less than", 'not giving it away'
+  ];
+
+  for (const word of tireKickerWords) {
+    if (lower.includes(word)) {
+      return {
+        pass: false,
+        tireKicker: true,
+        error: "We understand! When you're ready to move forward with selling, we're here. Feel free to come back anytime."
+      };
+    }
+  }
+
+  // STEP 3: No motivation AND no disqualifiers - re-prompt once
+  if (attempts === 0) {
+    return {
+      pass: false,
+      needsMore: true,
+      error: "We'd love to hear more about why you're looking to sell — this helps us put together the best offer for your situation."
+    };
+  }
+
+  // Second attempt with no motivation - pass them through
+  return { pass: true };
+};
+
 export default function SellYourLandPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -49,7 +127,7 @@ export default function SellYourLandPage() {
     propertyListed: '',
     isInherited: '',
     ownedFourYears: '',
-    priceRange: '',
+    whySelling: '',
     propertyState: '',
     streetAddress: '',
     propertyCounty: '',
@@ -71,6 +149,9 @@ export default function SellYourLandPage() {
   const [countySuggestions, setCountySuggestions] = useState([]);
   const [showCountySuggestions, setShowCountySuggestions] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [whySellingError, setWhySellingError] = useState('');
+  const [whySellingAttempts, setWhySellingAttempts] = useState(0);
+  const [wholesalerBlocks, setWholesalerBlocks] = useState(0);
 
   // Direct link to step: ?step=14
   useEffect(() => {
@@ -267,7 +348,7 @@ export default function SellYourLandPage() {
   };
 
   const handleBack = () => {
-    // If on step 7 (price range) and property was inherited, go back to step 5 (skip step 6)
+    // If on step 7 (why selling) and property was inherited, go back to step 5 (skip step 6)
     if (currentStep === 7 && formData.isInherited === 'yes') {
       setCurrentStep(5);
     } else {
@@ -389,7 +470,7 @@ export default function SellYourLandPage() {
           acres: parseFloat(formData.acres) || null,
           status: 'new',
           source: 'Haven Ground - Sell Your Land Form',
-          notes: `Position: ${formData.position}\nHome on property: ${formData.homeOnProperty}\nProperty listed: ${formData.propertyListed}\nInherited: ${formData.isInherited}\nOwned 4+ years: ${formData.ownedFourYears || 'N/A (inherited)'}\nPrice range: ${formData.priceRange}\nNames on deed: ${formData.namesOnDeed}`,
+          notes: `Position: ${formData.position}\nHome on property: ${formData.homeOnProperty}\nProperty listed: ${formData.propertyListed}\nInherited: ${formData.isInherited}\nOwned 4+ years: ${formData.ownedFourYears || 'N/A (inherited)'}\nWhy selling: ${formData.whySelling}\nNames on deed: ${formData.namesOnDeed}`,
           phone_verified: true,
           ip_address: userIp,
           form_data: {
@@ -398,7 +479,7 @@ export default function SellYourLandPage() {
             propertyListed: formData.propertyListed,
             isInherited: formData.isInherited,
             ownedFourYears: formData.ownedFourYears,
-            priceRange: formData.priceRange,
+            whySelling: formData.whySelling,
             propertyState: formData.propertyState,
             streetAddress: formData.streetAddress,
             propertyCounty: formData.propertyCounty,
@@ -1089,56 +1170,65 @@ export default function SellYourLandPage() {
               </div>
             )}
 
-            {/* Step 7: Price Range */}
+            {/* Step 7: Why Selling */}
             {currentStep === 7 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                  What price range would you accept for your property?
+                  In a few words, why are you looking to sell?
                 </h3>
+                <p className="text-sm text-[#7D6B58] -mt-4 mb-4">
+                  We've bought hundreds of properties — we understand every situation. Feel free to be open and honest.
+                </p>
 
-                <div className="grid grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto">
-                  {[
-                    { value: 'under-10k', label: 'Under $10,000' },
-                    { value: '10k-25k', label: '$10,000 – $25,000' },
-                    { value: '25k-50k', label: '$25,000 – $50,000' },
-                    { value: '50k-100k', label: '$50,000 – $100,000' },
-                    { value: '100k-150k', label: '$100,000 – $150,000' },
-                    { value: '150k-200k', label: '$150,000 – $200,000' },
-                    { value: '200k-250k', label: '$200,000 – $250,000' },
-                    { value: '250k-300k', label: '$250,000 – $300,000' },
-                    { value: '300k-350k', label: '$300,000 – $350,000' },
-                    { value: '350k-400k', label: '$350,000 – $400,000' },
-                    { value: '400k-450k', label: '$400,000 – $450,000' },
-                    { value: '450k-500k', label: '$450,000 – $500,000' },
-                    { value: '500k-550k', label: '$500,000 – $550,000' },
-                    { value: '550k-600k', label: '$550,000 – $600,000' },
-                    { value: '600k-650k', label: '$600,000 – $650,000' },
-                    { value: '650k-700k', label: '$650,000 – $700,000' },
-                    { value: '700k-750k', label: '$700,000 – $750,000' },
-                    { value: '750k-1m', label: '$750,000 – $1,000,000' },
-                    { value: '1m-plus', label: '$1,000,000+' },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => {
-                        setFormData({...formData, priceRange: option.value});
-                        setTimeout(() => setCurrentStep(8), 200);
-                      }}
-                      className={`p-3 text-left border-2 rounded-lg transition-all duration-200 ${
-                        formData.priceRange === option.value
-                          ? 'border-[#2F4F33] bg-[#2F4F33]/10'
-                          : 'border-[#D2C6B2] hover:border-[#2F4F33] bg-white'
-                      }`}
-                    >
-                      <span className="text-sm font-medium text-[#3A4045]">{option.label}</span>
-                    </button>
-                  ))}
-                </div>
+                <textarea
+                  name="whySelling"
+                  value={formData.whySelling}
+                  onChange={(e) => {
+                    setFormData({...formData, whySelling: e.target.value});
+                    setWhySellingError('');
+                  }}
+                  placeholder="Tell us a bit about your situation..."
+                  rows={3}
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors resize-none"
+                  autoFocus
+                />
+                <p className={`text-sm ${formData.whySelling.length >= 50 ? 'text-green-600' : 'text-[#7D6B58]'}`}>
+                  {formData.whySelling.length}/50 characters minimum
+                </p>
+
+                {whySellingError && (
+                  <div className={`p-4 rounded-lg ${wholesalerBlocks >= 2 ? 'bg-red-100 border border-red-300' : 'bg-amber-50 border border-amber-200'}`}>
+                    <p className={`text-sm ${wholesalerBlocks >= 2 ? 'text-red-700' : 'text-amber-800'}`}>{whySellingError}</p>
+                  </div>
+                )}
 
                 <div className="flex gap-4 mt-6">
                   <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
                     ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const result = validateWhySelling(formData.whySelling, whySellingAttempts, wholesalerBlocks);
+                      if (result.pass) {
+                        setWhySellingError('');
+                        setCurrentStep(8);
+                      } else if (result.wholesaler) {
+                        setWholesalerBlocks(prev => prev + 1);
+                        setWhySellingError(result.error);
+                      } else if (result.blocked) {
+                        setWhySellingError(result.error);
+                      } else if (result.tireKicker) {
+                        setWhySellingError(result.error);
+                      } else if (result.needsMore) {
+                        setWhySellingAttempts(prev => prev + 1);
+                        setWhySellingError(result.error);
+                      }
+                    }}
+                    disabled={formData.whySelling.length < 50 || wholesalerBlocks >= 2}
+                    className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Continue →
                   </button>
                 </div>
               </div>
