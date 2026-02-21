@@ -73,7 +73,6 @@ export default function SellYourLandPage() {
   const [showCountySuggestions, setShowCountySuggestions] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [whySellingError, setWhySellingError] = useState('');
-  const [whySellingAttempts, setWhySellingAttempts] = useState(0);
   const [wholesalerBlocks, setWholesalerBlocks] = useState(0);
   const [isValidatingReason, setIsValidatingReason] = useState(false);
 
