@@ -1208,13 +1208,7 @@ export default function SellYourLandPage() {
                         } else if (result === 'TIRE_KICKER') {
                           setWhySellingError("We understand! When you're ready to move forward with selling, we're here. Feel free to come back anytime.");
                         } else if (result === 'DESCRIPTION_ONLY') {
-                          if (whySellingAttempts >= 1) {
-                            // Second attempt, pass them through
-                            setCurrentStep(9);
-                          } else {
-                            setWhySellingAttempts(prev => prev + 1);
-                            setWhySellingError("We'd love to hear more about why you're looking to sell — this helps us put together the best offer for your situation.");
-                          }
+                          setWhySellingError("Please tell us why you're looking to sell, not just what the property is. This helps us put together the best offer for your situation.");
                         }
                       } catch (error) {
                         console.error('Validation error:', error);
