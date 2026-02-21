@@ -16,6 +16,7 @@
     "next": "^16.1.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "rrweb": "^2.0.0-alpha.17",
     "twilio": "^5.10.2"
   },
   "devDependencies": {

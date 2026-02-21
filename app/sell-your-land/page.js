@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
+import { getSessionTracker } from '../../lib/tracking/session-tracker';
 
 // Email validation - checks format and blocks fake/disposable domains
 const validateEmail = (email) => {
@@ -85,6 +86,22 @@ export default function SellYourLandPage() {
       setFormFocused(true);
     }
   }, []);
+
+  // Session tracking — init on mount, track step changes
+  const trackerRef = useRef(null);
+  const prevStepRef = useRef(1);
+  useEffect(() => {
+    const tracker = getSessionTracker();
+    trackerRef.current = tracker;
+    tracker.init();
+    return () => tracker.destroy();
+  }, []);
+  useEffect(() => {
+    if (trackerRef.current && currentStep !== prevStepRef.current) {
+      trackerRef.current.trackStepChange(currentStep);
+      prevStepRef.current = currentStep;
+    }
+  }, [currentStep]);
 
   const US_STATES = [
     'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
@@ -233,12 +250,14 @@ export default function SellYourLandPage() {
   const handleNext = () => {
     // Check if user selected realtor or wholesaler on step 1
     if (currentStep === 1 && (formData.position === 'realtor' || formData.position === 'wholesaler')) {
+      trackerRef.current?.trackDisqualification(1, formData.position);
       setShowDisqualifiedModal(true);
       return;
     }
 
     // Check if user selected 0-2 acres on step 2
     if (currentStep === 2 && formData.acres === '0-2 Acres') {
+      trackerRef.current?.trackDisqualification(2, '0-2 Acres');
       setShowDisqualifiedModal(true);
       return;
     }
@@ -248,6 +267,7 @@ export default function SellYourLandPage() {
     if (currentStep === 3 && formData.homeOnProperty === 'yes') {
       const hasLargeAcreage = formData.acres === '50-100 Acres' || formData.acres === '100+ Acres';
       if (!hasLargeAcreage) {
+        trackerRef.current?.trackDisqualification(3, 'home on property, under 50 acres');
         setShowDisqualifiedModal(true);
         return;
       }
@@ -255,6 +275,7 @@ export default function SellYourLandPage() {
 
     // Check if user selected YES for property listed (Step 4)
     if (currentStep === 4 && formData.propertyListed === 'yes') {
+      trackerRef.current?.trackDisqualification(4, 'property listed with realtor');
       setShowDisqualifiedModal(true);
       return;
     }
@@ -381,7 +402,7 @@ export default function SellYourLandPage() {
 
       // Submit to Parcel Reach (Supabase) first
       console.log('💾 Saving to Parcel Reach database...');
-      const { error: supabaseError } = await supabase
+      const { data: insertedLead, error: supabaseError } = await supabase
         .from('leads')
         .insert([{
           name: formData.fullName,
@@ -412,13 +433,19 @@ export default function SellYourLandPage() {
             email: formData.email,
             phone: e164Phone
           }
-        }]);
+        }])
+        .select('id')
+        .single();
 
       if (supabaseError) {
         console.error('❌ Supabase error:', supabaseError);
         // Continue anyway - don't block GHL submission
       } else {
         console.log('✅ Saved to Parcel Reach');
+        // Link lead to tracking session
+        if (insertedLead?.id) {
+          trackerRef.current?.linkLeadId(insertedLead.id);
+        }
       }
 
       // Submit to GHL webhook
@@ -1129,6 +1156,7 @@ export default function SellYourLandPage() {
                   <button
                     type="button"
                     onClick={() => {
+                      trackerRef.current?.trackDisqualification(7, 'prefers realtor');
                       setRealtorExit(true);
                       setShowDisqualifiedModal(true);
                     }}
