@@ -38,84 +38,6 @@ const validateEmail = (email) => {
   return { valid: true, error: null };
 };
 
-// Why Selling validation - 3-step priority system
-const validateWhySelling = (text, attempts, wholesalerBlocks) => {
-  const lower = text.toLowerCase();
-
-  // STEP 1: Check motivation words FIRST - if found, PASS immediately
-  const motivationWords = [
-    'inherited', 'inheritance', 'heir', 'estate', 'passed away', 'died', 'death', 'deceased',
-    'divorce', 'custody', 'separation',
-    'relocating', 'relocate', 'moving', 'moved',
-    'retiring', 'retired', 'retirement',
-    'taxes', 'tax burden', "can't afford", 'need cash', 'need money', 'financial', 'medical', 'health',
-    'downsizing', "don't use", 'never built', "can't maintain", 'too far', "don't live there", 'no longer interested',
-    'want to sell', 'ready to sell', 'need to sell', 'looking to sell', 'selling because',
-    'moving on', 'let it go', 'getting older', "can't take care of", "don't need it", 'tired of paying', 'not using',
-    'family situation', 'life change', 'starting a business', 'buying a house', 'having a baby', 'opening a business', 'pay off debt'
-  ];
-
-  for (const word of motivationWords) {
-    if (lower.includes(word)) {
-      return { pass: true };
-    }
-  }
-
-  // STEP 2: No motivation found - check disqualifiers
-  const wholesalerWords = [
-    'wholesale', 'wholesaler', 'wholesaling', 'assign', 'assignment', 'flip contract',
-    'double close', 'double closing', 'disposition', 'dispo', 'end buyer', 'bird dog',
-    'joint venture', 'jv deal', 'looking to assign', "i'm an investor looking to"
-  ];
-
-  for (const word of wholesalerWords) {
-    if (lower.includes(word)) {
-      if (wholesalerBlocks >= 1) {
-        return {
-          pass: false,
-          blocked: true,
-          error: "It looks like this form isn't the right fit. Feel free to reach out directly at jordan@havenground.com"
-        };
-      }
-      return {
-        pass: false,
-        wholesaler: true,
-        error: "We appreciate your interest, but Haven Ground works directly with landowners. If you own property and are looking to sell, we'd love to help!"
-      };
-    }
-  }
-
-  const tireKickerWords = [
-    'testing the waters', 'just curious', 'just looking', 'just seeing',
-    'gauging price', 'gauge the price', "what it's worth", 'what its worth',
-    'not selling cheap', "won't sell cheap", 'no lowball', 'no low ball',
-    'serious offers only', "don't want a lowball", 'not going to sell for cheap',
-    "won't take less than", 'not giving it away'
-  ];
-
-  for (const word of tireKickerWords) {
-    if (lower.includes(word)) {
-      return {
-        pass: false,
-        tireKicker: true,
-        error: "We understand! When you're ready to move forward with selling, we're here. Feel free to come back anytime."
-      };
-    }
-  }
-
-  // STEP 3: No motivation AND no disqualifiers - re-prompt once
-  if (attempts === 0) {
-    return {
-      pass: false,
-      needsMore: true,
-      error: "We'd love to hear more about why you're looking to sell — this helps us put together the best offer for your situation."
-    };
-  }
-
-  // Second attempt with no motivation - pass them through
-  return { pass: true };
-};
-
 export default function SellYourLandPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -153,6 +75,7 @@ export default function SellYourLandPage() {
   const [whySellingError, setWhySellingError] = useState('');
   const [whySellingAttempts, setWhySellingAttempts] = useState(0);
   const [wholesalerBlocks, setWholesalerBlocks] = useState(0);
+  const [isValidatingReason, setIsValidatingReason] = useState(false);
 
   // Direct link to step: ?step=14
   useEffect(() => {
@@ -1262,27 +1185,49 @@ export default function SellYourLandPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      const result = validateWhySelling(formData.whySelling, whySellingAttempts, wholesalerBlocks);
-                      if (result.pass) {
-                        setWhySellingError('');
+                    onClick={async () => {
+                      setIsValidatingReason(true);
+                      setWhySellingError('');
+                      try {
+                        const response = await fetch('/api/validate-reason', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ reason: formData.whySelling })
+                        });
+                        const { result } = await response.json();
+
+                        if (result === 'PASS') {
+                          setCurrentStep(9);
+                        } else if (result === 'WHOLESALER') {
+                          setWholesalerBlocks(prev => prev + 1);
+                          if (wholesalerBlocks >= 1) {
+                            setWhySellingError("It looks like this form isn't the right fit. Feel free to reach out directly at jordan@havenground.com");
+                          } else {
+                            setWhySellingError("We appreciate your interest, but Haven Ground works directly with landowners. If you own property and are looking to sell, we'd love to help!");
+                          }
+                        } else if (result === 'TIRE_KICKER') {
+                          setWhySellingError("We understand! When you're ready to move forward with selling, we're here. Feel free to come back anytime.");
+                        } else if (result === 'DESCRIPTION_ONLY') {
+                          if (whySellingAttempts >= 1) {
+                            // Second attempt, pass them through
+                            setCurrentStep(9);
+                          } else {
+                            setWhySellingAttempts(prev => prev + 1);
+                            setWhySellingError("We'd love to hear more about why you're looking to sell — this helps us put together the best offer for your situation.");
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Validation error:', error);
+                        // On error, pass them through
                         setCurrentStep(9);
-                      } else if (result.wholesaler) {
-                        setWholesalerBlocks(prev => prev + 1);
-                        setWhySellingError(result.error);
-                      } else if (result.blocked) {
-                        setWhySellingError(result.error);
-                      } else if (result.tireKicker) {
-                        setWhySellingError(result.error);
-                      } else if (result.needsMore) {
-                        setWhySellingAttempts(prev => prev + 1);
-                        setWhySellingError(result.error);
+                      } finally {
+                        setIsValidatingReason(false);
                       }
                     }}
-                    disabled={formData.whySelling.length < 50 || wholesalerBlocks >= 2}
+                    disabled={formData.whySelling.length < 50 || wholesalerBlocks >= 2 || isValidatingReason}
                     className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Continue →
+                    {isValidatingReason ? 'Checking...' : 'Continue →'}
                   </button>
                 </div>
               </div>
@@ -1328,14 +1273,17 @@ export default function SellYourLandPage() {
                   <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
                     ← Back
                   </button>
-                  <button type="button" onClick={handleNext} disabled={!formData.propertyState} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button type="button" onClick={handleNext} disabled={!US_STATES.includes(formData.propertyState)} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
                     Continue →
                   </button>
                 </div>
+                {formData.propertyState && !US_STATES.includes(formData.propertyState) && (
+                  <p className="text-sm text-red-600 mt-2">Please select a valid state from the list</p>
+                )}
               </div>
             )}
 
-            {/* Step 9: County */}
+            {/* Step 10: County */}
             {currentStep === 10 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
@@ -1375,14 +1323,17 @@ export default function SellYourLandPage() {
                   <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
                     ← Back
                   </button>
-                  <button type="button" onClick={handleNext} disabled={!formData.propertyCounty} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button type="button" onClick={handleNext} disabled={!formData.propertyCounty || !(COUNTIES_BY_STATE[formData.propertyState] || []).includes(formData.propertyCounty)} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
                     Continue →
                   </button>
                 </div>
+                {formData.propertyCounty && !(COUNTIES_BY_STATE[formData.propertyState] || []).includes(formData.propertyCounty) && (
+                  <p className="text-sm text-red-600 mt-2">Please select a valid county from the list</p>
+                )}
               </div>
             )}
 
-            {/* Step 10: Street Address */}
+            {/* Step 11: Street Address */}
             {currentStep === 11 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
