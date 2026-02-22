@@ -280,9 +280,16 @@ export default function SellYourLandPage() {
       return;
     }
 
-    // If property is inherited (Step 5), skip the ownership length question (Step 6)
+    // If property is inherited (Step 5), skip step 6 (ownership length) and step 7 (removed)
     if (currentStep === 5 && formData.isInherited === 'yes') {
-      setCurrentStep(7); // Skip to why selling question
+      setCurrentStep(8);
+      window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Step 6 → skip step 7 (removed), go straight to 8
+    if (currentStep === 6) {
+      setCurrentStep(8);
       window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
       return;
     }
@@ -292,9 +299,9 @@ export default function SellYourLandPage() {
   };
 
   const handleBack = () => {
-    // If on step 7 (honest statement) and property was inherited, go back to step 5 (skip step 6)
-    if (currentStep === 7 && formData.isInherited === 'yes') {
-      setCurrentStep(5);
+    // Step 8 → skip step 7 (removed), go back to 6 or 5 if inherited
+    if (currentStep === 8) {
+      setCurrentStep(formData.isInherited === 'yes' ? 5 : 6);
     } else {
       setCurrentStep(currentStep - 1);
     }
@@ -1125,50 +1132,6 @@ export default function SellYourLandPage() {
                   </button>
                   <button type="button" onClick={handleNext} disabled={!formData.ownedFourYears} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
                     Continue →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 7: Honest Statement */}
-            {currentStep === 7 && (
-              <div className="space-y-6 animate-fadeIn">
-                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                  Before we go further — a little honesty.
-                </h3>
-                <div className="text-[#3A4045] space-y-4">
-                  <p>
-                    If you're looking for top dollar and don't mind waiting 6 to 12 months, working with a realtor might be your best move. We'll be the first to tell you that.
-                  </p>
-                  <p>
-                    We're for the landowner who wants it done. Cash in hand, closed in 30 days, zero fees, zero hassle. We take on the risk so you don't have to. For that, we need the deal to make sense for both sides.
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-3 mt-8">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentStep(8)}
-                    className="w-full bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl"
-                  >
-                    This sounds like what I need →
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      trackerRef.current?.trackDisqualification(7, 'prefers realtor');
-                      setRealtorExit(true);
-                      setShowDisqualifiedModal(true);
-                    }}
-                    className="w-full bg-white border-2 border-[#D2C6B2] text-[#7D6B58] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300"
-                  >
-                    I'd rather work with a realtor
-                  </button>
-                </div>
-
-                <div className="flex gap-4 mt-4">
-                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
-                    ← Back
                   </button>
                 </div>
               </div>
