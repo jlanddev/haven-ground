@@ -331,7 +331,7 @@ export default function SellYourLandPage() {
 
       if (data.success) {
         setOtpSent(true);
-        setCurrentStep(15); // Move to OTP verification step
+        setCurrentStep(16); // Move to OTP verification step
       } else {
         setOtpError(data.error || 'Failed to send code');
       }
@@ -1525,7 +1525,7 @@ export default function SellYourLandPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setCurrentStep(14);
+                      setCurrentStep(15);
                       setOtpSent(false);
                       setOtpCode('');
                       setOtpError('');
