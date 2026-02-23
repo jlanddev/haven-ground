@@ -843,13 +843,13 @@ export default function SellYourLandPage() {
             {/* Progress Bar */}
             <div className="mb-8">
               <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep} of 15</span>
-                <span className="text-sm font-medium text-[#2F4F33]">{Math.round((currentStep / 13) * 100)}%</span>
+                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep > 7 ? currentStep - 1 : currentStep} of 15</span>
+                <span className="text-sm font-medium text-[#2F4F33]">{Math.round(((currentStep > 7 ? currentStep - 1 : currentStep) / 15) * 100)}%</span>
               </div>
               <div className="w-full bg-[#D2C6B2] rounded-full h-2">
                 <div
                   className="bg-[#2F4F33] h-2 rounded-full transition-all duration-500"
-                  style={{width: `${(currentStep / 13) * 100}%`}}
+                  style={{width: `${((currentStep > 7 ? currentStep - 1 : currentStep) / 15) * 100}%`}}
                 ></div>
               </div>
             </div>
