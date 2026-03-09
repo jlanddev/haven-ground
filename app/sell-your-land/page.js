@@ -287,9 +287,13 @@ export default function SellYourLandPage() {
       return;
     }
 
-    // Step 6 → skip step 7 (removed), go straight to 8
+    // Step 6 → if owned 4+ years, skip to 8. If not, show equity warning (step 7)
     if (currentStep === 6) {
-      setCurrentStep(8);
+      if (formData.ownedFourYears === 'yes') {
+        setCurrentStep(8);
+      } else {
+        setCurrentStep(7);
+      }
       window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
       return;
     }
@@ -299,9 +303,17 @@ export default function SellYourLandPage() {
   };
 
   const handleBack = () => {
-    // Step 8 → skip step 7 (removed), go back to 6 or 5 if inherited
+    // Step 8 → go back through the right path
     if (currentStep === 8) {
-      setCurrentStep(formData.isInherited === 'yes' ? 5 : 6);
+      if (formData.isInherited === 'yes') {
+        setCurrentStep(5);
+      } else if (formData.ownedFourYears === 'no') {
+        setCurrentStep(7); // back to equity warning
+      } else {
+        setCurrentStep(6);
+      }
+    } else if (currentStep === 7) {
+      setCurrentStep(6);
     } else {
       setCurrentStep(currentStep - 1);
     }
@@ -843,13 +855,13 @@ export default function SellYourLandPage() {
             {/* Progress Bar */}
             <div className="mb-8">
               <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep > 7 ? currentStep - 1 : currentStep} of 15</span>
-                <span className="text-sm font-medium text-[#2F4F33]">{Math.round(((currentStep > 7 ? currentStep - 1 : currentStep) / 15) * 100)}%</span>
+                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep} of 16</span>
+                <span className="text-sm font-medium text-[#2F4F33]">{Math.round((currentStep / 16) * 100)}%</span>
               </div>
               <div className="w-full bg-[#D2C6B2] rounded-full h-2">
                 <div
                   className="bg-[#2F4F33] h-2 rounded-full transition-all duration-500"
-                  style={{width: `${((currentStep > 7 ? currentStep - 1 : currentStep) / 15) * 100}%`}}
+                  style={{width: `${(currentStep / 16) * 100}%`}}
                 ></div>
               </div>
             </div>
@@ -1132,6 +1144,49 @@ export default function SellYourLandPage() {
                   </button>
                   <button type="button" onClick={handleNext} disabled={!formData.ownedFourYears} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
                     Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 7: Equity Expectation Warning (shown when owned < 4 years) */}
+            {currentStep === 7 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  Just so we're upfront with you —
+                </h3>
+                <div className="text-[#3A4045] space-y-4">
+                  <p>
+                    Properties owned for less than 4 years typically haven't built enough equity for us to offer above the original purchase price.
+                  </p>
+                  <p>
+                    Our cash offer may come in at or below what you paid. We believe in being straightforward about that from the start.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 mt-8">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(8)}
+                    className="w-full bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl"
+                  >
+                    I understand, let's continue →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      trackerRef.current?.trackDisqualification(7, 'declined equity warning');
+                      setShowDisqualifiedModal(true);
+                    }}
+                    className="w-full bg-white border-2 border-[#D2C6B2] text-[#7D6B58] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300"
+                  >
+                    That won't work for me
+                  </button>
+                </div>
+
+                <div className="flex gap-4 mt-4">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
                   </button>
                 </div>
               </div>
