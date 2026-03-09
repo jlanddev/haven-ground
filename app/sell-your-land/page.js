@@ -486,25 +486,14 @@ export default function SellYourLandPage() {
       console.log('⏳ Waiting 1 second before redirect...');
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Redirect to thank you page
-      // Qualified leads: no home + (owned 4+ years OR inherited) + not listed = go to /thank-you (Google conversion fires)
-      const isQualified = (
-        formData.homeOnProperty === 'no' &&
-        (formData.ownedFourYears === 'yes' || formData.isInherited === 'yes') &&
-        formData.propertyListed === 'no'
-      );
-      console.log('🎯 Redirecting to:', isQualified ? '/thank-you' : '/thank-you-dq');
-      window.location.href = isQualified ? '/thank-you' : '/thank-you-dq';
+      // Redirect to thank you page — any completed submission is a qualified lead
+      console.log('🎯 Redirecting to: /thank-you');
+      window.location.href = '/thank-you';
     } catch (error) {
       console.error('❌ Webhook error:', error);
       // Still redirect even if webhook fails
-      const isQualified = (
-        formData.homeOnProperty === 'no' &&
-        (formData.ownedFourYears === 'yes' || formData.isInherited === 'yes') &&
-        formData.propertyListed === 'no'
-      );
-      console.log('🎯 Redirecting anyway to:', isQualified ? '/thank-you' : '/thank-you-dq');
-      window.location.href = isQualified ? '/thank-you' : '/thank-you-dq';
+      console.log('🎯 Redirecting anyway to: /thank-you');
+      window.location.href = '/thank-you';
     }
   };
 
