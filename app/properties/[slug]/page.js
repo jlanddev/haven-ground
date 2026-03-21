@@ -960,9 +960,9 @@ export default function PropertyDetailPage() {
                     {property.type === 'raw_land' ? 'Available Tracts' : 'Available Properties'}
                   </h2>
                   <p className="text-sm opacity-90 mt-1 leading-snug">
-                    {property.type === 'raw_land'
+                    {property.homeTypes || (property.type === 'raw_land'
                       ? 'Ranchette tracts and acreage parcels'
-                      : 'Custom homesites and move-in ready homes'}
+                      : 'Custom homesites and move-in ready homes')}
                   </p>
                 </div>
                 {/* Mobile Card Layout */}
