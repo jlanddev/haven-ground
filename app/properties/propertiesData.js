@@ -25,7 +25,7 @@ export const properties = [
       "Excellent Build-Ready Tracts"
     ],
     lots: "2-5+ Acres",
-    homeTypes: "Ranchette Homesites",
+    homeTypes: "Ranch Style Homesites",
     priceRange: "From the $150s",
     price: 150000,
     pricePerAcre: 0,
