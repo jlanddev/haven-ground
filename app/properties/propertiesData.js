@@ -10,8 +10,14 @@ export const properties = [
     description: "Ranch style building lots on Highway 64 West in Bedford County, Tennessee. 5 build-ready lots with acreage, soil sites, and driveway permits. Duck River frontage on select lots, public water available, and county taxes only.",
     images: [
       "/images/mallards-bend/mallards-bend-aerial-river.png",
-      "/images/mallards-bend/mallards-bend-lots-aerial.webp",
+      "/images/mallards-bend/sunset-highway.png",
+      "/images/mallards-bend/sunset-aerial.png",
+      "/images/mallards-bend/aerial-river-north.png",
+      "/images/mallards-bend/aerial-river-south.png",
+      "/images/mallards-bend/aerial-highway-house.png",
+      "/images/mallards-bend/aerial-river-pasture.png",
       "/images/mallards-bend/mallards-bend-parcel-overlay.webp",
+      "/images/mallards-bend/mallards-bend-lots-aerial.webp",
       "/images/mallards-bend/mallards-bend-plat.webp"
     ],
     features: ["River Frontage", "Near Shelbyville", "Rolling Pastureland"],
