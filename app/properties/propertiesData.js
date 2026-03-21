@@ -3,6 +3,91 @@
 
 export const properties = [
   {
+    id: 11,
+    slug: "mallards-bend",
+    title: "Mallards Bend",
+    location: "Shelbyville, TN",
+    description: "Ranch style building lots on Highway 64 West in Bedford County, Tennessee. 5 build-ready lots with acreage, soil sites, and driveway permits. Duck River frontage on select lots, public water available, and county taxes only.",
+    images: [
+      "/images/mallards-bend/mallards-bend-aerial-river.png",
+      "/images/mallards-bend/mallards-bend-lots-aerial.webp",
+      "/images/mallards-bend/mallards-bend-parcel-overlay.webp",
+      "/images/mallards-bend/mallards-bend-plat.webp"
+    ],
+    features: ["River Frontage", "Near Shelbyville", "County Taxes Only"],
+    communityHighlights: [
+      "5 Ranch Style Building Lots with Acreage",
+      "Soil Sites Approved on Each Lot",
+      "Public Water Available - Taps on 2 Tracts",
+      "Duck River Frontage on Select Lots",
+      "Highway 64 West - All Lots Have Driveway Permits",
+      "Close to Town with County Taxes Only",
+      "Excellent Build-Ready Tracts"
+    ],
+    lots: "2-5+ Acres",
+    homeTypes: "Ranchette Homesites",
+    priceRange: "From the $150s",
+    price: 150000,
+    pricePerAcre: 0,
+    acres: "2-5+",
+    availableLots: 5,
+    type: "community",
+    template: "rural",
+    featured: true,
+    status: "Available",
+    targetBuyer: "Country Living Near Town",
+    lotTable: [
+      { lot: "Lot 1", size: "5.28 acres", price: "Call Agent", status: "Available" },
+      { lot: "Lot 2", size: "5.26 acres", price: "Call Agent", status: "Available" },
+      { lot: "Lot 3", size: "4.21 acres", price: "Call Agent", status: "Available" },
+      { lot: "Lot 4", size: "3.84 acres", price: "Call Agent", status: "Available" },
+      { lot: "Lot 5", size: "2.07 acres", price: "Call Agent", status: "Available" }
+    ],
+    boundary: [
+      [35.46300815704006, -86.48847895394319],
+      [35.46390296753792, -86.48704094140311],
+      [35.46560735825492, -86.48428650728964],
+      [35.46593950165525, -86.48376517077921],
+      [35.466053947051016, -86.48359291852732],
+      [35.466148472483546, -86.48346054396363],
+      [35.46624836486074, -86.48332962276464],
+      [35.46634981744318, -86.48320514607747],
+      [35.466454541422586, -86.48308478188416],
+      [35.4678028338277, -86.48599378728825],
+      [35.46662810368619, -86.48811056072364],
+      [35.46633136715373, -86.4881442010449],
+      [35.46614899934987, -86.48832346346998],
+      [35.46594286715413, -86.48848968837143],
+      [35.46561988003647, -86.488843350743],
+      [35.46554576054404, -86.48882644347297],
+      [35.465637744162564, -86.48865003965318],
+      [35.46545213884259, -86.48884539939004],
+      [35.46528132679921, -86.48903620469235],
+      [35.46513091468284, -86.48933149055367],
+      [35.46509007843459, -86.48950872851596],
+      [35.46300815704006, -86.48847895394319]
+    ],
+    propertyDetails: {
+      location: {
+        parcelId: "080",
+        county: "Bedford County",
+        coordinates: { lng: -86.4863, lat: 35.4654 },
+        address: "HWY 64 W, SHELBYVILLE, TN 37160"
+      },
+      features: {
+        access: "Highway 64 West - Driveway Permits on All Lots",
+        power: "Available",
+        water: "Public Water Available - Taps on 2 Tracts",
+        sewer: "Septic - Soil Sites Approved on Each Lot",
+        topography: "Rolling pastureland with mature hardwood trees along Duck River. Mix of open fields and wooded areas with river frontage on select lots."
+      }
+    },
+    surroundingLandscape: {
+      headline: "Duck River Country in Bedford County",
+      description: "Mallards Bend is a collection of 5 ranch style building lots on Highway 64 West in Bedford County, Tennessee, just minutes from Shelbyville. The property features beautiful rolling pastureland with Duck River frontage on select lots, offering a peaceful country setting with easy access to town.\n\nEach lot has approved soil sites and is completely build-ready. Public utility water is available with taps already in place on 2 of the tracts. All lots front Highway 64 West and come with driveway permits already secured.\n\nThe Duck River, one of the most biodiverse rivers in North America, winds along the property providing scenic views and recreational opportunities. The surrounding landscape is characterized by lush green pastures, mature hardwood timber along the riverbank, and gently rolling terrain ideal for building.\n\nWith county taxes only and no HOA restrictions, these tracts offer the freedom to build your dream home in a prime Middle Tennessee location. Close to the charming town of Shelbyville while enjoying the privacy and space of country living.\n\nFor more details and information, contact listing agent Tad Craig at 931-639-0914."
+    }
+  },
+  {
     id: 10,
     slug: "willow-valley",
     title: "Willow Valley",
@@ -756,91 +841,6 @@ export const properties = [
     surroundingLandscape: {
       headline: "West Texas Plains",
       description: "Mesquite Plains is located in Ector County on flat, open West Texas plains. The land features native mesquite vegetation. Hydrology studies are being conducted prior to lot sales to confirm water resource availability. The planned development will consist of 40 lots ranging from one to two acres each, suitable for homes and shops. The property is located near Odessa."
-    }
-  },
-  {
-    id: 11,
-    slug: "mallards-bend",
-    title: "Mallards Bend",
-    location: "Shelbyville, TN",
-    description: "Ranch style building lots on Highway 64 West in Bedford County, Tennessee. 5 build-ready lots with acreage, soil sites, and driveway permits. Duck River frontage on select lots, public water available, and county taxes only.",
-    images: [
-      "/images/mallards-bend/mallards-bend-lots-aerial.webp",
-      "/images/mallards-bend/mallards-bend-aerial-river.png",
-      "/images/mallards-bend/mallards-bend-parcel-overlay.webp",
-      "/images/mallards-bend/mallards-bend-plat.webp"
-    ],
-    features: ["5 Building Lots", "Duck River Frontage", "Build Ready"],
-    communityHighlights: [
-      "5 Ranch Style Building Lots with Acreage",
-      "Soil Sites Approved on Each Lot",
-      "Public Water Available - Taps on 2 Tracts",
-      "Duck River Frontage on Select Lots",
-      "Highway 64 West - All Lots Have Driveway Permits",
-      "Close to Town with County Taxes Only",
-      "Excellent Build-Ready Tracts"
-    ],
-    lots: "2-5+ Acres",
-    homeTypes: "Ranch Style Lots",
-    priceRange: "Call for Pricing",
-    price: 0,
-    pricePerAcre: 0,
-    acres: "2-5+",
-    availableLots: 5,
-    type: "raw_land",
-    template: "rural",
-    featured: true,
-    status: "Available",
-    targetBuyer: "Country Living Near Town",
-    lotTable: [
-      { lot: "Lot 1", size: "5.28 acres", price: "Call Agent", status: "Available" },
-      { lot: "Lot 2", size: "5.26 acres", price: "Call Agent", status: "Available" },
-      { lot: "Lot 3", size: "4.21 acres", price: "Call Agent", status: "Available" },
-      { lot: "Lot 4", size: "3.84 acres", price: "Call Agent", status: "Available" },
-      { lot: "Lot 5", size: "2.07 acres", price: "Call Agent", status: "Available" }
-    ],
-    boundary: [
-      [35.46300815704006, -86.48847895394319],
-      [35.46390296753792, -86.48704094140311],
-      [35.46560735825492, -86.48428650728964],
-      [35.46593950165525, -86.48376517077921],
-      [35.466053947051016, -86.48359291852732],
-      [35.466148472483546, -86.48346054396363],
-      [35.46624836486074, -86.48332962276464],
-      [35.46634981744318, -86.48320514607747],
-      [35.466454541422586, -86.48308478188416],
-      [35.4678028338277, -86.48599378728825],
-      [35.46662810368619, -86.48811056072364],
-      [35.46633136715373, -86.4881442010449],
-      [35.46614899934987, -86.48832346346998],
-      [35.46594286715413, -86.48848968837143],
-      [35.46561988003647, -86.488843350743],
-      [35.46554576054404, -86.48882644347297],
-      [35.465637744162564, -86.48865003965318],
-      [35.46545213884259, -86.48884539939004],
-      [35.46528132679921, -86.48903620469235],
-      [35.46513091468284, -86.48933149055367],
-      [35.46509007843459, -86.48950872851596],
-      [35.46300815704006, -86.48847895394319]
-    ],
-    propertyDetails: {
-      location: {
-        parcelId: "080",
-        county: "Bedford County",
-        coordinates: { lng: -86.4863, lat: 35.4654 },
-        address: "HWY 64 W, SHELBYVILLE, TN 37160"
-      },
-      features: {
-        access: "Highway 64 West - Driveway Permits on All Lots",
-        power: "Available",
-        water: "Public Water Available - Taps on 2 Tracts",
-        sewer: "Septic - Soil Sites Approved on Each Lot",
-        topography: "Rolling pastureland with mature hardwood trees along Duck River. Mix of open fields and wooded areas with river frontage on select lots."
-      }
-    },
-    surroundingLandscape: {
-      headline: "Duck River Country in Bedford County",
-      description: "Mallards Bend is a collection of 5 ranch style building lots on Highway 64 West in Bedford County, Tennessee, just minutes from Shelbyville. The property features beautiful rolling pastureland with Duck River frontage on select lots, offering a peaceful country setting with easy access to town.\n\nEach lot has approved soil sites and is completely build-ready. Public utility water is available with taps already in place on 2 of the tracts. All lots front Highway 64 West and come with driveway permits already secured.\n\nThe Duck River, one of the most biodiverse rivers in North America, winds along the property providing scenic views and recreational opportunities. The surrounding landscape is characterized by lush green pastures, mature hardwood timber along the riverbank, and gently rolling terrain ideal for building.\n\nWith county taxes only and no HOA restrictions, these tracts offer the freedom to build your dream home in a prime Middle Tennessee location. Close to the charming town of Shelbyville while enjoying the privacy and space of country living.\n\nFor more details and information, contact listing agent Tad Craig at 931-639-0914."
     }
   }
 ];
