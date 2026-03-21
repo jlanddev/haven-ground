@@ -24,12 +24,12 @@ export const properties = [
       "Close to Town with County Taxes Only",
       "Excellent Build-Ready Tracts"
     ],
-    lots: "2-5+ Acres",
+    lots: "5-11 Acres",
     homeTypes: "Ranch Style Homesites",
-    priceRange: "From the $150s",
-    price: 150000,
-    pricePerAcre: 0,
-    acres: "2-5+",
+    priceRange: "From the $140s",
+    price: 145290,
+    pricePerAcre: 29000,
+    acres: "5-11",
     availableLots: 5,
     type: "community",
     template: "rural",
@@ -37,11 +37,11 @@ export const properties = [
     status: "Available",
     targetBuyer: "Country Living Near Town",
     lotTable: [
-      { lot: "Lot 1", size: "5.28 acres", price: "Call Agent", status: "Available" },
-      { lot: "Lot 2", size: "5.26 acres", price: "Call Agent", status: "Available" },
-      { lot: "Lot 3", size: "4.21 acres", price: "Call Agent", status: "Available" },
-      { lot: "Lot 4", size: "3.84 acres", price: "Call Agent", status: "Available" },
-      { lot: "Lot 5", size: "2.07 acres", price: "Call Agent", status: "Available" }
+      { lot: "Lot 1", size: "5.23 acres", price: "$151,670", status: "Available" },
+      { lot: "Lot 2", size: "5.01 acres", price: "$145,290", status: "Available" },
+      { lot: "Lot 3", size: "5.01 acres", price: "$145,290", status: "Available" },
+      { lot: "Lot 4", size: "10.72 acres", price: "$310,880", status: "Available" },
+      { lot: "Lot 5", size: "10.99 acres", price: "$318,710", status: "Available" }
     ],
     boundary: [
       [35.46300815704006, -86.48847895394319],
