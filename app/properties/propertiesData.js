@@ -14,7 +14,7 @@ export const properties = [
       "/images/mallards-bend/mallards-bend-parcel-overlay.webp",
       "/images/mallards-bend/mallards-bend-plat.webp"
     ],
-    features: ["River Frontage", "Near Shelbyville", "County Taxes Only"],
+    features: ["River Frontage", "Near Shelbyville", "Rolling Pastureland"],
     communityHighlights: [
       "5 Ranch Style Building Lots with Acreage",
       "Soil Sites Approved on Each Lot",
