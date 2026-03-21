@@ -36,6 +36,11 @@ export const properties = [
     featured: true,
     status: "Available",
     targetBuyer: "Country Living Near Town",
+    listingAgent: {
+      name: "Tad Craig",
+      phone: "931-639-0914",
+      brokerage: "Craig and Wheeler Realty"
+    },
     lotTable: [
       { lot: "Lot 1", size: "5.23 acres", price: "$151,670", status: "Available" },
       { lot: "Lot 2", size: "5.01 acres", price: "$145,290", status: "Available" },

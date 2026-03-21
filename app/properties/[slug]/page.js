@@ -1258,6 +1258,20 @@ export default function PropertyDetailPage() {
               </div>
             )}
 
+            {/* Listing Agent Contact */}
+            {property.listingAgent && (
+              <div className="mb-8 text-center">
+                <p className="text-[#7D6B58] text-sm font-medium tracking-wide uppercase mb-3">Speak with our agent</p>
+                <div className="inline-block border-2 border-[#2F4F33] rounded-lg px-8 py-5">
+                  <p className="text-[#2F4F33] text-xl font-bold">{property.listingAgent.name}</p>
+                  <p className="text-[#7D6B58] text-sm mb-2">{property.listingAgent.brokerage}</p>
+                  <a href={`tel:${property.listingAgent.phone}`} className="text-[#2F4F33] text-lg font-semibold hover:underline">
+                    {property.listingAgent.phone}
+                  </a>
+                </div>
+              </div>
+            )}
+
             {/* Interactive Property Map - Custom Leaflet Map */}
             {property.propertyDetails?.location?.coordinates && (
               <div className="bg-white rounded-lg shadow-xl mb-8 overflow-hidden">
