@@ -772,7 +772,7 @@ export default function PropertyDetailPage() {
         {/* Image/Video Gallery - Grid Layout */}
         <div>
           {/* Photo Grid - Land.com Style */}
-          <div className="flex gap-1 h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px]">
+          <div className="flex gap-1 h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] bg-[#F5EFD9]">
             {/* Large Main Image - 75% width with carousel */}
             <div className="flex-1 lg:flex-[3] overflow-hidden relative group bg-white">
               {property.images[currentImageIndex]?.endsWith('.mp4') ? (

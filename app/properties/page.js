@@ -888,7 +888,7 @@ export default function PropertiesPage() {
                       <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-[#2F4F33] opacity-20 group-hover:opacity-40 transition-opacity z-10"></div>
                       <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-[#2F4F33] opacity-20 group-hover:opacity-40 transition-opacity z-10"></div>
                       <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-[#2F4F33] opacity-20 group-hover:opacity-40 transition-opacity z-10"></div>
-                      <div className="relative group overflow-hidden">
+                      <div className="relative group overflow-hidden bg-[#F5EFD9]">
                         {property.images[currentIndex].endsWith('.mp4') ? (
                           <div className="relative">
                             <video 
