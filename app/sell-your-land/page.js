@@ -503,6 +503,8 @@ export default function SellYourLandPage() {
   };
 
   return (
+    <>
+    <link rel="preload" href="/images/Haven LOGO Use.png" as="image" />
     <div className="flex flex-col min-h-screen font-serif relative">
       {/* Darkened overlay when form is focused */}
       {formFocused && (
@@ -1665,5 +1667,6 @@ export default function SellYourLandPage() {
         </div>
       </footer>
     </div>
+    </>
   );
 }
