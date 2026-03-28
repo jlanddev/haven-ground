@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
 import { getSessionTracker } from '../../lib/tracking/session-tracker';
 
@@ -1633,7 +1632,7 @@ export default function SellYourLandPage() {
                 <h3 className="text-3xl font-bold text-[#F5EFD9] italic font-serif">Haven Ground</h3>
               </div>
               <p className="text-[#D2C6B2] text-lg mb-4 leading-relaxed">Land and community, one meaningful handshake at a time.</p>
-              <img src="/images/isaiah-58-10-banner.png" alt="Isaiah 58:10 - If you pour yourself out for the hungry" width={1536} height={512} className="h-20 md:h-24 lg:h-28 w-auto" />
+              <img src="/images/isaiah-58-10-banner.png" alt="Isaiah 58:10 - If you pour yourself out for the hungry" width={1536} height={512} loading="lazy" className="h-20 md:h-24 lg:h-28 w-auto" />
             </div>
             <div>
               <h4 className="text-lg font-semibold text-[#F5EFD9] mb-4">Quick Links</h4>
