@@ -45,36 +45,6 @@ for = "/_next/static/*"
 [headers.values]
 Cache-Control = "public, max-age=31536000, immutable"
 
-[[headers]]
-for = "/images/*"
-
-[headers.values]
-Cache-Control = "public, max-age=2592000"
-
-[[headers]]
-for = "/*.png"
-
-[headers.values]
-Cache-Control = "public, max-age=2592000"
-
-[[headers]]
-for = "/*.jpg"
-
-[headers.values]
-Cache-Control = "public, max-age=2592000"
-
-[[headers]]
-for = "/*.webp"
-
-[headers.values]
-Cache-Control = "public, max-age=2592000"
-
-[[headers]]
-for = "/*.ico"
-
-[headers.values]
-Cache-Control = "public, max-age=2592000"
-
 [[redirects]]
 from = "/_next/image/"
 to = "/.netlify/images?url=:url&w=:width&q=:quality"

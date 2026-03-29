@@ -112,7 +112,7 @@ head.appendChild(script);`,
           }}
         />
         {/* Attrios AI Visitor Tracking */}
-        <script src="https://attrios.netlify.app/track.js?id=client_vp1wfzhcd5e" defer />
+        <script src="https://attrios.netlify.app/track.js?id=client_vp1wfzhcd5e" />
         {/* Microsoft UET Tag */}
         <script
           dangerouslySetInnerHTML={{
