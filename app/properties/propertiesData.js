@@ -3,6 +3,105 @@
 
 export const properties = [
   {
+    id: 12,
+    slug: "ventana-hills",
+    title: "Ventana Hills",
+    location: "Monterey, CA",
+    description: "Coming soon to Monterey, California.",
+    images: ["/images/placeholder-coming-soon.jpg"],
+    features: ["Monterey County", "California Coast", "Coming Soon"],
+    communityHighlights: ["Details Coming Soon"],
+    lots: "TBD",
+    homeTypes: "Acreage Lots",
+    priceRange: "Coming Soon",
+    price: 0,
+    pricePerAcre: 0,
+    acres: "TBD",
+    availableLots: 0,
+    type: "community",
+    template: "rural",
+    featured: true,
+    status: "coming-soon",
+    propertyDetails: {
+      location: {
+        county: "Monterey County",
+        coordinates: { lng: -121.8947, lat: 36.6002 }
+      },
+      features: {
+        access: "Coming Soon",
+        power: "Coming Soon",
+        water: "Coming Soon",
+        topography: "Central California Coast"
+      }
+    }
+  },
+  {
+    id: 13,
+    slug: "oak-crest-estates",
+    title: "Oak Crest Estates",
+    location: "Chappell Hill, TX",
+    description: "Coming soon to Chappell Hill, Texas.",
+    images: ["/images/placeholder-coming-soon.jpg"],
+    features: ["Washington County", "Chappell Hill", "Coming Soon"],
+    communityHighlights: ["Details Coming Soon"],
+    lots: "TBD",
+    homeTypes: "Acreage Lots",
+    priceRange: "Coming Soon",
+    price: 0,
+    pricePerAcre: 0,
+    acres: "TBD",
+    availableLots: 0,
+    type: "community",
+    template: "rural",
+    featured: true,
+    status: "coming-soon",
+    propertyDetails: {
+      location: {
+        county: "Washington County",
+        coordinates: { lng: -96.2586, lat: 30.1530 }
+      },
+      features: {
+        access: "Coming Soon",
+        power: "Coming Soon",
+        water: "Coming Soon",
+        topography: "Rolling Texas Hill Country"
+      }
+    }
+  },
+  {
+    id: 14,
+    slug: "reids-pine-ranch",
+    title: "Reid's Pine Ranch",
+    location: "Waller, TX",
+    description: "Coming soon to Waller, Texas.",
+    images: ["/images/placeholder-coming-soon.jpg"],
+    features: ["Waller County", "290 Corridor", "Coming Soon"],
+    communityHighlights: ["Details Coming Soon"],
+    lots: "TBD",
+    homeTypes: "Acreage Lots",
+    priceRange: "Coming Soon",
+    price: 0,
+    pricePerAcre: 0,
+    acres: "TBD",
+    availableLots: 0,
+    type: "community",
+    template: "rural",
+    featured: true,
+    status: "coming-soon",
+    propertyDetails: {
+      location: {
+        county: "Waller County",
+        coordinates: { lng: -95.9269, lat: 30.0566 }
+      },
+      features: {
+        access: "Coming Soon",
+        power: "Coming Soon",
+        water: "Coming Soon",
+        topography: "East Texas Piney Woods"
+      }
+    }
+  },
+  {
     id: 11,
     slug: "mallards-bend",
     title: "Mallards Bend",
@@ -853,105 +952,6 @@ export const properties = [
     surroundingLandscape: {
       headline: "West Texas Plains",
       description: "Mesquite Plains is located in Ector County on flat, open West Texas plains. The land features native mesquite vegetation. Hydrology studies are being conducted prior to lot sales to confirm water resource availability. The planned development will consist of 40 lots ranging from one to two acres each, suitable for homes and shops. The property is located near Odessa."
-    }
-  },
-  {
-    id: 12,
-    slug: "ventana-hills",
-    title: "Ventana Hills",
-    location: "Monterey, CA",
-    description: "Coming soon to Monterey, California.",
-    images: ["/images/placeholder-coming-soon.jpg"],
-    features: ["Monterey County", "California Coast", "Coming Soon"],
-    communityHighlights: ["Details Coming Soon"],
-    lots: "TBD",
-    homeTypes: "Acreage Lots",
-    priceRange: "Coming Soon",
-    price: 0,
-    pricePerAcre: 0,
-    acres: "TBD",
-    availableLots: 0,
-    type: "community",
-    template: "rural",
-    featured: true,
-    status: "coming-soon",
-    propertyDetails: {
-      location: {
-        county: "Monterey County",
-        coordinates: { lng: -121.8947, lat: 36.6002 }
-      },
-      features: {
-        access: "Coming Soon",
-        power: "Coming Soon",
-        water: "Coming Soon",
-        topography: "Central California Coast"
-      }
-    }
-  },
-  {
-    id: 13,
-    slug: "oak-crest-estates",
-    title: "Oak Crest Estates",
-    location: "Chappell Hill, TX",
-    description: "Coming soon to Chappell Hill, Texas.",
-    images: ["/images/placeholder-coming-soon.jpg"],
-    features: ["Washington County", "Chappell Hill", "Coming Soon"],
-    communityHighlights: ["Details Coming Soon"],
-    lots: "TBD",
-    homeTypes: "Acreage Lots",
-    priceRange: "Coming Soon",
-    price: 0,
-    pricePerAcre: 0,
-    acres: "TBD",
-    availableLots: 0,
-    type: "community",
-    template: "rural",
-    featured: true,
-    status: "coming-soon",
-    propertyDetails: {
-      location: {
-        county: "Washington County",
-        coordinates: { lng: -96.2586, lat: 30.1530 }
-      },
-      features: {
-        access: "Coming Soon",
-        power: "Coming Soon",
-        water: "Coming Soon",
-        topography: "Rolling Texas Hill Country"
-      }
-    }
-  },
-  {
-    id: 14,
-    slug: "reids-pine-ranch",
-    title: "Reid's Pine Ranch",
-    location: "Waller, TX",
-    description: "Coming soon to Waller, Texas.",
-    images: ["/images/placeholder-coming-soon.jpg"],
-    features: ["Waller County", "290 Corridor", "Coming Soon"],
-    communityHighlights: ["Details Coming Soon"],
-    lots: "TBD",
-    homeTypes: "Acreage Lots",
-    priceRange: "Coming Soon",
-    price: 0,
-    pricePerAcre: 0,
-    acres: "TBD",
-    availableLots: 0,
-    type: "community",
-    template: "rural",
-    featured: true,
-    status: "coming-soon",
-    propertyDetails: {
-      location: {
-        county: "Waller County",
-        coordinates: { lng: -95.9269, lat: 30.0566 }
-      },
-      features: {
-        access: "Coming Soon",
-        power: "Coming Soon",
-        water: "Coming Soon",
-        topography: "East Texas Piney Woods"
-      }
     }
   }
 ];
