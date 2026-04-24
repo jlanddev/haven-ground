@@ -3,6 +3,51 @@
 
 export const properties = [
   {
+    id: 11,
+    slug: "mallards-bend",
+    title: "Mallards Bend",
+    location: "Shelbyville, TN",
+    description: "Ranch style building lots on Highway 64 West in Bedford County, Tennessee. 5 build-ready lots with acreage, soil sites, and driveway permits. Duck River frontage on select lots, public water available, and county taxes only.",
+    images: [
+      "/images/mallards-bend/mallards-bend-aerial-river.png",
+      "/images/mallards-bend/sunset-highway.png",
+      "/images/mallards-bend/sunset-aerial.png",
+      "/images/mallards-bend/aerial-river-north.png",
+      "/images/mallards-bend/aerial-river-south.png",
+      "/images/mallards-bend/aerial-highway-house.png",
+      "/images/mallards-bend/aerial-river-pasture.png",
+      "/images/mallards-bend/mallards-bend-parcel-overlay.webp",
+      "/images/mallards-bend/mallards-bend-lots-aerial.webp",
+      "/images/mallards-bend/mallards-bend-plat.webp"
+    ],
+    features: ["River Frontage", "Near Shelbyville", "Rolling Pastureland"],
+    communityHighlights: [
+      "5 Ranch Style Building Lots with Acreage",
+      "Soil Sites Approved on Each Lot",
+      "Public Water Available - Taps on 2 Tracts",
+      "Duck River Frontage on Select Lots",
+      "Highway 64 West - All Lots Have Driveway Permits",
+      "Close to Town with County Taxes Only",
+      "Excellent Build-Ready Tracts"
+    ],
+    lots: "5-11 Acres",
+    homeTypes: "Ranch Style Homesites",
+    priceRange: "From the $140s",
+    price: 145290,
+    pricePerAcre: 29000,
+    acres: "5-11",
+    availableLots: 5,
+    type: "community",
+    template: "rural",
+    featured: true,
+    status: "Available",
+    targetBuyer: "Country Living Near Town",
+    listingAgent: {
+      name: "Tad Craig",
+      phone: "931-639-0914",
+      brokerage: "Craig and Wheeler Realty"
+    },,
+  {
     id: 15,
     slug: "ranches-at-forrest",
     title: "The Ranches at Forrest",
@@ -134,52 +179,6 @@ export const properties = [
       }
     }
   },
-  {
-    id: 11,
-    slug: "mallards-bend",
-    title: "Mallards Bend",
-    location: "Shelbyville, TN",
-    description: "Ranch style building lots on Highway 64 West in Bedford County, Tennessee. 5 build-ready lots with acreage, soil sites, and driveway permits. Duck River frontage on select lots, public water available, and county taxes only.",
-    images: [
-      "/images/mallards-bend/mallards-bend-aerial-river.png",
-      "/images/mallards-bend/sunset-highway.png",
-      "/images/mallards-bend/sunset-aerial.png",
-      "/images/mallards-bend/aerial-river-north.png",
-      "/images/mallards-bend/aerial-river-south.png",
-      "/images/mallards-bend/aerial-highway-house.png",
-      "/images/mallards-bend/aerial-river-pasture.png",
-      "/images/mallards-bend/mallards-bend-parcel-overlay.webp",
-      "/images/mallards-bend/mallards-bend-lots-aerial.webp",
-      "/images/mallards-bend/mallards-bend-plat.webp"
-    ],
-    features: ["River Frontage", "Near Shelbyville", "Rolling Pastureland"],
-    communityHighlights: [
-      "5 Ranch Style Building Lots with Acreage",
-      "Soil Sites Approved on Each Lot",
-      "Public Water Available - Taps on 2 Tracts",
-      "Duck River Frontage on Select Lots",
-      "Highway 64 West - All Lots Have Driveway Permits",
-      "Close to Town with County Taxes Only",
-      "Excellent Build-Ready Tracts"
-    ],
-    lots: "5-11 Acres",
-    homeTypes: "Ranch Style Homesites",
-    priceRange: "From the $140s",
-    price: 145290,
-    pricePerAcre: 29000,
-    acres: "5-11",
-    availableLots: 5,
-    type: "community",
-    template: "rural",
-    featured: true,
-    status: "Available",
-    targetBuyer: "Country Living Near Town",
-    listingAgent: {
-      name: "Tad Craig",
-      phone: "931-639-0914",
-      brokerage: "Craig and Wheeler Realty"
-    },
-    lotTable: [
       { lot: "Lot 1", size: "5.23 acres", price: "$151,670", status: "Available" },
       { lot: "Lot 2", size: "5.01 acres", price: "$145,290", status: "Available" },
       { lot: "Lot 3", size: "5.01 acres", price: "$145,290", status: "Available" },
