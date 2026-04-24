@@ -172,13 +172,14 @@ export const properties = [
     status: "Available",
     targetBuyer: "Calm Mountain Living",
     lotTable: [
-      { lot: "Lot 1", size: "1.10 acres", price: "$122,000", status: "Available" },
-      { lot: "Lot 2", size: "1.25 acres", price: "$138,636", status: "Sold" },
-      { lot: "Lot 3", size: "1.35 acres", price: "$149,727", status: "Sold" },
-      { lot: "Lot 4", size: "1.15 acres", price: "$127,545", status: "Sold" },
-      { lot: "Lot 5", size: "1.42 acres", price: "$157,491", status: "Sold" },
-      { lot: "Lot 6", size: "1.50 acres", price: "$166,364", status: "Sold" },
-      { lot: "Lot 7", size: "1.05 acres", price: "$116,455", status: "Sold" }
+      { lot: "Lot 1", size: "1.10 acres", price: "$122,000", status: "Available" }
+      // Sold lots removed temporarily — to restore:
+      // { lot: "Lot 2", size: "1.25 acres", price: "$138,636", status: "Sold" },
+      // { lot: "Lot 3", size: "1.35 acres", price: "$149,727", status: "Sold" },
+      // { lot: "Lot 4", size: "1.15 acres", price: "$127,545", status: "Sold" },
+      // { lot: "Lot 5", size: "1.42 acres", price: "$157,491", status: "Sold" },
+      // { lot: "Lot 6", size: "1.50 acres", price: "$166,364", status: "Sold" },
+      // { lot: "Lot 7", size: "1.05 acres", price: "$116,455", status: "Sold" }
     ],
     boundary: [
       [39.2743660853308, -106.05798840522766],
