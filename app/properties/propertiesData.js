@@ -3,6 +3,72 @@
 
 export const properties = [
   {
+    id: 15,
+    slug: "ranches-at-forrest",
+    title: "The Ranches at Forrest",
+    location: "Forrest, MS",
+    description: "Coming soon to Forrest, Mississippi.",
+    images: ["/images/placeholder-coming-soon.jpg"],
+    features: ["Scott County", "Rural Mississippi", "Coming Soon"],
+    communityHighlights: ["Details Coming Soon"],
+    lots: "TBD",
+    homeTypes: "Acreage Lots",
+    priceRange: "Coming Soon",
+    price: 0,
+    pricePerAcre: 0,
+    acres: "TBD",
+    availableLots: 0,
+    type: "community",
+    template: "rural",
+    featured: true,
+    status: "coming-soon",
+    propertyDetails: {
+      location: {
+        county: "Scott County",
+        coordinates: { lng: -89.7434, lat: 32.3682 }
+      },
+      features: {
+        access: "Coming Soon",
+        power: "Coming Soon",
+        water: "Coming Soon",
+        topography: "Rural Mississippi Pine Belt"
+      }
+    }
+  },
+  {
+    id: 14,
+    slug: "reids-pine-ranch",
+    title: "Reid's Pine Ranch",
+    location: "Waller, TX",
+    description: "Coming soon to Waller, Texas.",
+    images: ["/images/placeholder-coming-soon.jpg"],
+    features: ["Waller County", "290 Corridor", "Coming Soon"],
+    communityHighlights: ["Details Coming Soon"],
+    lots: "TBD",
+    homeTypes: "Acreage Lots",
+    priceRange: "Coming Soon",
+    price: 0,
+    pricePerAcre: 0,
+    acres: "TBD",
+    availableLots: 0,
+    type: "community",
+    template: "rural",
+    featured: true,
+    status: "coming-soon",
+    propertyDetails: {
+      location: {
+        county: "Waller County",
+        coordinates: { lng: -95.9269, lat: 30.0566 }
+      },
+      features: {
+        access: "Coming Soon",
+        power: "Coming Soon",
+        water: "Coming Soon",
+        topography: "East Texas Piney Woods"
+      }
+    }
+  },
+  {
     id: 12,
     slug: "ventana-hills",
     title: "Ventana Hills",
@@ -65,72 +131,6 @@ export const properties = [
         power: "Coming Soon",
         water: "Coming Soon",
         topography: "Rolling Texas Hill Country"
-      }
-    }
-  },
-  {
-    id: 14,
-    slug: "reids-pine-ranch",
-    title: "Reid's Pine Ranch",
-    location: "Waller, TX",
-    description: "Coming soon to Waller, Texas.",
-    images: ["/images/placeholder-coming-soon.jpg"],
-    features: ["Waller County", "290 Corridor", "Coming Soon"],
-    communityHighlights: ["Details Coming Soon"],
-    lots: "TBD",
-    homeTypes: "Acreage Lots",
-    priceRange: "Coming Soon",
-    price: 0,
-    pricePerAcre: 0,
-    acres: "TBD",
-    availableLots: 0,
-    type: "community",
-    template: "rural",
-    featured: true,
-    status: "coming-soon",
-    propertyDetails: {
-      location: {
-        county: "Waller County",
-        coordinates: { lng: -95.9269, lat: 30.0566 }
-      },
-      features: {
-        access: "Coming Soon",
-        power: "Coming Soon",
-        water: "Coming Soon",
-        topography: "East Texas Piney Woods"
-      }
-    }
-  },
-  {
-    id: 15,
-    slug: "ranches-at-forrest",
-    title: "The Ranches at Forrest",
-    location: "Forrest, MS",
-    description: "Coming soon to Forrest, Mississippi.",
-    images: ["/images/placeholder-coming-soon.jpg"],
-    features: ["Scott County", "Rural Mississippi", "Coming Soon"],
-    communityHighlights: ["Details Coming Soon"],
-    lots: "TBD",
-    homeTypes: "Acreage Lots",
-    priceRange: "Coming Soon",
-    price: 0,
-    pricePerAcre: 0,
-    acres: "TBD",
-    availableLots: 0,
-    type: "community",
-    template: "rural",
-    featured: true,
-    status: "coming-soon",
-    propertyDetails: {
-      location: {
-        county: "Scott County",
-        coordinates: { lng: -89.7434, lat: 32.3682 }
-      },
-      features: {
-        access: "Coming Soon",
-        power: "Coming Soon",
-        water: "Coming Soon",
-        topography: "Rural Mississippi Pine Belt"
       }
     }
   },
