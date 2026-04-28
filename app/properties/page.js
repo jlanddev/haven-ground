@@ -416,73 +416,53 @@ export default function PropertiesPage() {
       // Add markers and boundaries for each property
       const allBounds = [];
       const isMobile = window.innerWidth < 640;
-      const markerSize = isMobile ? 14 : 20;
-      const fontSize = isMobile ? '9px' : '11px';
-      const labelPad = isMobile ? '3px 5px' : '4px 8px';
-      const labelOffset = isMobile ? 18 : 24;
+      const markerSize = isMobile ? 12 : 18;
 
-      // Track placed labels to offset overlapping ones
-      const placedLabels = [];
+      // Assign label directions to avoid overlap
+      const directions = ['right', 'left', 'top', 'bottom'];
+      const placedCoords = [];
 
       propertiesWithCoords.forEach((property, idx) => {
         const coords = property.propertyDetails.location.coordinates;
         const latLng = [coords.lat, coords.lng];
         allBounds.push(latLng);
 
-        // Check if this marker is close to any previously placed one
-        let labelTop = labelOffset;
-        let labelAlign = 'left: 50%; transform: translateX(-50%);';
-        placedLabels.forEach(prev => {
-          const latDiff = Math.abs(coords.lat - prev.lat);
-          const lngDiff = Math.abs(coords.lng - prev.lng);
-          if (latDiff < 2 && lngDiff < 3) {
-            // Alternate: push label to left or right instead of center
-            if (idx % 2 === 0) {
-              labelAlign = 'left: 100%; transform: translateX(4px);';
-            } else {
-              labelAlign = 'right: 100%; transform: translateX(-4px);';
-            }
+        // Pick label direction: check if nearby markers exist and cycle directions
+        let direction = 'right';
+        let nearbyCount = 0;
+        placedCoords.forEach(prev => {
+          if (Math.abs(coords.lat - prev.lat) < 2.5 && Math.abs(coords.lng - prev.lng) < 4) {
+            nearbyCount++;
           }
         });
-        placedLabels.push({ lat: coords.lat, lng: coords.lng });
+        direction = directions[nearbyCount % directions.length];
+        placedCoords.push({ lat: coords.lat, lng: coords.lng });
 
-        // Create custom cyan marker
+        // Create clean dot marker
         const marker = L.marker(latLng, {
           icon: L.divIcon({
-            html: `
-              <div style="position: relative;">
-                <div style="
-                  background: #00FFFF;
-                  width: ${markerSize}px;
-                  height: ${markerSize}px;
-                  border-radius: 50%;
-                  border: ${isMobile ? 2 : 3}px solid white;
-                  box-shadow: 0 0 12px rgba(0,255,255,0.9), 0 2px 8px rgba(0,0,0,0.4);
-                  cursor: pointer;
-                "></div>
-                <div style="
-                  position: absolute;
-                  top: ${labelTop}px;
-                  ${labelAlign}
-                  background: rgba(47, 79, 51, 0.95);
-                  color: #F5EFD9;
-                  padding: ${labelPad};
-                  border-radius: 4px;
-                  white-space: nowrap;
-                  font-size: ${fontSize};
-                  font-weight: 600;
-                  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                  pointer-events: none;
-                  font-family: Georgia, serif;
-                  z-index: ${1000 - idx};
-                ">${property.title}</div>
-              </div>
-            `,
+            html: `<div style="
+              background: #00FFFF;
+              width: ${markerSize}px;
+              height: ${markerSize}px;
+              border-radius: 50%;
+              border: ${isMobile ? 2 : 3}px solid white;
+              box-shadow: 0 0 10px rgba(0,255,255,0.8), 0 2px 6px rgba(0,0,0,0.4);
+              cursor: pointer;
+            "></div>`,
             iconSize: [markerSize, markerSize],
             iconAnchor: [markerSize / 2, markerSize / 2],
             className: 'custom-property-marker'
           })
         }).addTo(map);
+
+        // Add permanent tooltip label
+        marker.bindTooltip(property.title, {
+          permanent: true,
+          direction: direction,
+          offset: L.point(direction === 'right' ? 8 : direction === 'left' ? -8 : 0, direction === 'top' ? -8 : direction === 'bottom' ? 8 : 0),
+          className: 'property-label-tooltip'
+        });
 
         // Create popup content
         const popupContent = `
