@@ -415,11 +415,36 @@ export default function PropertiesPage() {
 
       // Add markers and boundaries for each property
       const allBounds = [];
+      const isMobile = window.innerWidth < 640;
+      const markerSize = isMobile ? 14 : 20;
+      const fontSize = isMobile ? '9px' : '11px';
+      const labelPad = isMobile ? '3px 5px' : '4px 8px';
+      const labelOffset = isMobile ? 18 : 24;
 
-      propertiesWithCoords.forEach(property => {
+      // Track placed labels to offset overlapping ones
+      const placedLabels = [];
+
+      propertiesWithCoords.forEach((property, idx) => {
         const coords = property.propertyDetails.location.coordinates;
         const latLng = [coords.lat, coords.lng];
         allBounds.push(latLng);
+
+        // Check if this marker is close to any previously placed one
+        let labelTop = labelOffset;
+        let labelAlign = 'left: 50%; transform: translateX(-50%);';
+        placedLabels.forEach(prev => {
+          const latDiff = Math.abs(coords.lat - prev.lat);
+          const lngDiff = Math.abs(coords.lng - prev.lng);
+          if (latDiff < 2 && lngDiff < 3) {
+            // Alternate: push label to left or right instead of center
+            if (idx % 2 === 0) {
+              labelAlign = 'left: 100%; transform: translateX(4px);';
+            } else {
+              labelAlign = 'right: 100%; transform: translateX(-4px);';
+            }
+          }
+        });
+        placedLabels.push({ lat: coords.lat, lng: coords.lng });
 
         // Create custom cyan marker
         const marker = L.marker(latLng, {
@@ -428,33 +453,33 @@ export default function PropertiesPage() {
               <div style="position: relative;">
                 <div style="
                   background: #00FFFF;
-                  width: 20px;
-                  height: 20px;
+                  width: ${markerSize}px;
+                  height: ${markerSize}px;
                   border-radius: 50%;
-                  border: 3px solid white;
+                  border: ${isMobile ? 2 : 3}px solid white;
                   box-shadow: 0 0 12px rgba(0,255,255,0.9), 0 2px 8px rgba(0,0,0,0.4);
                   cursor: pointer;
                 "></div>
                 <div style="
                   position: absolute;
-                  top: 24px;
-                  left: 50%;
-                  transform: translateX(-50%);
+                  top: ${labelTop}px;
+                  ${labelAlign}
                   background: rgba(47, 79, 51, 0.95);
                   color: #F5EFD9;
-                  padding: 4px 8px;
+                  padding: ${labelPad};
                   border-radius: 4px;
                   white-space: nowrap;
-                  font-size: 11px;
+                  font-size: ${fontSize};
                   font-weight: 600;
                   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
                   pointer-events: none;
                   font-family: Georgia, serif;
+                  z-index: ${1000 - idx};
                 ">${property.title}</div>
               </div>
             `,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10],
+            iconSize: [markerSize, markerSize],
+            iconAnchor: [markerSize / 2, markerSize / 2],
             className: 'custom-property-marker'
           })
         }).addTo(map);
@@ -523,7 +548,7 @@ export default function PropertiesPage() {
       // Fit map to show all properties
       if (allBounds.length > 0) {
         map.fitBounds(L.latLngBounds(allBounds), {
-          padding: [50, 50],
+          padding: isMobile ? [40, 30] : [80, 80],
           maxZoom: 14
         });
       }
