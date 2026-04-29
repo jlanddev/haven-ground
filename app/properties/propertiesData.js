@@ -99,6 +99,76 @@ export const properties = [
     }
   },
   {
+    id: 13,
+    slug: "oak-crest-estates",
+    title: "Oak Crest Estates",
+    location: "Chappell Hill, TX",
+    description: "Discover the joy of country living with your own slice of Washington County land conveniently located to Brenham, Burton and Round Top. Tracts from 1.8 to 4.2 acres with paved road frontage and electricity available nearby.",
+    images: [
+      "/images/oak-crest/0u3a6246.jpg",
+      "/images/oak-crest/0u3a6251.jpg",
+      "/images/oak-crest/0u3a6264.jpg",
+      "/images/oak-crest/0u3a6271.jpg",
+      "/images/oak-crest/0u3a6279.jpg",
+      "/images/oak-crest/0u3a6286.jpg",
+      "/images/oak-crest/dji_20251014113330_0158_d.jpg",
+      "/images/oak-crest/dji_20251014113604_0171_d.jpg",
+      "/images/oak-crest/dji_20251014113856_0194_d.jpg",
+      "/images/oak-crest/dji_20251014113944_0199_d.jpg",
+      "/images/oak-crest/dji_20251014114338_0248_d.jpg",
+      "/images/oak-crest/dji_20251014114425_0259_d.jpg",
+      "/images/oak-crest/q copy 2.jpg"
+    ],
+    features: ["Near Round Top", "Rolling Terrain", "Paved Road Frontage"],
+    communityHighlights: [
+      "6 Acreage Homesites on Greenvine Road",
+      "1.8 to 4.2 Acres - Combine Tracts for Larger Homesites",
+      "Paved Road Frontage - Electricity Available Nearby",
+      "Light Deed Restrictions - Investment Protected",
+      "Scattered Trees and Rolling Terrain",
+      "Near Brenham, Burton, and Round Top",
+      "Water Well & Septic System Required"
+    ],
+    lots: "1.8-4.2 Acres",
+    homeTypes: "Acreage Homesites",
+    priceRange: "From the $115s",
+    price: 115000,
+    pricePerAcre: 0,
+    acres: "1.8-4.2",
+    availableLots: 4,
+    type: "community",
+    template: "rural",
+    featured: true,
+    status: "Available",
+    targetBuyer: "Texas Country Living",
+    lotTable: [
+      { lot: "Lot 1", size: "2.104 acres", price: "$115,000", status: "Sold" },
+      { lot: "Lot 2", size: "2.116 acres", price: "$115,000", status: "Sold" },
+      { lot: "Lot 3", size: "1.834 acres", price: "$82,530", status: "Available" },
+      { lot: "Lot 4", size: "4.124 acres", price: "$169,084", status: "Available" },
+      { lot: "Lot 5", size: "3.534 acres", price: "$176,700", status: "Available" },
+      { lot: "Lot 6", size: "4.236 acres", price: "$224,508", status: "Available" }
+    ],
+    propertyDetails: {
+      location: {
+        county: "Washington County",
+        coordinates: { lng: -96.2586, lat: 30.1530 },
+        address: "GREENVINE RD, CHAPPELL HILL, TX"
+      },
+      features: {
+        access: "Greenvine Road",
+        power: "Available",
+        water: "Water Well Required",
+        sewer: "Septic System Required",
+        topography: "Rolling pastureland with scattered live oak and post oak trees. Open fields with tree clusters throughout the property."
+      }
+    },
+    surroundingLandscape: {
+      headline: "Washington County Pastureland",
+      description: "Discover the joy of country living with your own slice of Washington County land conveniently located to Brenham, Burton and Round Top. This new development features tracts from 1.8 acres to 4.2 acres or combine multiple tracts for an even larger homesite.\n\nThe raw land of Oak Crest offers a serene private setting with scattered trees and rolling terrain. This offering has paved road frontage and electricity available nearby.\n\nWith light deed restrictions your investment is protected but also not overly burdensome. Imagine your own rural barndominium or beautiful new custom home in the rolling hills of Washington County. Bring your vision and make your dreams come true."
+    }
+  },
+  {
     id: 15,
     slug: "ranches-at-forrest",
     title: "The Ranches at Forrest",
@@ -195,76 +265,6 @@ export const properties = [
         water: "Coming Soon",
         topography: "Central California Coast"
       }
-    }
-  },
-  {
-    id: 13,
-    slug: "oak-crest-estates",
-    title: "Oak Crest Estates",
-    location: "Chappell Hill, TX",
-    description: "Discover the joy of country living with your own slice of Washington County land conveniently located to Brenham, Burton and Round Top. Tracts from 1.8 to 4.2 acres with paved road frontage and electricity available nearby.",
-    images: [
-      "/images/oak-crest/0u3a6246.jpg",
-      "/images/oak-crest/0u3a6251.jpg",
-      "/images/oak-crest/0u3a6264.jpg",
-      "/images/oak-crest/0u3a6271.jpg",
-      "/images/oak-crest/0u3a6279.jpg",
-      "/images/oak-crest/0u3a6286.jpg",
-      "/images/oak-crest/dji_20251014113330_0158_d.jpg",
-      "/images/oak-crest/dji_20251014113604_0171_d.jpg",
-      "/images/oak-crest/dji_20251014113856_0194_d.jpg",
-      "/images/oak-crest/dji_20251014113944_0199_d.jpg",
-      "/images/oak-crest/dji_20251014114338_0248_d.jpg",
-      "/images/oak-crest/dji_20251014114425_0259_d.jpg",
-      "/images/oak-crest/q copy 2.jpg"
-    ],
-    features: ["Near Round Top", "Rolling Terrain", "Paved Road Frontage"],
-    communityHighlights: [
-      "6 Acreage Homesites on Greenvine Road",
-      "1.8 to 4.2 Acres - Combine Tracts for Larger Homesites",
-      "Paved Road Frontage - Electricity Available Nearby",
-      "Light Deed Restrictions - Investment Protected",
-      "Scattered Trees and Rolling Terrain",
-      "Near Brenham, Burton, and Round Top",
-      "Water Well & Septic System Required"
-    ],
-    lots: "1.8-4.2 Acres",
-    homeTypes: "Acreage Homesites",
-    priceRange: "From the $115s",
-    price: 115000,
-    pricePerAcre: 0,
-    acres: "1.8-4.2",
-    availableLots: 4,
-    type: "community",
-    template: "rural",
-    featured: true,
-    status: "Available",
-    targetBuyer: "Texas Country Living",
-    lotTable: [
-      { lot: "Lot 1", size: "2.104 acres", price: "$115,000", status: "Sold" },
-      { lot: "Lot 2", size: "2.116 acres", price: "$115,000", status: "Sold" },
-      { lot: "Lot 3", size: "1.834 acres", price: "$82,530", status: "Available" },
-      { lot: "Lot 4", size: "4.124 acres", price: "$169,084", status: "Available" },
-      { lot: "Lot 5", size: "3.534 acres", price: "$176,700", status: "Available" },
-      { lot: "Lot 6", size: "4.236 acres", price: "$224,508", status: "Available" }
-    ],
-    propertyDetails: {
-      location: {
-        county: "Washington County",
-        coordinates: { lng: -96.2586, lat: 30.1530 },
-        address: "GREENVINE RD, CHAPPELL HILL, TX"
-      },
-      features: {
-        access: "Greenvine Road",
-        power: "Available",
-        water: "Water Well Required",
-        sewer: "Septic System Required",
-        topography: "Rolling pastureland with scattered live oak and post oak trees. Open fields with tree clusters throughout the property."
-      }
-    },
-    surroundingLandscape: {
-      headline: "Washington County Pastureland",
-      description: "Discover the joy of country living with your own slice of Washington County land conveniently located to Brenham, Burton and Round Top. This new development features tracts from 1.8 acres to 4.2 acres or combine multiple tracts for an even larger homesite.\n\nThe raw land of Oak Crest offers a serene private setting with scattered trees and rolling terrain. This offering has paved road frontage and electricity available nearby.\n\nWith light deed restrictions your investment is protected but also not overly burdensome. Imagine your own rural barndominium or beautiful new custom home in the rolling hills of Washington County. Bring your vision and make your dreams come true."
     }
   },
   {
