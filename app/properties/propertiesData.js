@@ -36,7 +36,7 @@ export const properties = [
     price: 145290,
     pricePerAcre: 29000,
     acres: "5-11",
-    availableLots: 5,
+    availableLots: 2,
     type: "community",
     template: "rural",
     featured: true,
@@ -48,9 +48,9 @@ export const properties = [
       brokerage: "Craig and Wheeler Realty"
     },
     lotTable: [
-      { lot: "Lot 1", size: "5.23 acres", price: "$151,670", status: "Available" },
-      { lot: "Lot 2", size: "5.01 acres", price: "$145,290", status: "Available" },
-      { lot: "Lot 3", size: "5.01 acres", price: "$145,290", status: "Available" },
+      { lot: "Lot 1", size: "5.23 acres", price: "$151,670", status: "Sold" },
+      { lot: "Lot 2", size: "5.01 acres", price: "$145,290", status: "Sold" },
+      { lot: "Lot 3", size: "5.01 acres", price: "$145,290", status: "Sold" },
       { lot: "Lot 4", size: "10.72 acres", price: "$310,880", status: "Available" },
       { lot: "Lot 5", size: "10.99 acres", price: "$318,710", status: "Available" }
     ],
@@ -135,7 +135,7 @@ export const properties = [
     price: 115000,
     pricePerAcre: 0,
     acres: "1.8-4.2",
-    availableLots: 4,
+    availableLots: 1,
     type: "community",
     template: "rural",
     featured: true,
@@ -144,10 +144,10 @@ export const properties = [
     lotTable: [
       { lot: "Lot 1", size: "2.104 acres", price: "$115,000", status: "Sold" },
       { lot: "Lot 2", size: "2.116 acres", price: "$115,000", status: "Sold" },
-      { lot: "Lot 3", size: "1.834 acres", price: "$82,530", status: "Available" },
-      { lot: "Lot 4", size: "4.124 acres", price: "$169,084", status: "Available" },
+      { lot: "Lot 3", size: "1.834 acres", price: "$82,530", status: "Sold" },
+      { lot: "Lot 4", size: "4.124 acres", price: "$169,084", status: "Sold" },
       { lot: "Lot 5", size: "3.534 acres", price: "$176,700", status: "Available" },
-      { lot: "Lot 6", size: "4.236 acres", price: "$224,508", status: "Available" }
+      { lot: "Lot 6", size: "4.236 acres", price: "$224,508", status: "Sold" }
     ],
     propertyDetails: {
       location: {
