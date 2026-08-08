@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { properties as propertiesData } from '../propertiesData';
+import { fetchPropertyBySlug } from '../../../lib/properties-data';
 import { getContactFormText, getSectionHeaders, sanitizePropertyData } from '../propertyConfig';
 
 // Dynamic Property Map Component - Acres.com Style
@@ -197,9 +198,16 @@ export default function PropertyDetailPage() {
   const [embeddedShowThankYou, setEmbeddedShowThankYou] = useState(false);
   const [embeddedSavedFormData, setEmbeddedSavedFormData] = useState(null);
 
-  // Import properties from centralized data file
-  const properties = propertiesData;
-  const property = properties.find(p => p.slug === propertySlug) || properties[0];
+  // Render the static match instantly (fast, never hangs), then refresh from
+  // Supabase so edited or newly published listings show. Static stays as the
+  // fallback if the DB is slow or down.
+  const staticMatch = propertiesData.find(p => p.slug === propertySlug) || propertiesData[0];
+  const [property, setProperty] = useState(staticMatch);
+  useEffect(() => {
+    let alive = true;
+    fetchPropertyBySlug(propertySlug).then((p) => { if (alive && p) setProperty(p); }).catch(() => {});
+    return () => { alive = false; };
+  }, [propertySlug]);
 
   // Modal functions
   const openModal = (images, startIndex) => {

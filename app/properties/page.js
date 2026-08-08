@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { properties as propertiesData } from './propertiesData';
+import { fetchProperties } from '../../lib/properties-data';
 
 export default function PropertiesPage() {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'map'
@@ -49,8 +50,14 @@ export default function PropertiesPage() {
   const [showLandListThankYou, setShowLandListThankYou] = useState(false);
   const [savedLandListFormData, setSavedLandListFormData] = useState(null);
 
-  // Import properties from centralized data file
-  const properties = propertiesData;
+  // Properties: render the static data instantly (fast, never hangs), then
+  // refresh from Supabase. If the DB is slow or down, the static data stays.
+  const [properties, setProperties] = useState(propertiesData);
+  useEffect(() => {
+    let alive = true;
+    fetchProperties().then((rows) => { if (alive && rows?.length) setProperties(rows); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   // Filter properties based on current filters
   const filteredProperties = properties.filter(property => {
