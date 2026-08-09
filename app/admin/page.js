@@ -203,9 +203,12 @@ function Editor({ row, onClose }) {
               <Field label="Title" full><input style={inp} value={form.title || ''} onChange={(e) => { setTop('title', e.target.value); setD('title', e.target.value); }} /></Field>
               <Field label="URL slug" hint="auto from title if blank"><input style={inp} value={form.slug || ''} onChange={(e) => setTop('slug', slugify(e.target.value))} placeholder={slugify(form.title)} /></Field>
               <Field label="Location (City, ST)"><input style={inp} value={d.location || ''} onChange={(e) => setD('location', e.target.value)} placeholder="Shelbyville, TN" /></Field>
-              <Field label="Status">
+              <Field label="Status" hint="drives the badge at top of the listing">
                 <select style={inp} value={form.status} onChange={(e) => { setTop('status', e.target.value); setD('status', e.target.value); }}>
-                  <option>Available</option><option>Pending</option><option>Sold</option>
+                  <option value="Available">Available</option>
+                  <option value="Sold Out">Sold Out</option>
+                  <option value="coming-soon">Coming Soon</option>
+                  <option value="Engineering & Planning">Engineering & Planning</option>
                 </select>
               </Field>
               <Field label="Type">
@@ -222,7 +225,7 @@ function Editor({ row, onClose }) {
               <Field label="Available lots (number)"><input style={inp} type="number" value={d.availableLots ?? ''} onChange={(e) => setD('availableLots', e.target.value === '' ? null : Number(e.target.value))} /></Field>
               <Field label="Target buyer"><input style={inp} value={d.targetBuyer || ''} onChange={(e) => setD('targetBuyer', e.target.value)} /></Field>
               <Field label="" full>
-                <label style={chk}><input type="checkbox" checked={!!form.featured} onChange={(e) => { setTop('featured', e.target.checked); setD('featured', e.target.checked); }} /> Featured on the site</label>
+                <label style={chk}><input type="checkbox" checked={!!form.featured} onChange={(e) => { setTop('featured', e.target.checked); setD('featured', e.target.checked); }} /> Featured (shows the green “{(d.lotUnit === 'Tracts') ? 'Tracts' : 'Lots'} Available” badge)</label>
                 <label style={chk}><input type="checkbox" checked={form.published !== false} onChange={(e) => setTop('published', e.target.checked)} /> Published (visible on site)</label>
               </Field>
             </div>

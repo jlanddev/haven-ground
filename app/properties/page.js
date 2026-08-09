@@ -1062,7 +1062,7 @@ export default function PropertiesPage() {
                           </span>
                         ) : property.featured ? (
                           <span className="absolute top-4 left-4 bg-[#2F4F33] text-white px-4 py-1.5 text-sm font-bold rounded-full shadow-lg z-20">
-                            {property.homeTypes?.toLowerCase().includes('ranchette') || property.lots?.toLowerCase().includes('tract')
+                            {property.lotUnit === 'Tracts' || property.homeTypes?.toLowerCase().includes('ranchette') || property.lots?.toLowerCase().includes('tract')
                               ? 'Tracts Available'
                               : 'Lots Available'}
                           </span>
