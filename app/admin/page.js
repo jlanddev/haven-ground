@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabaseCms as supabase } from '../../lib/supabase-cms';
 import {
   getAdminProperties, saveProperty, deleteProperty, uploadPhoto, blankProperty,
 } from '../../lib/admin-properties';
@@ -178,7 +178,8 @@ function Editor({ row, onClose }) {
   const removeImage = (i) => setD('images', (d.images || []).filter((_, idx) => idx !== i));
   const makeCover = (i) => { const imgs = [...(d.images || [])]; const [c] = imgs.splice(i, 1); setD('images', [c, ...imgs]); };
 
-  const tabs = [['basics', 'Basics'], ['description', 'Description'], ['location', 'Location'], ['photos', `Photos (${(d.images || []).length})`], ['agent', 'Agent'], ['lots', `Lots (${(d.lotTable || []).length})`]];
+  const unit = d.lotUnit || 'Lots';
+  const tabs = [['basics', 'Basics'], ['description', 'Description'], ['location', 'Location'], ['photos', `Photos (${(d.images || []).length})`], ['agent', 'Agent'], ['lots', `${unit} (${(d.lotTable || []).length})`]];
 
   return (
     <div style={{ minHeight: '100vh', background: '#F5EFD9', fontFamily: 'Georgia, serif' }}>
@@ -247,6 +248,19 @@ function Editor({ row, onClose }) {
               <Field label="Water"><input style={inp} value={d.propertyDetails?.features?.water || ''} onChange={(e) => setPD('features', 'water', e.target.value)} /></Field>
               <Field label="Sewer"><input style={inp} value={d.propertyDetails?.features?.sewer || ''} onChange={(e) => setPD('features', 'sewer', e.target.value)} /></Field>
               <Field label="Topography" full><textarea style={{ ...inp, minHeight: 70 }} value={d.propertyDetails?.features?.topography || ''} onChange={(e) => setPD('features', 'topography', e.target.value)} /></Field>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <ParcelMap
+                  boundary={d.boundary}
+                  center={d.propertyDetails?.location?.coordinates}
+                  defaultQuery={d.propertyDetails?.location?.parcelId || d.propertyDetails?.location?.address || ''}
+                  onSet={(boundary, center) => setForm((f) => {
+                    const pd = f.data.propertyDetails || {};
+                    const loc = pd.location || {};
+                    return { ...f, data: { ...f.data, boundary, propertyDetails: { ...pd, location: { ...loc, coordinates: center } } } };
+                  })}
+                  onClear={() => setD('boundary', null)}
+                />
+              </div>
             </div>
           )}
 
@@ -285,7 +299,7 @@ function Editor({ row, onClose }) {
           )}
 
           {tab === 'lots' && (
-            <LotsEditor lots={d.lotTable || []} onChange={(v) => setD('lotTable', v)} />
+            <LotsEditor lots={d.lotTable || []} unit={unit} onUnitChange={(u) => setD('lotUnit', u)} onChange={(v) => setD('lotTable', v)} />
           )}
         </div>
       </div>
@@ -321,15 +335,27 @@ function ListEditor({ label, items, onChange, placeholder }) {
   );
 }
 
-function LotsEditor({ lots, onChange }) {
+function LotsEditor({ lots, unit, onUnitChange, onChange }) {
   const set = (i, k, v) => onChange(lots.map((l, idx) => (idx === i ? { ...l, [k]: v } : l)));
+  const singular = unit === 'Tracts' ? 'Tract' : 'Lot';
+  const addRow = () => onChange([...lots, { lot: `${singular} ${lots.length + 1}`, size: '', price: '', status: 'Available' }]);
   return (
     <div>
-      <p style={{ fontSize: 13, color: '#6b7280', marginTop: 0 }}>For communities: one row per lot or tract.</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>One row per {singular.toLowerCase()}. Use Tracts for larger ranchette parcels.</p>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['Lots', 'Tracts'].map((u) => (
+            <button key={u} onClick={() => onUnitChange(u)} style={{ ...tabBtn, ...(unit === u ? { background: GREEN, color: '#fff' } : {}) }}>{u}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: 6, marginBottom: 4, fontSize: 11, color: '#9ca3af' }}>
+        <span>{singular} name</span><span>Size</span><span>Price</span><span>Status</span><span />
+      </div>
       <div style={{ display: 'grid', gap: 8 }}>
         {lots.map((l, i) => (
           <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: 6, alignItems: 'center' }}>
-            <input style={inp} value={l.lot || ''} onChange={(e) => set(i, 'lot', e.target.value)} placeholder="Lot 1" />
+            <input style={inp} value={l.lot || ''} onChange={(e) => set(i, 'lot', e.target.value)} placeholder={`${singular} ${i + 1}`} />
             <input style={inp} value={l.size || ''} onChange={(e) => set(i, 'size', e.target.value)} placeholder="5.23 acres" />
             <input style={inp} value={l.price || ''} onChange={(e) => set(i, 'price', e.target.value)} placeholder="$151,670" />
             <select style={inp} value={l.status || 'Available'} onChange={(e) => set(i, 'status', e.target.value)}>
@@ -339,7 +365,124 @@ function LotsEditor({ lots, onChange }) {
           </div>
         ))}
       </div>
-      <button onClick={() => onChange([...lots, { lot: '', size: '', price: '', status: 'Available' }])} style={{ ...btnGhost, marginTop: 10 }}>+ Add lot</button>
+      <button onClick={addRow} style={{ ...btnGhost, marginTop: 10 }}>+ Add {singular.toLowerCase()}</button>
+    </div>
+  );
+}
+
+// ---- Parcel map (Regrid lookup + boundary preview) -------------------------
+let leafletLoading = null;
+function loadLeaflet() {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  if (window.L) return Promise.resolve(window.L);
+  if (leafletLoading) return leafletLoading;
+  leafletLoading = new Promise((resolve) => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet'; css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(css);
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    s.onload = () => resolve(window.L);
+    document.body.appendChild(s);
+  });
+  return leafletLoading;
+}
+
+// GeoJSON (lng,lat) -> boundary the public page expects ([lat,lng], or an array
+// of rings for a multipolygon).
+function geomToBoundary(geom) {
+  if (!geom) return null;
+  if (geom.type === 'Polygon') return geom.coordinates[0].map(([lng, lat]) => [lat, lng]);
+  if (geom.type === 'MultiPolygon') return geom.coordinates.map((poly) => poly[0].map(([lng, lat]) => [lat, lng]));
+  return null;
+}
+function boundaryCenter(boundary) {
+  if (!boundary || !boundary.length) return null;
+  const ring = Array.isArray(boundary[0][0]) ? boundary[0] : boundary;
+  let la = 0, ln = 0;
+  ring.forEach(([lat, lng]) => { la += lat; ln += lng; });
+  return { lat: la / ring.length, lng: ln / ring.length };
+}
+
+function ParcelMap({ boundary, center, defaultQuery, onSet, onClear }) {
+  const [query, setQuery] = useState(defaultQuery || '');
+  const [results, setResults] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [ready, setReady] = useState(false);
+  const mapRef = useState(() => ({ map: null, layer: null }))[0];
+
+  useEffect(() => { loadLeaflet().then(() => setReady(true)); }, []);
+
+  // Draw / redraw the boundary whenever it changes.
+  useEffect(() => {
+    if (!ready || typeof window === 'undefined' || !window.L) return;
+    const L = window.L;
+    const el = document.getElementById('admin-parcel-map');
+    if (!el) return;
+    if (!mapRef.map) {
+      mapRef.map = L.map('admin-parcel-map', { scrollWheelZoom: false, attributionControl: false });
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20 }).addTo(mapRef.map);
+    }
+    const map = mapRef.map;
+    if (mapRef.layer) { map.removeLayer(mapRef.layer); mapRef.layer = null; }
+    const style = { color: '#00FFFF', weight: 3, fillColor: '#00FFFF', fillOpacity: 0.2 };
+    if (boundary && boundary.length) {
+      const isMulti = Array.isArray(boundary[0][0]);
+      mapRef.layer = isMulti ? L.layerGroup(boundary.map((r) => L.polygon(r, style))).addTo(map) : L.polygon(boundary, style).addTo(map);
+      const b = isMulti ? L.polygon(boundary.flat()).getBounds() : L.polygon(boundary).getBounds();
+      map.fitBounds(b, { padding: [20, 20] });
+    } else if (center?.lat) {
+      map.setView([center.lat, center.lng], 15);
+    } else {
+      map.setView([39.5, -98.35], 4);
+    }
+    setTimeout(() => map.invalidateSize(), 100);
+  }, [ready, boundary, center, mapRef]);
+
+  const lookup = async () => {
+    if (!query.trim()) return;
+    setBusy(true); setErr(''); setResults(null);
+    try {
+      const res = await fetch(`/api/regrid/parcel?query=${encodeURIComponent(query.trim())}`);
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Lookup failed');
+      setResults(data.results || []);
+      if (!data.results?.length) setErr('No parcels found. Try the full address or the APN.');
+    } catch (e) {
+      setErr(e.message || 'Lookup failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pick = (r) => {
+    const bnd = geomToBoundary(r.geometry);
+    if (!bnd) { setErr('That parcel has no boundary on file.'); return; }
+    onSet(bnd, boundaryCenter(bnd));
+    setResults(null);
+  };
+
+  return (
+    <div style={{ marginTop: 6 }}>
+      <label style={{ display: 'block', fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Parcel map (boundary shown on the listing)</label>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        <input style={{ ...inp, flex: 1 }} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Address or APN, e.g. 17 SE Wyoming Ave, Deming NM  or  0656-04-70" onKeyDown={(e) => e.key === 'Enter' && lookup()} />
+        <button onClick={lookup} disabled={busy} style={btn}>{busy ? 'Looking…' : 'Look up parcel'}</button>
+        {boundary && boundary.length ? <button onClick={onClear} style={{ ...btnGhost, color: '#b91c1c', borderColor: '#b91c1c' }}>Clear</button> : null}
+      </div>
+      {err && <p style={{ color: '#b91c1c', fontSize: 13, margin: '0 0 8px' }}>{err}</p>}
+      {results && results.length > 0 && (
+        <div style={{ display: 'grid', gap: 6, marginBottom: 10 }}>
+          {results.map((r, i) => (
+            <button key={i} onClick={() => pick(r)} style={{ ...btnGhost, textAlign: 'left', display: 'block', width: '100%' }}>
+              {r.label || r.apn || 'Parcel'} {r.acres ? `· ${Number(r.acres).toFixed(2)} ac` : ''} {r.geometry ? '' : '· (no boundary)'}
+            </button>
+          ))}
+        </div>
+      )}
+      <div id="admin-parcel-map" style={{ height: 320, borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb', background: '#eef2f0' }} />
+      <p style={{ fontSize: 12, color: '#6b7280', marginTop: 6 }}>{boundary && boundary.length ? 'Boundary saved. It will draw on the listing map.' : 'Look up the parcel to pull its boundary, or leave blank to show a location pin.'}</p>
     </div>
   );
 }
