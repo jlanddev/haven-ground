@@ -3,6 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { properties as propertiesData } from './propertiesData';
 import { fetchProperties } from '../../lib/properties-data';
+import { US_STATES, COUNTIES_BY_STATE, STATE_ABBR } from '../../lib/us-locations';
+
+// A property's full state name, read from its "City, ST" (or "City, State") location.
+const propStateFull = (p) => {
+  const tail = (p?.location || '').split(',').pop().trim();
+  if (!tail) return '';
+  if (tail.length === 2) return STATE_ABBR[tail.toUpperCase()] || '';
+  return US_STATES.find((s) => s.toLowerCase() === tail.toLowerCase()) || tail;
+};
+// County name without a trailing "County", lowercased, for loose matching.
+const countyKey = (c) => (c || '').toLowerCase().replace(/\s+county$/, '').trim();
 
 export default function PropertiesPage() {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'map'
@@ -59,6 +70,45 @@ export default function PropertiesPage() {
     return () => { alive = false; };
   }, []);
 
+  // Which states / counties we actually have inventory in (drives the
+  // "no inventory yet, join the land list" prompt).
+  const statesWithInventory = new Set(properties.map(propStateFull).filter(Boolean));
+  const countiesWithInventory = new Set(
+    properties.map((p) => countyKey(p.propertyDetails?.location?.county)).filter(Boolean)
+  );
+
+  // Location typeahead, same feel as the sell-your-land form.
+  const [stateInput, setStateInput] = useState('');
+  const [stateSug, setStateSug] = useState([]);
+  const [countyInput, setCountyInput] = useState('');
+  const [countySug, setCountySug] = useState([]);
+
+  const onStateType = (v) => {
+    setStateInput(v);
+    setStateSug(v ? US_STATES.filter((s) => s.toLowerCase().startsWith(v.toLowerCase())).slice(0, 8) : []);
+    if (v === '') setFilters((f) => ({ ...f, state: 'all', location: 'all' }));
+  };
+  const pickState = (s) => {
+    setStateInput(s); setStateSug([]);
+    setFilters((f) => ({ ...f, state: s, location: 'all' }));
+    setCountyInput('');
+  };
+  const onCountyType = (v) => {
+    setCountyInput(v);
+    const pool = (filters.state !== 'all' && COUNTIES_BY_STATE[filters.state]) ? COUNTIES_BY_STATE[filters.state] : Object.values(COUNTIES_BY_STATE).flat();
+    setCountySug(v ? pool.filter((c) => c.toLowerCase().startsWith(v.toLowerCase())).slice(0, 8) : []);
+    if (v === '') setFilters((f) => ({ ...f, location: 'all' }));
+  };
+  const pickCounty = (c) => {
+    setCountyInput(c); setCountySug([]);
+    setFilters((f) => ({ ...f, location: c }));
+  };
+
+  // A selected market with zero listings -> show the land-list prompt.
+  const selectedStateEmpty = filters.state !== 'all' && !statesWithInventory.has(filters.state);
+  const selectedCountyEmpty = filters.location !== 'all' && !countiesWithInventory.has(countyKey(filters.location));
+  const noInventoryMarket = filters.state !== 'all' ? filters.state : (filters.location !== 'all' ? filters.location : '');
+
   // Filter properties based on current filters
   const filteredProperties = properties.filter(property => {
     // Search filter
@@ -68,19 +118,12 @@ export default function PropertiesPage() {
     }
 
     // State filter (applies to all properties)
-    if (filters.state !== 'all') {
-      let propertyState = 'Texas'; // default
-      if (property.location.includes('MS')) propertyState = 'Mississippi';
-      else if (property.location.includes('Nashville') || property.location.includes('TN')) propertyState = 'Tennessee';
-      else if (property.location.includes('MO')) propertyState = 'Missouri';
-      else if (property.location.includes('CO')) propertyState = 'Colorado';
+    if (filters.state !== 'all' && propStateFull(property) !== filters.state) return false;
 
-      if (propertyState !== filters.state) return false;
-    }
-
-    // County filter (applies to all properties)
-    if (filters.location !== 'all' && property.propertyDetails?.location?.county) {
-      if (property.propertyDetails.location.county !== filters.location) return false;
+    // County filter (loose match: "Washington" matches "Washington County")
+    if (filters.location !== 'all') {
+      const pc = property.propertyDetails?.location?.county || '';
+      if (countyKey(pc) !== countyKey(filters.location)) return false;
     }
 
     // Acres and price filters (only for properties with numeric values)
@@ -765,50 +808,69 @@ export default function PropertiesPage() {
                 </div>
               </div>
 
-              {/* State Filter */}
-              <div className="mb-6">
+              {/* State Filter (type to search any state) */}
+              <div className="mb-6 relative">
                 <label className="block text-sm font-medium text-[#2F4F33] mb-2">
                   State
                 </label>
-                <select
+                <input
+                  type="text"
+                  autoComplete="off"
+                  placeholder="All states (type to search)"
                   className="w-full px-4 py-2 border border-[#D2C6B2] rounded-md focus:ring-[#7D6B58] focus:border-[#2F4F33]"
-                  value={filters.state}
-                  onChange={(e) => setFilters({...filters, state: e.target.value})}
-                >
-                  <option value="all">All States</option>
-                  <option value="Texas">Texas</option>
-                  <option value="Colorado">Colorado</option>
-                  <option value="Mississippi">Mississippi</option>
-                  <option value="Tennessee">Tennessee</option>
-                  <option value="Missouri">Missouri</option>
-                </select>
+                  value={stateInput}
+                  onChange={(e) => onStateType(e.target.value)}
+                  onFocus={(e) => onStateType(e.target.value)}
+                  onBlur={() => setTimeout(() => setStateSug([]), 150)}
+                />
+                {stateSug.length > 0 && (
+                  <ul className="absolute z-30 left-0 right-0 mt-1 bg-white border border-[#D2C6B2] rounded-md shadow-lg max-h-56 overflow-y-auto">
+                    {stateSug.map((s) => (
+                      <li key={s}>
+                        <button type="button" onMouseDown={() => pickState(s)}
+                          className="w-full text-left px-4 py-2 hover:bg-[#F5EFD9] flex items-center justify-between">
+                          <span>{s}</span>
+                          {!statesWithInventory.has(s) && <span className="text-xs text-[#9a9384]">no listings yet</span>}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
-              {/* County Filter */}
-              <div className="mb-6">
+              {/* County Filter (type to search) */}
+              <div className="mb-6 relative">
                 <label className="block text-sm font-medium text-[#2F4F33] mb-2">
                   County
                 </label>
-                <select
+                <input
+                  type="text"
+                  autoComplete="off"
+                  placeholder={filters.state !== 'all' ? `Counties in ${filters.state}` : 'All counties (type to search)'}
                   className="w-full px-4 py-2 border border-[#D2C6B2] rounded-md focus:ring-[#7D6B58] focus:border-[#2F4F33]"
-                  value={filters.location}
-                  onChange={(e) => setFilters({...filters, location: e.target.value})}
-                >
-                  <option value="all">All Counties</option>
-                  <option value="Washington County">Washington County, TX</option>
-                  <option value="Burleson County">Burleson County, TX</option>
-                  <option value="Hill County">Hill County, TX</option>
-                  <option value="Ector County">Ector County, TX</option>
-                  <option value="Bell County">Bell County, TX</option>
-                  <option value="Panola County">Panola County, MS</option>
-                  <option value="Davidson County">Davidson County, TN</option>
-                  <option value="Cass County">Cass County, MO</option>
-                </select>
+                  value={countyInput}
+                  onChange={(e) => onCountyType(e.target.value)}
+                  onFocus={(e) => onCountyType(e.target.value)}
+                  onBlur={() => setTimeout(() => setCountySug([]), 150)}
+                />
+                {countySug.length > 0 && (
+                  <ul className="absolute z-30 left-0 right-0 mt-1 bg-white border border-[#D2C6B2] rounded-md shadow-lg max-h-56 overflow-y-auto">
+                    {countySug.map((c) => (
+                      <li key={c}>
+                        <button type="button" onMouseDown={() => pickCounty(c)}
+                          className="w-full text-left px-4 py-2 hover:bg-[#F5EFD9] flex items-center justify-between">
+                          <span>{c}</span>
+                          {!countiesWithInventory.has(countyKey(c)) && <span className="text-xs text-[#9a9384]">no listings yet</span>}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {/* Clear Filters */}
               <button
-                onClick={() => setFilters({
+                onClick={() => { setStateInput(''); setCountyInput(''); setStateSug([]); setCountySug([]); setFilters({
                   search: '',
                   minAcres: '',
                   maxAcres: '',
@@ -818,7 +880,7 @@ export default function PropertiesPage() {
                   location: 'all',
                   sortBy: 'featured',
                   showMobileFilters: false
-                })}
+                }); }}
                 className="w-full py-2 px-4 bg-[#F5EFD9] text-[#2F4F33] border border-[#2F4F33] hover:bg-[#2F4F33] hover:text-[#F5EFD9] transition duration-300"
               >
                 Clear All Filters
@@ -872,6 +934,20 @@ export default function PropertiesPage() {
                 </button>
               </div>
             </div>
+
+            {/* No inventory in the selected market: capture the demand. */}
+            {(selectedStateEmpty || selectedCountyEmpty) && (
+              <div className="mb-6 bg-[#2F4F33] text-[#F5EFD9] rounded-lg p-6 text-center">
+                <h3 className="text-xl font-medium mb-2">No listings in {noInventoryMarket} yet</h3>
+                <p className="text-sm mb-4 max-w-lg mx-auto">Join our land list and we will notify you the moment we have inventory in this market.</p>
+                <button
+                  onClick={() => setShowLandListModal(true)}
+                  className="py-2 px-6 bg-[#F5EFD9] text-[#2F4F33] font-medium hover:bg-[#D2C6B2] transition duration-300 rounded"
+                >
+                  Join Our Land List
+                </button>
+              </div>
+            )}
 
             {/* Properties Display */}
             {viewMode === 'grid' ? (
