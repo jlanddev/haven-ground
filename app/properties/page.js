@@ -76,6 +76,16 @@ export default function PropertiesPage() {
   const countiesWithInventory = new Set(
     properties.map((p) => countyKey(p.propertyDetails?.location?.county)).filter(Boolean)
   );
+  // Bare county names we have, grouped by state, so the county box can lead with
+  // the markets we actually stock (e.g. Texas shows the counties we own).
+  const ourCountiesByState = {};
+  properties.forEach((p) => {
+    const st = propStateFull(p);
+    const cty = (p.propertyDetails?.location?.county || '').replace(/\s+[Cc]ounty$/, '').trim();
+    if (!st || !cty) return;
+    (ourCountiesByState[st] = ourCountiesByState[st] || new Set()).add(cty);
+  });
+  const ourCountiesFor = (st) => Array.from(ourCountiesByState[st] || []).sort();
 
   // Location typeahead, same feel as the sell-your-land form.
   const [stateInput, setStateInput] = useState('');
@@ -83,9 +93,12 @@ export default function PropertiesPage() {
   const [countyInput, setCountyInput] = useState('');
   const [countySug, setCountySug] = useState([]);
 
+  // Suggestions with our-inventory markets first.
+  const rankStates = (list) => [...list].sort((a, b) => (statesWithInventory.has(b) ? 1 : 0) - (statesWithInventory.has(a) ? 1 : 0));
   const onStateType = (v) => {
     setStateInput(v);
-    setStateSug(v ? US_STATES.filter((s) => s.toLowerCase().startsWith(v.toLowerCase())).slice(0, 8) : []);
+    const base = v ? US_STATES.filter((s) => s.toLowerCase().startsWith(v.toLowerCase())) : rankStates(US_STATES);
+    setStateSug(base.slice(0, 8));
     if (v === '') setFilters((f) => ({ ...f, state: 'all', location: 'all' }));
   };
   const pickState = (s) => {
@@ -95,8 +108,19 @@ export default function PropertiesPage() {
   };
   const onCountyType = (v) => {
     setCountyInput(v);
-    const pool = (filters.state !== 'all' && COUNTIES_BY_STATE[filters.state]) ? COUNTIES_BY_STATE[filters.state] : Object.values(COUNTIES_BY_STATE).flat();
-    setCountySug(v ? pool.filter((c) => c.toLowerCase().startsWith(v.toLowerCase())).slice(0, 8) : []);
+    const stFull = filters.state !== 'all' ? filters.state : null;
+    const ours = stFull ? ourCountiesFor(stFull) : Object.keys(ourCountiesByState).flatMap((s) => ourCountiesFor(s));
+    if (!v) {
+      // Empty box: lead with the counties we actually have.
+      setCountySug(ours.slice(0, 8));
+    } else {
+      const all = stFull && COUNTIES_BY_STATE[stFull] ? COUNTIES_BY_STATE[stFull] : Object.values(COUNTIES_BY_STATE).flat();
+      const match = all.filter((c) => c.toLowerCase().startsWith(v.toLowerCase()));
+      // our-inventory counties first
+      const ranked = [...new Set(match)].sort((a, b) => (ours.includes(b) ? 1 : 0) - (ours.includes(a) ? 1 : 0));
+      setCountySug(ranked.slice(0, 8));
+      setFilters((f) => ({ ...f, location: 'all' })); // typing resets until a pick
+    }
     if (v === '') setFilters((f) => ({ ...f, location: 'all' }));
   };
   const pickCounty = (c) => {
@@ -104,10 +128,13 @@ export default function PropertiesPage() {
     setFilters((f) => ({ ...f, location: c }));
   };
 
-  // A selected market with zero listings -> show the land-list prompt.
+  // A selected market with zero listings -> show the land-list prompt, named for
+  // whichever selection is actually empty (the county, or the state).
   const selectedStateEmpty = filters.state !== 'all' && !statesWithInventory.has(filters.state);
   const selectedCountyEmpty = filters.location !== 'all' && !countiesWithInventory.has(countyKey(filters.location));
-  const noInventoryMarket = filters.state !== 'all' ? filters.state : (filters.location !== 'all' ? filters.location : '');
+  const emptyMarketLabel = selectedStateEmpty
+    ? filters.state
+    : (selectedCountyEmpty ? `${filters.location} County` : '');
 
   // Filter properties based on current filters
   const filteredProperties = properties.filter(property => {
@@ -938,7 +965,7 @@ export default function PropertiesPage() {
             {/* No inventory in the selected market: capture the demand. */}
             {(selectedStateEmpty || selectedCountyEmpty) && (
               <div className="mb-6 bg-[#2F4F33] text-[#F5EFD9] rounded-lg p-6 text-center">
-                <h3 className="text-xl font-medium mb-2">No listings in {noInventoryMarket} yet</h3>
+                <h3 className="text-xl font-medium mb-2">No listings in {emptyMarketLabel} yet</h3>
                 <p className="text-sm mb-4 max-w-lg mx-auto">Join our land list and we will notify you the moment we have inventory in this market.</p>
                 <button
                   onClick={() => setShowLandListModal(true)}
