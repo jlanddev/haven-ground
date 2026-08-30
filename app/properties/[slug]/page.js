@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { properties as propertiesData } from '../propertiesData';
 import { fetchPropertyBySlug } from '../../../lib/properties-data';
@@ -9,6 +9,7 @@ import { getContactFormText, getSectionHeaders, sanitizePropertyData } from '../
 // Dynamic Property Map Component - Acres.com Style
 function PropertyMap({ property }) {
   const [mapLoaded, setMapLoaded] = useState(false);
+  const mapInstance = useRef(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -41,10 +42,19 @@ function PropertyMap({ property }) {
         const lng = coords.lng;
 
         try {
+          // Tear down any prior Leaflet instance on this container first. The
+          // effect re-runs when the listing refreshes from Supabase; without
+          // this, Leaflet throws "Map container is already initialized" and the
+          // map renders blank.
+          if (mapInstance.current) { try { mapInstance.current.remove(); } catch (e) {} mapInstance.current = null; }
+          const existing = document.getElementById(mapId);
+          if (existing && existing._leaflet_id) { existing._leaflet_id = undefined; existing.innerHTML = ''; }
+
           const map = L.map(mapId, {
             scrollWheelZoom: false,
             zoomControl: true
           }).setView([lat, lng], 15);
+          mapInstance.current = map;
 
           // Esri satellite imagery - no country flags
           L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -114,13 +124,10 @@ function PropertyMap({ property }) {
     }
 
     return () => {
-      if (document.getElementById(mapId)) {
-        const mapContainer = document.getElementById(mapId);
-        if (mapContainer && mapContainer._leaflet_id) {
-          mapContainer._leaflet = null;
-        }
-        mapContainer.innerHTML = '';
-      }
+      // Proper Leaflet teardown so a re-run can re-init cleanly.
+      if (mapInstance.current) { try { mapInstance.current.remove(); } catch (e) {} mapInstance.current = null; }
+      const mapContainer = document.getElementById(mapId);
+      if (mapContainer) { mapContainer._leaflet_id = undefined; mapContainer.innerHTML = ''; }
     };
   }, [property]);
 
@@ -321,7 +328,9 @@ export default function PropertyDetailPage() {
       const mapContainer = document.getElementById('property-detail-map');
       if (!mapContainer) return;
 
-      // Clear any existing map
+      // Clear any existing map (reset the Leaflet marker too, or a re-run throws
+      // "Map container is already initialized" and the map goes blank).
+      if (mapContainer._leaflet_id) mapContainer._leaflet_id = undefined;
       mapContainer.innerHTML = '';
 
       const map = L.map('property-detail-map', {
