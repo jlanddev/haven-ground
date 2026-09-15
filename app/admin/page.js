@@ -92,6 +92,25 @@ function Dashboard({ email }) {
     finally { setReordering(false); }
   };
 
+  // Drag-and-drop reorder: drag a row to any position (not just one step).
+  const [dragIndex, setDragIndex] = useState(null);
+  const [overIndex, setOverIndex] = useState(null);
+  const handleDrop = async (to) => {
+    const from = dragIndex;
+    setDragIndex(null); setOverIndex(null);
+    if (from == null || to == null || from === to || !rows) return;
+    const orig = rows;
+    const next = rows.slice();
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    const renum = next.map((r, i) => ({ ...r, sort_order: i }));
+    setRows(renum);
+    try {
+      const changed = renum.filter((r) => (orig.find((o) => o.id === r.id)?.sort_order) !== r.sort_order);
+      await Promise.all(changed.map((r) => updateSortOrder(r.id, r.sort_order)));
+    } catch (e) { setErr(e.message); load(); }
+  };
+
   if (editing) {
     return <Editor row={editing} onClose={() => { setEditing(null); load(); }} />;
   }
@@ -115,11 +134,34 @@ function Dashboard({ email }) {
         {!rows && <p>Loading…</p>}
         {rows && rows.length === 0 && <p style={{ color: '#6b7280' }}>No listings yet. Create your first one.</p>}
         <div style={{ display: 'grid', gap: 10 }}>
+          {rows && rows.length > 1 && (
+            <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 2px 2px' }}>Drag a listing by the ⠿ handle to reorder, or use the arrows.</p>
+          )}
           {rows && rows.map((r, i) => (
-            <div key={r.id} style={{ background: '#fff', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginRight: 12, flexShrink: 0 }}>
-                <button onClick={() => move(i, -1)} disabled={i === 0 || reordering} title="Move up" style={arrowBtn(i === 0)}>▲</button>
-                <button onClick={() => move(i, 1)} disabled={i === rows.length - 1 || reordering} title="Move down" style={arrowBtn(i === rows.length - 1)}>▼</button>
+            <div
+              key={r.id}
+              onDragOver={(e) => { if (dragIndex != null) { e.preventDefault(); setOverIndex(i); } }}
+              onDrop={(e) => { e.preventDefault(); handleDrop(i); }}
+              style={{
+                background: '#fff', borderRadius: 10, padding: '14px 18px', display: 'flex',
+                alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+                opacity: dragIndex === i ? 0.4 : 1,
+                borderTop: overIndex === i && dragIndex != null && dragIndex !== i ? `3px solid ${GREEN}` : '3px solid transparent',
+                transition: 'opacity .12s',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 12, flexShrink: 0 }}>
+                <span
+                  draggable
+                  onDragStart={() => setDragIndex(i)}
+                  onDragEnd={() => { setDragIndex(null); setOverIndex(null); }}
+                  title="Drag to reorder"
+                  style={{ cursor: 'grab', color: '#b9bdb0', fontSize: 18, lineHeight: 1, userSelect: 'none', padding: '0 2px' }}
+                >⠿</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <button onClick={() => move(i, -1)} disabled={i === 0 || reordering} title="Move up" style={arrowBtn(i === 0)}>▲</button>
+                  <button onClick={() => move(i, 1)} disabled={i === rows.length - 1 || reordering} title="Move down" style={arrowBtn(i === rows.length - 1)}>▼</button>
+                </div>
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontSize: 17, color: '#1f2937', display: 'flex', alignItems: 'center', gap: 8 }}>
