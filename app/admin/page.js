@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabaseCms as supabase } from '../../lib/supabase-cms';
 import {
-  getAdminProperties, saveProperty, deleteProperty, uploadPhoto, blankProperty,
+  getAdminProperties, saveProperty, deleteProperty, uploadPhoto, blankProperty, updateSortOrder,
 } from '../../lib/admin-properties';
 
 const GREEN = '#2F4F33';
@@ -64,11 +64,33 @@ function Dashboard({ email }) {
   const [editing, setEditing] = useState(null); // row being edited, or null
   const [err, setErr] = useState('');
 
+  const [reordering, setReordering] = useState(false);
+
   const load = async () => {
     try { setRows(await getAdminProperties()); }
     catch (e) { setErr(e.message); }
   };
   useEffect(() => { load(); }, []);
+
+  // Move a listing up/down. Optimistically reorders, renumbers sort_order to the
+  // new positions, and persists only the rows that changed. Public pages list by
+  // sort_order ascending, so this controls the order on the site.
+  const move = async (index, dir) => {
+    if (!rows || reordering) return;
+    const j = index + dir;
+    if (j < 0 || j >= rows.length) return;
+    const orig = rows;
+    const next = rows.slice();
+    const t = next[index]; next[index] = next[j]; next[j] = t;
+    const renum = next.map((r, i) => ({ ...r, sort_order: i }));
+    setRows(renum);
+    setReordering(true);
+    try {
+      const changed = renum.filter((r) => (orig.find((o) => o.id === r.id)?.sort_order) !== r.sort_order);
+      await Promise.all(changed.map((r) => updateSortOrder(r.id, r.sort_order)));
+    } catch (e) { setErr(e.message); load(); }
+    finally { setReordering(false); }
+  };
 
   if (editing) {
     return <Editor row={editing} onClose={() => { setEditing(null); load(); }} />;
@@ -93,9 +115,13 @@ function Dashboard({ email }) {
         {!rows && <p>Loading…</p>}
         {rows && rows.length === 0 && <p style={{ color: '#6b7280' }}>No listings yet. Create your first one.</p>}
         <div style={{ display: 'grid', gap: 10 }}>
-          {rows && rows.map((r) => (
+          {rows && rows.map((r, i) => (
             <div key={r.id} style={{ background: '#fff', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
-              <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginRight: 12, flexShrink: 0 }}>
+                <button onClick={() => move(i, -1)} disabled={i === 0 || reordering} title="Move up" style={arrowBtn(i === 0)}>▲</button>
+                <button onClick={() => move(i, 1)} disabled={i === rows.length - 1 || reordering} title="Move down" style={arrowBtn(i === rows.length - 1)}>▼</button>
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontSize: 17, color: '#1f2937', display: 'flex', alignItems: 'center', gap: 8 }}>
                   {r.title || '(untitled)'}
                   {r.featured && <span style={tagStyle('#B8860B')}>Featured</span>}
@@ -500,3 +526,4 @@ const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 };
 const chk = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#374151', marginTop: 8 };
 const miniBtn = { background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 12 };
 const tagStyle = (color) => ({ background: color, color: '#fff', fontSize: 11, padding: '2px 8px', borderRadius: 999 });
+const arrowBtn = (disabled) => ({ background: disabled ? '#f1efe6' : '#fff', color: disabled ? '#cbd0c4' : GREEN, border: `1px solid ${disabled ? '#e5e2d6' : GREEN}`, borderRadius: 6, width: 26, height: 20, lineHeight: '1', fontSize: 10, cursor: disabled ? 'default' : 'pointer', fontFamily: 'inherit', padding: 0 });

@@ -1004,10 +1004,10 @@ export default function PropertiesPage() {
                       <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-[#2F4F33] opacity-20 group-hover:opacity-40 transition-opacity z-10"></div>
                       <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-[#2F4F33] opacity-20 group-hover:opacity-40 transition-opacity z-10"></div>
                       <div className="relative group overflow-hidden bg-[#F5EFD9]">
-                        {property.images[currentIndex].endsWith('.mp4') ? (
+                        {(property.images?.[currentIndex] || '').endsWith('.mp4') ? (
                           <div className="relative">
                             <video 
-                              src={property.images[currentIndex]}
+                              src={property.images?.[currentIndex] || '/images/placeholder-coming-soon.jpg'}
                               poster="/images/Oak Hill/Oak Hill Reserve/IMG_8202.jpg"
                               className="w-full h-64 object-cover object-center"
                               controls
@@ -1071,7 +1071,7 @@ export default function PropertiesPage() {
                         ) : (
                           <div className="relative">
                             <img
-                              src={property.images[currentIndex]}
+                              src={property.images?.[currentIndex] || '/images/placeholder-coming-soon.jpg'}
                               alt={`${property.title} - Image ${currentIndex + 1}`}
                               className="w-full h-64 object-cover object-center"
                               style={{ imageRendering: 'crisp-edges' }}

@@ -771,7 +771,7 @@ export default function PropertyDetailPage() {
         ) : property.slug === 'desoto-estates' ? (
           <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-white">
             <img
-              src={property.images[0]}
+              src={property.images?.[0] || '/images/placeholder-coming-soon.jpg'}
               alt={`${property.title} Plat`}
               className="w-full h-full object-contain"
             />
@@ -779,7 +779,7 @@ export default function PropertyDetailPage() {
         ) : property.slug === 'the-ranches' ? (
           <div className="w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] bg-white">
             <img
-              src={property.images[0]}
+              src={property.images?.[0] || '/images/placeholder-coming-soon.jpg'}
               alt={`${property.title} Plat`}
               className="w-full h-full object-cover"
             />
@@ -794,7 +794,7 @@ export default function PropertyDetailPage() {
             <div className="flex-1 lg:flex-[3] overflow-hidden relative group bg-white">
               {property.images[currentImageIndex]?.endsWith('.mp4') ? (
                 <video
-                  src={property.images[currentImageIndex]}
+                  src={property.images?.[currentImageIndex] || '/images/placeholder-coming-soon.jpg'}
                   className="w-full h-full object-cover cursor-pointer"
                   onClick={() => openModal(property.images, currentImageIndex)}
                   controls
@@ -804,7 +804,7 @@ export default function PropertyDetailPage() {
                 />
               ) : (
                 <img
-                  src={property.images[currentImageIndex]}
+                  src={property.images?.[currentImageIndex] || '/images/placeholder-coming-soon.jpg'}
                   alt={property.title}
                   className={`w-full h-full object-cover cursor-pointer ${
                     property.images[currentImageIndex]?.includes('plat')
