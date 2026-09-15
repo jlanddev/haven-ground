@@ -492,12 +492,43 @@ function ParcelMap({ boundary, center, defaultQuery, onSet, onClear }) {
     setResults(null);
   };
 
+  // Upload a .kml and pull its polygon(s) into the boundary. Parsed in the
+  // browser (no Regrid call, no cost). Handles one or many polygons.
+  const onKml = async (file) => {
+    setErr('');
+    try {
+      const text = await file.text();
+      const xml = new DOMParser().parseFromString(text, 'application/xml');
+      if (xml.getElementsByTagName('parsererror').length) throw new Error('That file is not valid KML.');
+      const polys = Array.from(xml.getElementsByTagName('Polygon'));
+      const rings = polys.map((poly) => {
+        // First <coordinates> in a Polygon is the outer boundary ring.
+        const c = poly.getElementsByTagName('coordinates')[0];
+        if (!c) return null;
+        const pts = c.textContent.trim().split(/\s+/)
+          .map((t) => t.split(',').map(Number))
+          .filter((p) => p.length >= 2 && !Number.isNaN(p[0]) && !Number.isNaN(p[1]))
+          .map(([lng, lat]) => [lat, lng]); // KML is lng,lat -> we store lat,lng
+        return pts.length >= 3 ? pts : null;
+      }).filter(Boolean);
+      if (!rings.length) { setErr('No polygon boundary found in that KML.'); return; }
+      const bnd = rings.length > 1 ? rings : rings[0];
+      onSet(bnd, boundaryCenter(bnd));
+    } catch (e) {
+      setErr(e.message || 'Could not read that KML file.');
+    }
+  };
+
   return (
     <div style={{ marginTop: 6 }}>
       <label style={{ display: 'block', fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Parcel map (boundary shown on the listing)</label>
       <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
         <input style={{ ...inp, flex: 1 }} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Address or APN, e.g. 17 SE Wyoming Ave, Deming NM  or  0656-04-70" onKeyDown={(e) => e.key === 'Enter' && lookup()} />
         <button onClick={lookup} disabled={busy} style={btn}>{busy ? 'Looking…' : 'Look up parcel'}</button>
+        <label style={{ ...btnGhost, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          Upload KML
+          <input type="file" accept=".kml,application/vnd.google-earth.kml+xml,text/xml" style={{ display: 'none' }} onChange={(e) => { const f = e.target.files?.[0]; if (f) onKml(f); e.target.value = ''; }} />
+        </label>
         {boundary && boundary.length ? <button onClick={onClear} style={{ ...btnGhost, color: '#b91c1c', borderColor: '#b91c1c' }}>Clear</button> : null}
       </div>
       {err && <p style={{ color: '#b91c1c', fontSize: 13, margin: '0 0 8px' }}>{err}</p>}
@@ -511,7 +542,7 @@ function ParcelMap({ boundary, center, defaultQuery, onSet, onClear }) {
         </div>
       )}
       <div id="admin-parcel-map" style={{ height: 320, borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb', background: '#eef2f0' }} />
-      <p style={{ fontSize: 12, color: '#6b7280', marginTop: 6 }}>{boundary && boundary.length ? 'Boundary saved. It will draw on the listing map.' : 'Look up the parcel to pull its boundary, or leave blank to show a location pin.'}</p>
+      <p style={{ fontSize: 12, color: '#6b7280', marginTop: 6 }}>{boundary && boundary.length ? 'Boundary saved. It will draw on the listing map.' : 'Upload a KML (free) or look up the parcel to pull its boundary, or leave blank to show a location pin.'}</p>
     </div>
   );
 }
