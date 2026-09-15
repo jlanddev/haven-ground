@@ -138,7 +138,7 @@ function PropertyMap({ property }) {
       <div
         id={mapId}
         className="w-full h-[500px] rounded-lg"
-        style={{ background: '#f0f0f0' }}
+        style={{ background: '#f0f0f0', position: 'relative', zIndex: 0, isolation: 'isolate' }}
       >
         {!mapLoaded && (
           <div className="flex items-center justify-center h-full text-[#7D6B58]">Loading satellite map...</div>
