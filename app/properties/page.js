@@ -139,8 +139,8 @@ export default function PropertiesPage() {
   // Filter properties based on current filters
   const filteredProperties = properties.filter(property => {
     // Search filter
-    if (filters.search && !property.title.toLowerCase().includes(filters.search.toLowerCase()) &&
-        !property.location.toLowerCase().includes(filters.search.toLowerCase())) {
+    if (filters.search && !(property.title || '').toLowerCase().includes(filters.search.toLowerCase()) &&
+        !(property.location || '').toLowerCase().includes(filters.search.toLowerCase())) {
       return false;
     }
 
@@ -1216,8 +1216,8 @@ export default function PropertiesPage() {
                               /* Regular Property Details */
                               <div className="flex justify-between items-center mb-4">
                                 <div>
-                                  <p className="text-3xl text-[#2F4F33] font-light">${property.price.toLocaleString()}</p>
-                                  <p className="text-sm text-[#7D6B58]">${property.pricePerAcre.toLocaleString()}/acre</p>
+                                  <p className="text-3xl text-[#2F4F33] font-light">{property.price != null ? `$${property.price.toLocaleString()}` : 'Contact for pricing'}</p>
+                                  {property.pricePerAcre != null && <p className="text-sm text-[#7D6B58]">${property.pricePerAcre.toLocaleString()}/acre</p>}
                                 </div>
                                 <div className="text-right">
                                   <p className="text-2xl text-[#2F4F33]">{property.acres} acres</p>
@@ -1229,12 +1229,12 @@ export default function PropertiesPage() {
                       <p className="text-[#2F4F33] mb-4 line-clamp-2">{property.description}</p>
                       
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {property.features.slice(0, 3).map((feature, index) => (
+                        {(property.features || []).slice(0, 3).map((feature, index) => (
                           <span key={index} className="bg-[#F5EFD9] text-[#2F4F33] px-3 py-1 text-sm">
                             {feature}
                           </span>
                         ))}
-                        {property.features.length > 3 && (
+                        {(property.features || []).length > 3 && (
                           <span className="text-[#7D6B58] text-sm py-1">
                             +{property.features.length - 3} more
                           </span>
