@@ -52,7 +52,12 @@ function PropertyMap({ property }) {
 
           const map = L.map(mapId, {
             scrollWheelZoom: false,
-            zoomControl: true
+            zoomControl: true,
+            // No zoom animation: a fitBounds-triggered zoom that finishes AFTER
+            // the effect re-runs/unmounts throws Leaflet's "_leaflet_pos of
+            // undefined" and takes down the whole page. Snapping avoids the race.
+            zoomAnimation: false,
+            markerZoomAnimation: false
           }).setView([lat, lng], 15);
           mapInstance.current = map;
 
@@ -89,11 +94,12 @@ function PropertyMap({ property }) {
               });
               // Fit map to show all polygons
               const bounds = L.latLngBounds(allBounds);
-              map.fitBounds(bounds, { padding: [50, 50] });
+              if (bounds.isValid()) map.fitBounds(bounds, { padding: [50, 50], animate: false });
             } else {
               // Single polygon
               const polygon = L.polygon(property.boundary, boundaryStyle).addTo(map);
-              map.fitBounds(polygon.getBounds(), { padding: [50, 50] });
+              const b = polygon.getBounds();
+              if (b.isValid()) map.fitBounds(b, { padding: [50, 50], animate: false });
             }
           } else {
             // Fallback to circle for properties without boundary data
@@ -339,7 +345,9 @@ export default function PropertyDetailPage() {
         dragging: true,
         touchZoom: true,
         doubleClickZoom: true,
-        attributionControl: false
+        attributionControl: false,
+        zoomAnimation: false,
+        markerZoomAnimation: false
       });
 
       // Esri satellite imagery
@@ -390,7 +398,8 @@ export default function PropertyDetailPage() {
 
       // Fit map to bounds
       if (allBounds.length > 0) {
-        map.fitBounds(L.latLngBounds(allBounds), { padding: [50, 50] });
+        const b = L.latLngBounds(allBounds);
+        if (b.isValid()) map.fitBounds(b, { padding: [50, 50], animate: false });
       }
     }
 
