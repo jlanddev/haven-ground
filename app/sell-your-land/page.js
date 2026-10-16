@@ -514,6 +514,11 @@ export default function SellYourLandPage() {
         throw new Error(`Webhook failed: ${response.status}`);
       }
 
+      // Stash email/phone for enhanced conversions: the thank-you page reads this and
+      // passes it to Google as user-provided data so future offline uploads can match
+      // this lead even without a gclid.
+      try { sessionStorage.setItem('hg_ec', JSON.stringify({ email: formData.email, phone: e164Phone })); } catch (e) {}
+
       console.log('⏳ Waiting 1 second before redirect...');
       await new Promise(resolve => setTimeout(resolve, 1000));
 

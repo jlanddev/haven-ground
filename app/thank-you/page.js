@@ -26,6 +26,8 @@ function ThankYouContent() {
       // gtag('event', 'conversion', {'send_to': 'AW-XXXXXXXXX/XXXXXXXXX'});
       console.log('🎯 Google Ads conversion event would fire here');
     }
+    // Clear the enhanced-conversions stash so it can't attach to a later visit.
+    try { sessionStorage.removeItem('hg_ec'); } catch (e) {}
   }, [property]);
 
   return (
@@ -40,6 +42,15 @@ function ThankYouContent() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
+          // Enhanced conversions for leads: pass the seller's email/phone (stashed by
+          // the form on submit) as user-provided data BEFORE config, so Google can match
+          // future offline uploads even when there's no gclid. Google hashes it client-side.
+          try {
+            var __ec = JSON.parse(sessionStorage.getItem('hg_ec') || 'null');
+            if (__ec && (__ec.email || __ec.phone)) {
+              gtag('set', 'user_data', { email: __ec.email || undefined, phone_number: __ec.phone || undefined });
+            }
+          } catch (e) {}
           gtag('config', 'G-KRZH94TT88');
         `}
       </Script>
