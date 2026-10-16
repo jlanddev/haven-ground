@@ -459,6 +459,10 @@ export default function SellYourLandPage() {
           notes: `Position: ${formData.position}\nHome on property: ${formData.homeOnProperty}\nProperty listed: ${formData.propertyListed}\nInherited: ${formData.isInherited}\nOwned 4+ years: ${formData.ownedFourYears || 'N/A (inherited)'}\nWhy selling: ${formData.whySelling}\nNames on deed: ${formData.namesOnDeed}`,
           phone_verified: true,
           ip_address: userIp,
+          // Google click IDs in dedicated columns too (for the nightly offline upload).
+          gclid: clickIdsRef.current.gclid || null,
+          gbraid: clickIdsRef.current.gbraid || null,
+          wbraid: clickIdsRef.current.wbraid || null,
           form_data: {
             position: formData.position,
             homeOnProperty: formData.homeOnProperty,
