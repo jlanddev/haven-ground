@@ -103,6 +103,29 @@ export default function SellYourLandPage() {
     }
   }, [currentStep]);
 
+  // Google click IDs for value-based bidding: capture gclid/gbraid/wbraid from the
+  // landing URL, persist in a first-party cookie (90 days) so they survive page
+  // navigation, and attach them to the lead on submit. This is what ties a lead
+  // back to the exact ad click when we upload reviewed values to Google.
+  const clickIdsRef = useRef({});
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ids = {};
+      for (const k of ['gclid', 'gbraid', 'wbraid']) {
+        let v = params.get(k);
+        if (v) {
+          document.cookie = `hg_${k}=${encodeURIComponent(v)};path=/;max-age=${90 * 24 * 60 * 60};SameSite=Lax`;
+        } else {
+          const m = document.cookie.match(new RegExp('(?:^|; )hg_' + k + '=([^;]*)'));
+          if (m) v = decodeURIComponent(m[1]);
+        }
+        if (v) ids[k] = v;
+      }
+      clickIdsRef.current = ids;
+    } catch (e) { /* no-op */ }
+  }, []);
+
   const US_STATES = [
     'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
     'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland',
@@ -450,7 +473,11 @@ export default function SellYourLandPage() {
             fullName: formData.fullName,
             namesOnDeed: formData.namesOnDeed,
             email: formData.email,
-            phone: e164Phone
+            phone: e164Phone,
+            // Google click IDs (VBB attribution) — captured on landing from the ad URL.
+            gclid: clickIdsRef.current.gclid || null,
+            gbraid: clickIdsRef.current.gbraid || null,
+            wbraid: clickIdsRef.current.wbraid || null
           }
         }])
         .select('id')
