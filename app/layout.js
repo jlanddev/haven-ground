@@ -1,4 +1,20 @@
 import "./globals.css";
+import { Fraunces, Inter } from "next/font/google";
+import ClickIdCapture from "../components/ClickIdCapture";
+
+// Display serif with real character (optical sizing + italics) for headings and
+// the brand voice; clean humanist sans for nav, buttons, and small UI text.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-display",
+  style: ["normal", "italic"],
+});
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-sans",
+});
 
 export const metadata = {
   title: "Haven Ground - Land and community, one meaningful handshake at a time",
@@ -56,7 +72,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
       <head>
         {/* Google Tag Manager */}
         <script
@@ -188,6 +204,8 @@ head.appendChild(script);`,
         />
       </head>
       <body>
+        {/* Capture Google click IDs site-wide (any landing page), not just the form. */}
+        <ClickIdCapture />
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe

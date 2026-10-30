@@ -48,6 +48,18 @@ export async function POST(request) {
   try {
     const leadData = await request.json();
 
+    // Google click IDs for value-based bidding: take them from the posted body,
+    // else from the site-wide first-party cookie. Previously this path saved NO
+    // click ID, so every lead through it (source "haven-ground") was unmatchable.
+    const cookieHeader = request.headers.get('cookie') || '';
+    const fromCookie = (k) => {
+      const m = cookieHeader.match(new RegExp('(?:^|; )hg_' + k + '=([^;]*)'));
+      return m ? decodeURIComponent(m[1]) : null;
+    };
+    const gclid = leadData.gclid || fromCookie('gclid') || null;
+    const gbraid = leadData.gbraid || fromCookie('gbraid') || null;
+    const wbraid = leadData.wbraid || fromCookie('wbraid') || null;
+
     // Insert lead into ParcelReach database
     const { data, error } = await supabase
       .from('leads')
@@ -76,6 +88,11 @@ export async function POST(request) {
         // SMS verification
         sms_consent: leadData.smsConsent || false,
         sms_verified: leadData.smsVerified || false,
+
+        // Google click IDs (for the nightly offline-conversion upload)
+        gclid,
+        gbraid,
+        wbraid,
 
         // Source tracking
         source: 'haven-ground',
