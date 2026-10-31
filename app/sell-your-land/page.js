@@ -122,6 +122,8 @@ export default function SellYourLandPage() {
         }
         if (v) ids[k] = v;
       }
+      // Full first-touch landing URL (from the site-wide cookie, else this page's URL).
+      try { const m = document.cookie.match(/(?:^|; )hg_landing=([^;]*)/); ids.landing_url = m ? decodeURIComponent(m[1]) : window.location.href; } catch { /* no-op */ }
       clickIdsRef.current = ids;
     } catch (e) { /* no-op */ }
   }, []);
@@ -481,7 +483,9 @@ export default function SellYourLandPage() {
             // Google click IDs (VBB attribution) — captured on landing from the ad URL.
             gclid: clickIdsRef.current.gclid || null,
             gbraid: clickIdsRef.current.gbraid || null,
-            wbraid: clickIdsRef.current.wbraid || null
+            wbraid: clickIdsRef.current.wbraid || null,
+            // Full first-touch landing URL — always recoverable even if a gclid wasn't parsed.
+            landing_url: clickIdsRef.current.landing_url || null
           }
         }])
         .select('id')

@@ -59,6 +59,7 @@ export async function POST(request) {
     const gclid = leadData.gclid || fromCookie('gclid') || null;
     const gbraid = leadData.gbraid || fromCookie('gbraid') || null;
     const wbraid = leadData.wbraid || fromCookie('wbraid') || null;
+    const landingUrl = leadData.landing_url || fromCookie('landing') || null;
 
     // Insert lead into ParcelReach database
     const { data, error } = await supabase
@@ -93,6 +94,7 @@ export async function POST(request) {
         gclid,
         gbraid,
         wbraid,
+        form_data: { landing_url: landingUrl, gclid, gbraid, wbraid },
 
         // Source tracking
         source: 'haven-ground',
