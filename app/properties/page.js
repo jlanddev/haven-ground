@@ -981,6 +981,11 @@ export default function PropertiesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {sortedProperties.map((property) => {
                   const currentIndex = currentImageIndex[property.id] || 0;
+                  // A listing published before it's finished (no price, no price
+                  // range, no photos) is treated as Coming Soon so it degrades
+                  // gracefully instead of showing blanks.
+                  const comingSoon = property.status === 'coming-soon'
+                    || (property.price == null && !property.priceRange && (!property.images || property.images.length === 0));
                   const nextImage = () => {
                     setHasNavigated(prev => ({ ...prev, [property.id]: true }));
                     setCurrentImageIndex(prev => ({
@@ -1159,7 +1164,7 @@ export default function PropertiesPage() {
                           <span className="absolute top-4 left-4 bg-blue-600 text-white px-4 py-1.5 text-sm font-bold rounded-full shadow-lg z-20">
                             In Engineering Phase
                           </span>
-                        ) : property.status === 'coming-soon' ? (
+                        ) : comingSoon ? (
                           <span className="absolute top-4 left-4 bg-[#7D6B58] text-white px-3 py-1 text-sm font-medium rounded-full shadow-lg z-20">
                             COMING SOON
                           </span>
@@ -1208,7 +1213,7 @@ export default function PropertiesPage() {
                                   </div>
                                   <div>
                                     <p className="text-sm text-[#7D6B58] font-medium">Price Range</p>
-                                    <p className="text-2xl text-[#2F4F33] font-bold">{property.priceRange}</p>
+                                    <p className="text-2xl text-[#2F4F33] font-bold">{comingSoon ? 'Coming Soon' : property.priceRange}</p>
                                   </div>
                                 </div>
                               </div>

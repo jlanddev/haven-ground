@@ -14,7 +14,7 @@ body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: #F5EFD9;
   color: #2F4F33;
 }
@@ -24,10 +24,15 @@ a {
   text-decoration: none;
 }
 
-/* Keep serif for headings - they give character */
+/* Display serif (Fraunces) for headings - real character with optical sizing */
 h1, h2, h3, h4, h5, h6 {
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-family: var(--font-display), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-optical-sizing: auto;
 }
+
+/* Font-family utilities to opt specific elements in/out of the two families */
+.font-display { font-family: var(--font-display), Georgia, serif; font-optical-sizing: auto; }
+.font-ui { font-family: var(--font-sans), -apple-system, "Segoe UI", sans-serif; }
 
 /* Force all numbers to use clear, lined-up digits (no old-style numerals) */
 body, body * {
@@ -82,4 +87,87 @@ table, th, td, .lot-table, [class*="lot"], [class*="Lot"] {
     font-size: 8px !important;
     padding: 2px 5px !important;
   }
+}
+
+/* ============================================================
+   Homepage hero: entrance motion + hand-drawn texture
+   ============================================================ */
+
+/* Content rises and fades in on load; stagger with inline animation-delay. */
+@keyframes hg-reveal-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* The pencil landscape draws/fills in from the bottom and settles. */
+@keyframes hg-sketch-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(1.02);
+    clip-path: inset(60% 0 0 0);
+  }
+  to {
+    opacity: var(--sketch-opacity, 0.55);
+    transform: translateY(0) scale(1);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.hg-reveal {
+  opacity: 0;
+  animation: hg-reveal-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hg-sketch {
+  opacity: 0;
+  animation: hg-sketch-in 1.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+/* Pencil landscape settles in from the bottom-right and fades up to full.
+   mix-blend-multiply (set inline) drops the white paper so lines sit on cream. */
+@keyframes hg-draw-br {
+  from { opacity: 0; transform: translate(46px, 40px); }
+  to   { opacity: 0.62; transform: translate(0, 0); }
+}
+.hg-draw-br {
+  opacity: 0;
+  transform: translate(46px, 40px);
+  animation: hg-draw-br 2s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+}
+
+/* Subdivision plat: each stroke draws itself in (real line-drawing). Shapes set
+   pathLength="1" so one keyframe works regardless of path length; stagger with
+   inline animation-delay. */
+@keyframes hg-plat-draw { to { stroke-dashoffset: 0; } }
+.hg-plat [pathLength] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: hg-plat-draw 1.5s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* Soft paper grain so the cream reads as crafted, not flat digital. */
+.hg-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+}
+
+/* CTA arrow nudge on hover */
+.hg-cta .hg-arrow { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.hg-cta:hover .hg-arrow { transform: translateX(4px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hg-reveal, .hg-sketch, .hg-draw-br {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+  }
+  .hg-sketch { opacity: var(--sketch-opacity, 0.55); }
+  .hg-draw-br { opacity: 0.62; transform: none; }
+  .hg-plat [pathLength] { animation: none; stroke-dashoffset: 0; }
 }

@@ -20,12 +20,11 @@ function ThankYouContent() {
       console.log('✅ Facebook Lead event tracked for:', property);
     }
 
-    // Google Ads conversion tracking - fires when qualified lead lands on this page
-    if (typeof window !== 'undefined' && window.gtag) {
-      // TODO: Add Google Ads conversion code here (starts with AW-)
-      // gtag('event', 'conversion', {'send_to': 'AW-XXXXXXXXX/XXXXXXXXX'});
-      console.log('🎯 Google Ads conversion event would fire here');
-    }
+    // Google Ads receives this conversion via the GA4 import, NOT a separate AW- tag.
+    // The GA4 "Qualified_Lead" key event (imported into Google Ads account 2875216984)
+    // is the conversion. The hashed email/phone set as user_data in the GA script below
+    // (before config) rides along with it as enhanced-conversions-for-leads data, so a
+    // lead can be matched to its ad click even without a gclid. Nothing to fire here.
     // Clear the enhanced-conversions stash so it can't attach to a later visit.
     try { sessionStorage.removeItem('hg_ec'); } catch (e) {}
   }, [property]);
@@ -43,12 +42,21 @@ function ThankYouContent() {
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
           // Enhanced conversions for leads: pass the seller's email/phone (stashed by
-          // the form on submit) as user-provided data BEFORE config, so Google can match
-          // future offline uploads even when there's no gclid. Google hashes it client-side.
+          // the form on submit) as user-provided data BEFORE config, so the Qualified_Lead
+          // conversion (imported from this GA4 property into Google Ads) carries hashed
+          // contact data and can be matched to the ad click even when there's no gclid.
+          // Normalize per Google's spec first (email: trim + lowercase; phone: E.164) —
+          // gtag does the SHA-256 hashing itself, but only hashes what we hand it.
           try {
             var __ec = JSON.parse(sessionStorage.getItem('hg_ec') || 'null');
             if (__ec && (__ec.email || __ec.phone)) {
-              gtag('set', 'user_data', { email: __ec.email || undefined, phone_number: __ec.phone || undefined });
+              var __email = String(__ec.email || '').trim().toLowerCase();
+              var __phone = String(__ec.phone || '').replace(/[^\d+]/g, '');
+              if (__phone && __phone.charAt(0) !== '+') __phone = '+' + __phone;
+              gtag('set', 'user_data', {
+                email: __email || undefined,
+                phone_number: __phone || undefined
+              });
             }
           } catch (e) {}
           gtag('config', 'G-KRZH94TT88');
