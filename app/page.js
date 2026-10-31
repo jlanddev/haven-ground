@@ -134,10 +134,10 @@ export default function HomePage() {
             {/* Logo */}
             <div className="flex items-center relative z-20">
               <a href="/" className="relative">
-                <img
-                  src="/images/haven-logo-2026.png"
-                  alt="Haven Ground Logo"
-                  className="h-12 sm:h-14 md:h-16 w-auto hover:opacity-90 transition-opacity duration-300"
+                <img 
+                  src="/images/Haven LOGO Use.png" 
+                  alt="Haven Ground Logo" 
+                  className="h-16 sm:h-20 md:h-24 w-auto hover:opacity-90 transition-opacity duration-300"
                 />
               </a>
             </div>
@@ -175,68 +175,43 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* Hero — hand-drawn: subdivision plat draws across the top, pencil land
-          draws in from the bottom-right, on a light cream ground */}
-      <section
-        className="relative flex-1 min-h-[88vh] flex flex-col justify-center overflow-hidden"
-        style={{ background: 'linear-gradient(to bottom, #F7F1DC 0%, #F5EFD9 55%, #EFE7CD 100%)' }}
-      >
-        {/* Subdivision plat drawing across the top */}
-        <svg
-          className="hg-plat absolute top-0 inset-x-0 w-full h-[30%] pointer-events-none"
-          viewBox="0 0 1440 300" fill="none" preserveAspectRatio="xMidYMin slice"
-          style={{ opacity: 0.5 }}
-        >
-          <g stroke="#6F7A55" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none">
-            <path pathLength="1" d="M 110 60 L 1330 60" style={{ animationDelay: '0.15s' }} />
-            <path pathLength="1" d="M 110 60 L 92 168" style={{ animationDelay: '0.3s' }} />
-            <path pathLength="1" d="M 1330 60 L 1348 150" style={{ animationDelay: '0.3s' }} />
-            <path pathLength="1" d="M 92 168 C 470 146, 940 186, 1348 150" style={{ animationDelay: '0.5s' }} />
-            <path pathLength="1" d="M 96 192 C 470 172, 940 210, 1352 174" style={{ animationDelay: '0.62s' }} />
-            <path pathLength="1" d="M 280 60 L 272 161" style={{ animationDelay: '0.8s' }} />
-            <path pathLength="1" d="M 460 60 L 452 166" style={{ animationDelay: '0.9s' }} />
-            <path pathLength="1" d="M 640 60 L 634 172" style={{ animationDelay: '1.0s' }} />
-            <path pathLength="1" d="M 820 60 L 817 178" style={{ animationDelay: '1.1s' }} />
-            <path pathLength="1" d="M 1000 60 L 1001 174" style={{ animationDelay: '1.2s' }} />
-            <path pathLength="1" d="M 1180 60 L 1184 160" style={{ animationDelay: '1.3s' }} />
-          </g>
-        </svg>
-
-        {/* Pencil landscape drawing in from the bottom-right; multiply drops the
-            white paper so the lines sit on the cream ground */}
-        <div
-          className="hg-draw-br absolute inset-x-0 bottom-0 h-[60%] pointer-events-none"
-          style={{
-            backgroundImage: "url('/images/Homepage hero design.png')",
-            backgroundSize: '1500px auto',
-            backgroundPosition: 'center bottom',
-            backgroundRepeat: 'no-repeat',
-            mixBlendMode: 'multiply',
-          }}
-        />
-
-        {/* Content */}
-        <div className="relative z-10 w-full max-w-4xl mx-auto px-6 text-center pb-16">
-          <p className="hg-reveal font-ui text-xs md:text-sm font-medium tracking-[0.34em] uppercase text-[#7D6B58] mb-6" style={{ animationDelay: '0.15s' }}>
-            Land&nbsp;&middot;&nbsp;Community&nbsp;&middot;&nbsp;Legacy
-          </p>
-          <h1 className="hg-reveal font-display font-semibold text-[#2F4F33] leading-[0.94] tracking-[-0.02em] text-5xl md:text-7xl lg:text-[5.5rem]" style={{ animationDelay: '0.28s' }}>
+      {/* Coming Soon Content */}
+      <div className="flex-1 flex items-center justify-center px-4 py-16 bg-gradient-to-br from-[#F5EFD9] to-[#D2C6B2] relative">
+        <div className="max-w-3xl mx-auto text-center">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl text-[#2F4F33] font-serif font-bold mb-4 leading-tight">
             Our Land is<br />Your Haven
           </h1>
-          <p className="hg-reveal font-display italic text-[#5c5240] text-xl md:text-2xl mt-6" style={{ animationDelay: '0.44s' }}>
-            Integrity, Honor, and Heart
-          </p>
-          <div className="hg-reveal mt-10" style={{ animationDelay: '0.6s' }}>
-            <a
-              href="/properties"
-              className="hg-cta group inline-flex items-center gap-2.5 font-ui font-semibold tracking-wide text-[#F5EFD9] bg-[#2F4F33] hover:bg-[#25401f] px-8 py-4 rounded-full shadow-[0_12px_30px_-10px_rgba(47,79,51,0.55)] transition-all duration-300"
-            >
-              Browse Available Properties
-              <svg className="hg-arrow w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </a>
+          
+          {/* Elegant Southern Separation Line */}
+          <div className="flex items-center justify-center mb-8">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#7D6B58] to-transparent"></div>
+            <span className="px-4 text-[#3A4045] font-serif text-lg italic">built on</span>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#7D6B58] to-transparent"></div>
           </div>
+          
+          <h2 className="text-2xl md:text-3xl lg:text-4xl text-[#3A4045] font-serif font-bold mb-8 leading-tight">
+            Integrity, Honor, and Heart
+          </h2>
+          
+          <a 
+            href="/properties" 
+            className="inline-block bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 rounded-md hover:bg-[#1a2e1c] active:bg-[#0f1a10] transition-all duration-200 font-serif text-lg shadow-lg hover:shadow-xl relative z-10 transform hover:scale-105 active:scale-95"
+          >
+            Browse Available Properties
+          </a>
         </div>
-      </section>
+        
+        {/* Hero Image Fading Up from Footer */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-1/2 bg-cover bg-center bg-no-repeat opacity-30"
+          style={{
+            backgroundImage: `url('/images/Homepage hero design.png')`,
+            backgroundPosition: 'center bottom',
+            mask: 'linear-gradient(to top, black 0%, transparent 100%)',
+            WebkitMask: 'linear-gradient(to top, black 0%, transparent 100%)'
+          }}
+        ></div>
+      </div>
 
       {/* Footer */}
       <footer className="bg-[#2F4F33] text-[#F5EFD9] py-16 border-t border-[#7D6B58]">
