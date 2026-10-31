@@ -502,6 +502,13 @@ export default function SellYourLandPage() {
         }
       }
 
+      // Stash email/phone for enhanced conversions BEFORE the GHL webhook, so it's
+      // set even if the webhook throws — the catch block below still redirects to
+      // /thank-you, which reads hg_ec and passes the hashed email/phone to Google.
+      // (Previously this ran only after a successful webhook, so a webhook failure
+      // silently dropped the enhanced-conversion data.)
+      try { sessionStorage.setItem('hg_ec', JSON.stringify({ email: formData.email, phone: e164Phone })); } catch (e) {}
+
       // Submit to GHL webhook
       console.log('📡 Sending webhook to GHL...');
       const response = await fetch('https://services.leadconnectorhq.com/hooks/wLaNbf44RqmPNhV1IEev/webhook-trigger/32643373-57f4-47c1-9b89-c4ecf9143beb', {
@@ -517,11 +524,6 @@ export default function SellYourLandPage() {
       if (!response.ok) {
         throw new Error(`Webhook failed: ${response.status}`);
       }
-
-      // Stash email/phone for enhanced conversions: the thank-you page reads this and
-      // passes it to Google as user-provided data so future offline uploads can match
-      // this lead even without a gclid.
-      try { sessionStorage.setItem('hg_ec', JSON.stringify({ email: formData.email, phone: e164Phone })); } catch (e) {}
 
       console.log('⏳ Waiting 1 second before redirect...');
       await new Promise(resolve => setTimeout(resolve, 1000));
