@@ -124,6 +124,8 @@ export default function SellYourLandPage() {
       }
       // Full first-touch landing URL (from the site-wide cookie, else this page's URL).
       try { const m = document.cookie.match(/(?:^|; )hg_landing=([^;]*)/); ids.landing_url = m ? decodeURIComponent(m[1]) : window.location.href; } catch { /* no-op */ }
+      // Campaign attribution (e.g. Facebook retargeting) so the CRM can show the lead's source.
+      try { const sp = new URLSearchParams(window.location.search); if (sp.get('utm_source')) ids.utm_source = sp.get('utm_source'); if (sp.get('utm_medium')) ids.utm_medium = sp.get('utm_medium'); if (sp.get('utm_campaign')) ids.utm_campaign = sp.get('utm_campaign'); } catch { /* no-op */ }
       clickIdsRef.current = ids;
     } catch (e) { /* no-op */ }
   }, []);
@@ -485,7 +487,10 @@ export default function SellYourLandPage() {
             gbraid: clickIdsRef.current.gbraid || null,
             wbraid: clickIdsRef.current.wbraid || null,
             // Full first-touch landing URL — always recoverable even if a gclid wasn't parsed.
-            landing_url: clickIdsRef.current.landing_url || null
+            landing_url: clickIdsRef.current.landing_url || null,
+            utm_source: clickIdsRef.current.utm_source || null,
+            utm_medium: clickIdsRef.current.utm_medium || null,
+            utm_campaign: clickIdsRef.current.utm_campaign || null
           }
         }])
         .select('id')
