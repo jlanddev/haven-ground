@@ -5,7 +5,7 @@ export default function InheritedLandPage() {
     <SellLandForm
       landingPage="inherited-land"
       headline="Inherited Land You Don't Want to Keep?"
-      subhead="Too much land, far from home, with taxes due every year? Skip the 6–12 months a listing takes — no realtor, no showings, just a fair offer and a closing you can count on. We buy land 2+ acres, and you can live anywhere."
+      subhead="Own inherited land that's far from home and costing you taxes every year? Skip the 6-12 months a listing takes. No realtor, no showings. Just a fair offer and a closing you can count on. We buy parcels 2 acres and up and work with out-of-state owners every day."
       bullets={[
         "We handle multiple heirs, title & probate paperwork",
         "Behind on taxes? We can still help",

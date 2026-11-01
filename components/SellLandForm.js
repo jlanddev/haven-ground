@@ -585,7 +585,7 @@ export default function SellLandForm({ landingPage, headline, subhead, bullets }
               {realtorExit ? (
                 /* Message for self-selected realtor preference */
                 <p className="text-[#3A4045] mb-6 leading-relaxed">
-                  No hard feelings — we respect that. If anything changes, we're here. Good luck with your sale!
+                  No hard feelings. We respect that. If anything changes, we're here. Good luck with your sale!
                   <br /><br />
                   <span className="font-semibold text-[#2F4F33]">- The Haven Team</span>
                 </p>
@@ -672,7 +672,7 @@ export default function SellLandForm({ landingPage, headline, subhead, bullets }
         <div className="absolute inset-0 bg-gradient-to-br from-[#2F4F33] to-[#1a2e1c] opacity-90"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl text-[#F5EFD9] font-serif font-light mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl text-[#F5EFD9] font-serif font-light mb-6 leading-tight break-words [text-wrap:balance]">
               {headline}
             </h1>
             <p className="text-xl md:text-2xl text-[#D2C6B2] max-w-3xl mx-auto leading-relaxed mb-8">
@@ -870,7 +870,7 @@ export default function SellLandForm({ landingPage, headline, subhead, bullets }
                 <div className="bg-white p-6 rounded-lg shadow-md flex-1 border-l-4 border-[#2F4F33]">
                   <h3 className="text-xl text-[#2F4F33] font-serif mb-2">We Handle Everything</h3>
                   <p className="text-[#3A4045] leading-relaxed">
-                    Title work, surveys if needed, closing costs—we take care of it. You show up to closing, sign papers, and get paid. That's it.
+                    Title work, surveys if needed, closing costs. We take care of it. You show up to closing, sign papers, and get paid. That's it.
                   </p>
                 </div>
               </div>
@@ -1198,7 +1198,7 @@ export default function SellLandForm({ landingPage, headline, subhead, bullets }
             {currentStep === 7 && (
               <div className="space-y-6 animate-fadeIn">
                 <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
-                  Just so we're upfront with you —
+                  Just so we're upfront with you:
                 </h3>
                 <div className="text-[#3A4045] space-y-4">
                   <p>
@@ -1244,7 +1244,7 @@ export default function SellLandForm({ landingPage, headline, subhead, bullets }
                   In a few words, why are you looking to sell?
                 </h3>
                 <p className="text-sm text-[#7D6B58] -mt-4 mb-4">
-                  We've bought hundreds of properties — we understand every situation. Feel free to be open and honest.
+                  We've bought hundreds of properties. We understand every situation. Feel free to be open and honest.
                 </p>
 
                 <textarea
