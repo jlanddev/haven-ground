@@ -31,7 +31,7 @@ export default function PropertiesPage() {
     maxPrice: '',
     state: 'all',
     location: 'all',
-    sortBy: 'featured',
+    sortBy: 'recommended',
     showMobileFilters: false
   });
 
@@ -186,8 +186,11 @@ export default function PropertiesPage() {
         if (b.type === 'community') return -1;
         return (parseFloat(b.acres) || 0) - (parseFloat(a.acres) || 0);
       case 'featured':
-      default:
         return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+      case 'recommended':
+      default:
+        // Admin drag order wins: order by the CMS sort_order ascending.
+        return (a.sort_order ?? 9999) - (b.sort_order ?? 9999);
     }
   });
 
@@ -905,7 +908,7 @@ export default function PropertiesPage() {
                   maxPrice: '',
                   state: 'all',
                   location: 'all',
-                  sortBy: 'featured',
+                  sortBy: 'recommended',
                   showMobileFilters: false
                 }); }}
                 className="w-full py-2 px-4 bg-[#F5EFD9] text-[#2F4F33] border border-[#2F4F33] hover:bg-[#2F4F33] hover:text-[#F5EFD9] transition duration-300"
@@ -939,6 +942,7 @@ export default function PropertiesPage() {
                   value={filters.sortBy}
                   onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
                 >
+                  <option value="recommended">Recommended</option>
                   <option value="featured">Featured First</option>
                   <option value="priceLow">Price: Low to High</option>
                   <option value="priceHigh">Price: High to Low</option>
