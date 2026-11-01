@@ -1,0 +1,1725 @@
+"use client";
+
+import { useState, useEffect, useRef } from 'react';
+import Script from 'next/script';
+import { supabase } from '../lib/supabase';
+import { getSessionTracker } from '../lib/tracking/session-tracker';
+
+// Email validation - checks format and blocks fake/disposable domains
+const validateEmail = (email) => {
+  if (!email) return { valid: false, error: 'Email is required' };
+
+  // Basic format check
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    return { valid: false, error: 'Please enter a valid email address' };
+  }
+
+  const domain = email.split('@')[1].toLowerCase();
+
+  // Block disposable/temporary email domains
+  const disposableDomains = [
+    'tempmail.com', 'throwaway.com', 'guerrillamail.com', 'mailinator.com',
+    'temp-mail.org', '10minutemail.com', 'fakeinbox.com', 'trashmail.com',
+    'yopmail.com', 'sharklasers.com', 'getnada.com', 'tempail.com',
+    'emailondeck.com', 'mohmal.com', 'dispostable.com', 'maildrop.cc',
+    'getairmail.com', 'temp-mail.io', 'burnermail.io', 'spamgourmet.com'
+  ];
+
+  if (disposableDomains.includes(domain)) {
+    return { valid: false, error: 'Please use a permanent email address' };
+  }
+
+  // Check for obviously fake domains (no dot, too short, etc.)
+  const domainParts = domain.split('.');
+  if (domainParts.length < 2 || domainParts[0].length < 2 || domainParts[domainParts.length - 1].length < 2) {
+    return { valid: false, error: 'Please enter a valid email domain' };
+  }
+
+  return { valid: true, error: null };
+};
+
+export default function SellLandForm({ landingPage, headline, subhead, bullets }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formFocused, setFormFocused] = useState(false);
+  const [showDisqualifiedModal, setShowDisqualifiedModal] = useState(false);
+  const [realtorExit, setRealtorExit] = useState(false);
+  const [formData, setFormData] = useState({
+    position: '',
+    homeOnProperty: '',
+    propertyListed: '',
+    isInherited: '',
+    ownedFourYears: '',
+    whySelling: '',
+    propertyState: '',
+    streetAddress: '',
+    propertyCounty: '',
+    acres: '',
+    fullName: '',
+    namesOnDeed: '',
+    email: '',
+    phone: '',
+    smsConsent: false
+  });
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [e164Phone, setE164Phone] = useState('');
+  const [stateSuggestions, setStateSuggestions] = useState([]);
+  const [showStateSuggestions, setShowStateSuggestions] = useState(false);
+  const [countySuggestions, setCountySuggestions] = useState([]);
+  const [showCountySuggestions, setShowCountySuggestions] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [whySellingError, setWhySellingError] = useState('');
+  const [wholesalerBlocks, setWholesalerBlocks] = useState(0);
+  const [isValidatingReason, setIsValidatingReason] = useState(false);
+
+  // Direct link to step: ?step=14
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const step = params.get('step');
+    if (step) {
+      setCurrentStep(parseInt(step, 10));
+      setFormFocused(true);
+    }
+  }, []);
+
+  // Session tracking — init on mount, track step changes
+  const trackerRef = useRef(null);
+  const prevStepRef = useRef(1);
+  useEffect(() => {
+    const tracker = getSessionTracker();
+    trackerRef.current = tracker;
+    tracker.init();
+    return () => tracker.destroy();
+  }, []);
+  useEffect(() => {
+    if (trackerRef.current && currentStep !== prevStepRef.current) {
+      trackerRef.current.trackStepChange(currentStep);
+      prevStepRef.current = currentStep;
+    }
+  }, [currentStep]);
+
+  // Google click IDs for value-based bidding: capture gclid/gbraid/wbraid from the
+  // landing URL, persist in a first-party cookie (90 days) so they survive page
+  // navigation, and attach them to the lead on submit. This is what ties a lead
+  // back to the exact ad click when we upload reviewed values to Google.
+  const clickIdsRef = useRef({});
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ids = {};
+      for (const k of ['gclid', 'gbraid', 'wbraid']) {
+        let v = params.get(k);
+        if (v) {
+          document.cookie = `hg_${k}=${encodeURIComponent(v)};path=/;max-age=${90 * 24 * 60 * 60};SameSite=Lax`;
+        } else {
+          const m = document.cookie.match(new RegExp('(?:^|; )hg_' + k + '=([^;]*)'));
+          if (m) v = decodeURIComponent(m[1]);
+        }
+        if (v) ids[k] = v;
+      }
+      // Full first-touch landing URL (from the site-wide cookie, else this page's URL).
+      try { const m = document.cookie.match(/(?:^|; )hg_landing=([^;]*)/); ids.landing_url = m ? decodeURIComponent(m[1]) : window.location.href; } catch { /* no-op */ }
+      clickIdsRef.current = ids;
+    } catch (e) { /* no-op */ }
+  }, []);
+
+  const US_STATES = [
+    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
+    'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland',
+    'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
+    'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina',
+    'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+  ];
+
+  const handleStateChange = (value) => {
+    setFormData({...formData, propertyState: value});
+    if (value.length > 0) {
+      const filtered = US_STATES.filter(state =>
+        state.toLowerCase().startsWith(value.toLowerCase())
+      );
+      setStateSuggestions(filtered);
+      setShowStateSuggestions(filtered.length > 0);
+    } else {
+      setStateSuggestions([]);
+      setShowStateSuggestions(false);
+    }
+  };
+
+  const selectState = (state) => {
+    setFormData({...formData, propertyState: state, propertyCounty: ''});
+    setShowStateSuggestions(false);
+  };
+
+  // Complete county data by state (all 3,137 US counties/equivalents, alphabetized)
+  const COUNTIES_BY_STATE = {
+    'Alabama': ['Autauga', 'Baldwin', 'Barbour', 'Bibb', 'Blount', 'Bullock', 'Butler', 'Calhoun', 'Chambers', 'Cherokee', 'Chilton', 'Choctaw', 'Clarke', 'Clay', 'Cleburne', 'Coffee', 'Colbert', 'Conecuh', 'Coosa', 'Covington', 'Crenshaw', 'Cullman', 'Dale', 'Dallas', 'DeKalb', 'Elmore', 'Escambia', 'Etowah', 'Fayette', 'Franklin', 'Geneva', 'Greene', 'Hale', 'Henry', 'Houston', 'Jackson', 'Jefferson', 'Lamar', 'Lauderdale', 'Lawrence', 'Lee', 'Limestone', 'Lowndes', 'Macon', 'Madison', 'Marengo', 'Marion', 'Marshall', 'Mobile', 'Monroe', 'Montgomery', 'Morgan', 'Perry', 'Pickens', 'Pike', 'Randolph', 'Russell', 'Shelby', 'St. Clair', 'Sumter', 'Talladega', 'Tallapoosa', 'Tuscaloosa', 'Walker', 'Washington', 'Wilcox', 'Winston'],
+    'Alaska': ['Aleutians East', 'Aleutians West', 'Anchorage', 'Bethel', 'Bristol Bay', 'Denali', 'Dillingham', 'Fairbanks North Star', 'Haines', 'Hoonah-Angoon', 'Juneau', 'Kenai Peninsula', 'Ketchikan Gateway', 'Kodiak Island', 'Lake and Peninsula', 'Matanuska-Susitna', 'Nome', 'North Slope', 'Northwest Arctic', 'Petersburg', 'Prince of Wales-Hyder', 'Sitka', 'Skagway', 'Southeast Fairbanks', 'Valdez-Cordova', 'Wade Hampton', 'Wrangell', 'Yakutat', 'Yukon-Koyukuk'],
+    'Arizona': ['Apache', 'Cochise', 'Coconino', 'Gila', 'Graham', 'Greenlee', 'La Paz', 'Maricopa', 'Mohave', 'Navajo', 'Pima', 'Pinal', 'Santa Cruz', 'Yavapai', 'Yuma'],
+    'Arkansas': ['Arkansas', 'Ashley', 'Baxter', 'Benton', 'Boone', 'Bradley', 'Calhoun', 'Carroll', 'Chicot', 'Clark', 'Clay', 'Cleburne', 'Cleveland', 'Columbia', 'Conway', 'Craighead', 'Crawford', 'Crittenden', 'Cross', 'Dallas', 'Desha', 'Drew', 'Faulkner', 'Franklin', 'Fulton', 'Garland', 'Grant', 'Greene', 'Hempstead', 'Hot Spring', 'Howard', 'Independence', 'Izard', 'Jackson', 'Jefferson', 'Johnson', 'Lafayette', 'Lawrence', 'Lee', 'Lincoln', 'Little River', 'Logan', 'Lonoke', 'Madison', 'Marion', 'Miller', 'Mississippi', 'Monroe', 'Montgomery', 'Nevada', 'Newton', 'Ouachita', 'Perry', 'Phillips', 'Pike', 'Poinsett', 'Polk', 'Pope', 'Prairie', 'Pulaski', 'Randolph', 'Saline', 'Scott', 'Searcy', 'Sebastian', 'Sevier', 'Sharp', 'St. Francis', 'Stone', 'Union', 'Van Buren', 'Washington', 'White', 'Woodruff', 'Yell'],
+    'California': ['Alameda', 'Alpine', 'Amador', 'Butte', 'Calaveras', 'Colusa', 'Contra Costa', 'Del Norte', 'El Dorado', 'Fresno', 'Glenn', 'Humboldt', 'Imperial', 'Inyo', 'Kern', 'Kings', 'Lake', 'Lassen', 'Los Angeles', 'Madera', 'Marin', 'Mariposa', 'Mendocino', 'Merced', 'Modoc', 'Mono', 'Monterey', 'Napa', 'Nevada', 'Orange', 'Placer', 'Plumas', 'Riverside', 'Sacramento', 'San Benito', 'San Bernardino', 'San Diego', 'San Francisco', 'San Joaquin', 'San Luis Obispo', 'San Mateo', 'Santa Barbara', 'Santa Clara', 'Santa Cruz', 'Shasta', 'Sierra', 'Siskiyou', 'Solano', 'Sonoma', 'Stanislaus', 'Sutter', 'Tehama', 'Trinity', 'Tulare', 'Tuolumne', 'Ventura', 'Yolo', 'Yuba'],
+    'Colorado': ['Adams', 'Alamosa', 'Arapahoe', 'Archuleta', 'Baca', 'Bent', 'Boulder', 'Broomfield', 'Chaffee', 'Cheyenne', 'Clear Creek', 'Conejos', 'Costilla', 'Crowley', 'Custer', 'Delta', 'Denver', 'Dolores', 'Douglas', 'Eagle', 'El Paso', 'Elbert', 'Fremont', 'Garfield', 'Gilpin', 'Grand', 'Gunnison', 'Hinsdale', 'Huerfano', 'Jackson', 'Jefferson', 'Kiowa', 'Kit Carson', 'La Plata', 'Lake', 'Larimer', 'Las Animas', 'Lincoln', 'Logan', 'Mesa', 'Mineral', 'Moffat', 'Montezuma', 'Montrose', 'Morgan', 'Otero', 'Ouray', 'Park', 'Phillips', 'Pitkin', 'Prowers', 'Pueblo', 'Rio Blanco', 'Rio Grande', 'Routt', 'Saguache', 'San Juan', 'San Miguel', 'Sedgwick', 'Summit', 'Teller', 'Washington', 'Weld', 'Yuma'],
+    'Connecticut': ['Fairfield', 'Hartford', 'Litchfield', 'Middlesex', 'New Haven', 'New London', 'Tolland', 'Windham'],
+    'Delaware': ['Kent', 'New Castle', 'Sussex'],
+    'Florida': ['Alachua', 'Baker', 'Bay', 'Bradford', 'Brevard', 'Broward', 'Calhoun', 'Charlotte', 'Citrus', 'Clay', 'Collier', 'Columbia', 'DeSoto', 'Dixie', 'Duval', 'Escambia', 'Flagler', 'Franklin', 'Gadsden', 'Gilchrist', 'Glades', 'Gulf', 'Hamilton', 'Hardee', 'Hendry', 'Hernando', 'Highlands', 'Hillsborough', 'Holmes', 'Indian River', 'Jackson', 'Jefferson', 'Lafayette', 'Lake', 'Lee', 'Leon', 'Levy', 'Liberty', 'Madison', 'Manatee', 'Marion', 'Martin', 'Miami-Dade', 'Monroe', 'Nassau', 'Okaloosa', 'Okeechobee', 'Orange', 'Osceola', 'Palm Beach', 'Pasco', 'Pinellas', 'Polk', 'Putnam', 'Santa Rosa', 'Sarasota', 'Seminole', 'St. Johns', 'St. Lucie', 'Sumter', 'Suwannee', 'Taylor', 'Union', 'Volusia', 'Wakulla', 'Walton', 'Washington'],
+    'Georgia': ['Appling', 'Atkinson', 'Bacon', 'Baker', 'Baldwin', 'Banks', 'Barrow', 'Bartow', 'Ben Hill', 'Berrien', 'Bibb', 'Bleckley', 'Brantley', 'Brooks', 'Bryan', 'Bulloch', 'Burke', 'Butts', 'Calhoun', 'Camden', 'Candler', 'Carroll', 'Catoosa', 'Charlton', 'Chatham', 'Chattahoochee', 'Chattooga', 'Cherokee', 'Clarke', 'Clay', 'Clayton', 'Clinch', 'Cobb', 'Coffee', 'Colquitt', 'Columbia', 'Cook', 'Coweta', 'Crawford', 'Crisp', 'Dade', 'Dawson', 'Decatur', 'DeKalb', 'Dodge', 'Dooly', 'Dougherty', 'Douglas', 'Early', 'Echols', 'Effingham', 'Elbert', 'Emanuel', 'Evans', 'Fannin', 'Fayette', 'Floyd', 'Forsyth', 'Franklin', 'Fulton', 'Gilmer', 'Glascock', 'Glynn', 'Gordon', 'Grady', 'Greene', 'Gwinnett', 'Habersham', 'Hall', 'Hancock', 'Haralson', 'Harris', 'Hart', 'Heard', 'Henry', 'Houston', 'Irwin', 'Jackson', 'Jasper', 'Jeff Davis', 'Jefferson', 'Jenkins', 'Johnson', 'Jones', 'Lamar', 'Lanier', 'Laurens', 'Lee', 'Liberty', 'Lincoln', 'Long', 'Lowndes', 'Lumpkin', 'Macon', 'Madison', 'Marion', 'McDuffie', 'McIntosh', 'Meriwether', 'Miller', 'Mitchell', 'Monroe', 'Montgomery', 'Morgan', 'Murray', 'Muscogee', 'Newton', 'Oconee', 'Oglethorpe', 'Paulding', 'Peach', 'Pickens', 'Pierce', 'Pike', 'Polk', 'Pulaski', 'Putnam', 'Quitman', 'Rabun', 'Randolph', 'Richmond', 'Rockdale', 'Schley', 'Screven', 'Seminole', 'Spalding', 'Stephens', 'Stewart', 'Sumter', 'Talbot', 'Taliaferro', 'Tattnall', 'Taylor', 'Telfair', 'Terrell', 'Thomas', 'Tift', 'Toombs', 'Towns', 'Treutlen', 'Troup', 'Turner', 'Twiggs', 'Union', 'Upson', 'Walker', 'Walton', 'Ware', 'Warren', 'Washington', 'Wayne', 'Webster', 'Wheeler', 'White', 'Whitfield', 'Wilcox', 'Wilkes', 'Wilkinson', 'Worth'],
+    'Hawaii': ['Hawaii', 'Honolulu', 'Kalawao', 'Kauai', 'Maui'],
+    'Idaho': ['Ada', 'Adams', 'Bannock', 'Bear Lake', 'Benewah', 'Bingham', 'Blaine', 'Boise', 'Bonner', 'Bonneville', 'Boundary', 'Butte', 'Camas', 'Canyon', 'Caribou', 'Cassia', 'Clark', 'Clearwater', 'Custer', 'Elmore', 'Franklin', 'Fremont', 'Gem', 'Gooding', 'Idaho', 'Jefferson', 'Jerome', 'Kootenai', 'Latah', 'Lemhi', 'Lewis', 'Lincoln', 'Madison', 'Minidoka', 'Nez Perce', 'Oneida', 'Owyhee', 'Payette', 'Power', 'Shoshone', 'Teton', 'Twin Falls', 'Valley', 'Washington'],
+    'Illinois': ['Adams', 'Alexander', 'Bond', 'Boone', 'Brown', 'Bureau', 'Calhoun', 'Carroll', 'Cass', 'Champaign', 'Christian', 'Clark', 'Clay', 'Clinton', 'Coles', 'Cook', 'Crawford', 'Cumberland', 'De Witt', 'DeKalb', 'Douglas', 'DuPage', 'Edgar', 'Edwards', 'Effingham', 'Fayette', 'Ford', 'Franklin', 'Fulton', 'Gallatin', 'Greene', 'Grundy', 'Hamilton', 'Hancock', 'Hardin', 'Henderson', 'Henry', 'Iroquois', 'Jackson', 'Jasper', 'Jefferson', 'Jersey', 'Jo Daviess', 'Johnson', 'Kane', 'Kankakee', 'Kendall', 'Knox', 'Lake', 'LaSalle', 'Lawrence', 'Lee', 'Livingston', 'Logan', 'Macon', 'Macoupin', 'Madison', 'Marion', 'Marshall', 'Mason', 'Massac', 'McDonough', 'McHenry', 'McLean', 'Menard', 'Mercer', 'Monroe', 'Montgomery', 'Morgan', 'Moultrie', 'Ogle', 'Peoria', 'Perry', 'Piatt', 'Pike', 'Pope', 'Pulaski', 'Putnam', 'Randolph', 'Richland', 'Rock Island', 'Saline', 'Sangamon', 'Schuyler', 'Scott', 'Shelby', 'St. Clair', 'Stark', 'Stephenson', 'Tazewell', 'Union', 'Vermilion', 'Wabash', 'Warren', 'Washington', 'Wayne', 'White', 'Whiteside', 'Will', 'Williamson', 'Winnebago', 'Woodford'],
+    'Indiana': ['Adams', 'Allen', 'Bartholomew', 'Benton', 'Blackford', 'Boone', 'Brown', 'Carroll', 'Cass', 'Clark', 'Clay', 'Clinton', 'Crawford', 'Daviess', 'Dearborn', 'Decatur', 'DeKalb', 'Delaware', 'Dubois', 'Elkhart', 'Fayette', 'Floyd', 'Fountain', 'Franklin', 'Fulton', 'Gibson', 'Grant', 'Greene', 'Hamilton', 'Hancock', 'Harrison', 'Hendricks', 'Henry', 'Howard', 'Huntington', 'Jackson', 'Jasper', 'Jay', 'Jefferson', 'Jennings', 'Johnson', 'Knox', 'Kosciusko', 'LaGrange', 'Lake', 'LaPorte', 'Lawrence', 'Madison', 'Marion', 'Marshall', 'Martin', 'Miami', 'Monroe', 'Montgomery', 'Morgan', 'Newton', 'Noble', 'Ohio', 'Orange', 'Owen', 'Parke', 'Perry', 'Pike', 'Porter', 'Posey', 'Pulaski', 'Putnam', 'Randolph', 'Ripley', 'Rush', 'Scott', 'Shelby', 'Spencer', 'St. Joseph', 'Starke', 'Steuben', 'Sullivan', 'Switzerland', 'Tippecanoe', 'Tipton', 'Union', 'Vanderburgh', 'Vermillion', 'Vigo', 'Wabash', 'Warren', 'Warrick', 'Washington', 'Wayne', 'Wells', 'White', 'Whitley'],
+    'Iowa': ['Adair', 'Adams', 'Allamakee', 'Appanoose', 'Audubon', 'Benton', 'Black Hawk', 'Boone', 'Bremer', 'Buchanan', 'Buena Vista', 'Butler', 'Calhoun', 'Carroll', 'Cass', 'Cedar', 'Cerro Gordo', 'Cherokee', 'Chickasaw', 'Clarke', 'Clay', 'Clayton', 'Clinton', 'Crawford', 'Dallas', 'Davis', 'Decatur', 'Delaware', 'Des Moines', 'Dickinson', 'Dubuque', 'Emmet', 'Fayette', 'Floyd', 'Franklin', 'Fremont', 'Greene', 'Grundy', 'Guthrie', 'Hamilton', 'Hancock', 'Hardin', 'Harrison', 'Henry', 'Howard', 'Humboldt', 'Ida', 'Iowa', 'Jackson', 'Jasper', 'Jefferson', 'Johnson', 'Jones', 'Keokuk', 'Kossuth', 'Lee', 'Linn', 'Louisa', 'Lucas', 'Lyon', 'Madison', 'Mahaska', 'Marion', 'Marshall', 'Mills', 'Mitchell', 'Monona', 'Monroe', 'Montgomery', 'Muscatine', "O'Brien", 'Osceola', 'Page', 'Palo Alto', 'Plymouth', 'Pocahontas', 'Polk', 'Pottawattamie', 'Poweshiek', 'Ringgold', 'Sac', 'Scott', 'Shelby', 'Sioux', 'Story', 'Tama', 'Taylor', 'Union', 'Van Buren', 'Wapello', 'Warren', 'Washington', 'Wayne', 'Webster', 'Winnebago', 'Winneshiek', 'Woodbury', 'Worth', 'Wright'],
+    'Kansas': ['Allen', 'Anderson', 'Atchison', 'Barber', 'Barton', 'Bourbon', 'Brown', 'Butler', 'Chase', 'Chautauqua', 'Cherokee', 'Cheyenne', 'Clark', 'Clay', 'Cloud', 'Coffey', 'Comanche', 'Cowley', 'Crawford', 'Decatur', 'Dickinson', 'Doniphan', 'Douglas', 'Edwards', 'Elk', 'Ellis', 'Ellsworth', 'Finney', 'Ford', 'Franklin', 'Geary', 'Gove', 'Graham', 'Grant', 'Gray', 'Greeley', 'Greenwood', 'Hamilton', 'Harper', 'Harvey', 'Haskell', 'Hodgeman', 'Jackson', 'Jefferson', 'Jewell', 'Johnson', 'Kearny', 'Kingman', 'Kiowa', 'Labette', 'Lane', 'Leavenworth', 'Lincoln', 'Linn', 'Logan', 'Lyon', 'Marion', 'Marshall', 'McPherson', 'Meade', 'Miami', 'Mitchell', 'Montgomery', 'Morris', 'Morton', 'Nemaha', 'Neosho', 'Ness', 'Norton', 'Osage', 'Osborne', 'Ottawa', 'Pawnee', 'Phillips', 'Pottawatomie', 'Pratt', 'Rawlins', 'Reno', 'Republic', 'Rice', 'Riley', 'Rooks', 'Rush', 'Russell', 'Saline', 'Scott', 'Sedgwick', 'Seward', 'Shawnee', 'Sheridan', 'Sherman', 'Smith', 'Stafford', 'Stanton', 'Stevens', 'Sumner', 'Thomas', 'Trego', 'Wabaunsee', 'Wallace', 'Washington', 'Wichita', 'Wilson', 'Woodson', 'Wyandotte'],
+    'Kentucky': ['Adair', 'Allen', 'Anderson', 'Ballard', 'Barren', 'Bath', 'Bell', 'Boone', 'Bourbon', 'Boyd', 'Boyle', 'Bracken', 'Breathitt', 'Breckinridge', 'Bullitt', 'Butler', 'Caldwell', 'Calloway', 'Campbell', 'Carlisle', 'Carroll', 'Carter', 'Casey', 'Christian', 'Clark', 'Clay', 'Clinton', 'Crittenden', 'Cumberland', 'Daviess', 'Edmonson', 'Elliott', 'Estill', 'Fayette', 'Fleming', 'Floyd', 'Franklin', 'Fulton', 'Gallatin', 'Garrard', 'Grant', 'Graves', 'Grayson', 'Green', 'Greenup', 'Hancock', 'Hardin', 'Harlan', 'Harrison', 'Hart', 'Henderson', 'Henry', 'Hickman', 'Hopkins', 'Jackson', 'Jefferson', 'Jessamine', 'Johnson', 'Kenton', 'Knott', 'Knox', 'Larue', 'Laurel', 'Lawrence', 'Lee', 'Leslie', 'Letcher', 'Lewis', 'Lincoln', 'Livingston', 'Logan', 'Lyon', 'Madison', 'Magoffin', 'Marion', 'Marshall', 'Martin', 'Mason', 'McCracken', 'McCreary', 'McLean', 'Meade', 'Menifee', 'Mercer', 'Metcalfe', 'Monroe', 'Montgomery', 'Morgan', 'Muhlenberg', 'Nelson', 'Nicholas', 'Ohio', 'Oldham', 'Owen', 'Owsley', 'Pendleton', 'Perry', 'Pike', 'Powell', 'Pulaski', 'Robertson', 'Rockcastle', 'Rowan', 'Russell', 'Scott', 'Shelby', 'Simpson', 'Spencer', 'Taylor', 'Todd', 'Trigg', 'Trimble', 'Union', 'Warren', 'Washington', 'Wayne', 'Webster', 'Whitley', 'Wolfe', 'Woodford'],
+    'Louisiana': ['Acadia', 'Allen', 'Ascension', 'Assumption', 'Avoyelles', 'Beauregard', 'Bienville', 'Bossier', 'Caddo', 'Calcasieu', 'Caldwell', 'Cameron', 'Catahoula', 'Claiborne', 'Concordia', 'De Soto', 'East Baton Rouge', 'East Carroll', 'East Feliciana', 'Evangeline', 'Franklin', 'Grant', 'Iberia', 'Iberville', 'Jackson', 'Jefferson', 'Jefferson Davis', 'Lafayette', 'Lafourche', 'LaSalle', 'Lincoln', 'Livingston', 'Madison', 'Morehouse', 'Natchitoches', 'Orleans', 'Ouachita', 'Plaquemines', 'Pointe Coupee', 'Rapides', 'Red River', 'Richland', 'Sabine', 'St. Bernard', 'St. Charles', 'St. Helena', 'St. James', 'St. John the Baptist', 'St. Landry', 'St. Martin', 'St. Mary', 'St. Tammany', 'Tangipahoa', 'Tensas', 'Terrebonne', 'Union', 'Vermilion', 'Vernon', 'Washington', 'Webster', 'West Baton Rouge', 'West Carroll', 'West Feliciana', 'Winn'],
+    'Maine': ['Androscoggin', 'Aroostook', 'Cumberland', 'Franklin', 'Hancock', 'Kennebec', 'Knox', 'Lincoln', 'Oxford', 'Penobscot', 'Piscataquis', 'Sagadahoc', 'Somerset', 'Waldo', 'Washington', 'York'],
+    'Maryland': ['Allegany', 'Anne Arundel', 'Baltimore', 'Baltimore City', 'Calvert', 'Caroline', 'Carroll', 'Cecil', 'Charles', 'Dorchester', 'Frederick', 'Garrett', 'Harford', 'Howard', 'Kent', 'Montgomery', "Prince George's", "Queen Anne's", 'Somerset', "St. Mary's", 'Talbot', 'Washington', 'Wicomico', 'Worcester'],
+    'Massachusetts': ['Barnstable', 'Berkshire', 'Bristol', 'Dukes', 'Essex', 'Franklin', 'Hampden', 'Hampshire', 'Middlesex', 'Nantucket', 'Norfolk', 'Plymouth', 'Suffolk', 'Worcester'],
+    'Michigan': ['Alcona', 'Alger', 'Allegan', 'Alpena', 'Antrim', 'Arenac', 'Baraga', 'Barry', 'Bay', 'Benzie', 'Berrien', 'Branch', 'Calhoun', 'Cass', 'Charlevoix', 'Cheboygan', 'Chippewa', 'Clare', 'Clinton', 'Crawford', 'Delta', 'Dickinson', 'Eaton', 'Emmet', 'Genesee', 'Gladwin', 'Gogebic', 'Grand Traverse', 'Gratiot', 'Hillsdale', 'Houghton', 'Huron', 'Ingham', 'Ionia', 'Iosco', 'Iron', 'Isabella', 'Jackson', 'Kalamazoo', 'Kalkaska', 'Kent', 'Keweenaw', 'Lake', 'Lapeer', 'Leelanau', 'Lenawee', 'Livingston', 'Luce', 'Mackinac', 'Macomb', 'Manistee', 'Marquette', 'Mason', 'Mecosta', 'Menominee', 'Midland', 'Missaukee', 'Monroe', 'Montcalm', 'Montmorency', 'Muskegon', 'Newaygo', 'Oakland', 'Oceana', 'Ogemaw', 'Ontonagon', 'Osceola', 'Oscoda', 'Otsego', 'Ottawa', 'Presque Isle', 'Roscommon', 'Saginaw', 'Sanilac', 'Schoolcraft', 'Shiawassee', 'St. Clair', 'St. Joseph', 'Tuscola', 'Van Buren', 'Washtenaw', 'Wayne', 'Wexford'],
+    'Minnesota': ['Aitkin', 'Anoka', 'Becker', 'Beltrami', 'Benton', 'Big Stone', 'Blue Earth', 'Brown', 'Carlton', 'Carver', 'Cass', 'Chippewa', 'Chisago', 'Clay', 'Clearwater', 'Cook', 'Cottonwood', 'Crow Wing', 'Dakota', 'Dodge', 'Douglas', 'Faribault', 'Fillmore', 'Freeborn', 'Goodhue', 'Grant', 'Hennepin', 'Houston', 'Hubbard', 'Isanti', 'Itasca', 'Jackson', 'Kanabec', 'Kandiyohi', 'Kittson', 'Koochiching', 'Lac qui Parle', 'Lake', 'Lake of the Woods', 'Le Sueur', 'Lincoln', 'Lyon', 'Mahnomen', 'Marshall', 'Martin', 'McLeod', 'Meeker', 'Mille Lacs', 'Morrison', 'Mower', 'Murray', 'Nicollet', 'Nobles', 'Norman', 'Olmsted', 'Otter Tail', 'Pennington', 'Pine', 'Pipestone', 'Polk', 'Pope', 'Ramsey', 'Red Lake', 'Redwood', 'Renville', 'Rice', 'Rock', 'Roseau', 'Scott', 'Sherburne', 'Sibley', 'St. Louis', 'Stearns', 'Steele', 'Stevens', 'Swift', 'Todd', 'Traverse', 'Wabasha', 'Wadena', 'Waseca', 'Washington', 'Watonwan', 'Wilkin', 'Winona', 'Wright', 'Yellow Medicine'],
+    'Mississippi': ['Adams', 'Alcorn', 'Amite', 'Attala', 'Benton', 'Bolivar', 'Calhoun', 'Carroll', 'Chickasaw', 'Choctaw', 'Claiborne', 'Clarke', 'Clay', 'Coahoma', 'Copiah', 'Covington', 'DeSoto', 'Forrest', 'Franklin', 'George', 'Greene', 'Grenada', 'Hancock', 'Harrison', 'Hinds', 'Holmes', 'Humphreys', 'Issaquena', 'Itawamba', 'Jackson', 'Jasper', 'Jefferson', 'Jefferson Davis', 'Jones', 'Kemper', 'Lafayette', 'Lamar', 'Lauderdale', 'Lawrence', 'Leake', 'Lee', 'Leflore', 'Lincoln', 'Lowndes', 'Madison', 'Marion', 'Marshall', 'Monroe', 'Montgomery', 'Neshoba', 'Newton', 'Noxubee', 'Oktibbeha', 'Panola', 'Pearl River', 'Perry', 'Pike', 'Pontotoc', 'Prentiss', 'Quitman', 'Rankin', 'Scott', 'Sharkey', 'Simpson', 'Smith', 'Stone', 'Sunflower', 'Tallahatchie', 'Tate', 'Tippah', 'Tishomingo', 'Tunica', 'Union', 'Walthall', 'Warren', 'Washington', 'Wayne', 'Webster', 'Wilkinson', 'Winston', 'Yalobusha', 'Yazoo'],
+    'Missouri': ['Adair', 'Andrew', 'Atchison', 'Audrain', 'Barry', 'Barton', 'Bates', 'Benton', 'Bollinger', 'Boone', 'Buchanan', 'Butler', 'Caldwell', 'Callaway', 'Camden', 'Cape Girardeau', 'Carroll', 'Carter', 'Cass', 'Cedar', 'Chariton', 'Christian', 'Clark', 'Clay', 'Clinton', 'Cole', 'Cooper', 'Crawford', 'Dade', 'Dallas', 'Daviess', 'DeKalb', 'Dent', 'Douglas', 'Dunklin', 'Franklin', 'Gasconade', 'Gentry', 'Greene', 'Grundy', 'Harrison', 'Henry', 'Hickory', 'Holt', 'Howard', 'Howell', 'Iron', 'Jackson', 'Jasper', 'Jefferson', 'Johnson', 'Knox', 'Laclede', 'Lafayette', 'Lawrence', 'Lewis', 'Lincoln', 'Linn', 'Livingston', 'Macon', 'Madison', 'Maries', 'Marion', 'McDonald', 'Mercer', 'Miller', 'Mississippi', 'Moniteau', 'Monroe', 'Montgomery', 'Morgan', 'New Madrid', 'Newton', 'Nodaway', 'Oregon', 'Osage', 'Ozark', 'Pemiscot', 'Perry', 'Pettis', 'Phelps', 'Pike', 'Platte', 'Polk', 'Pulaski', 'Putnam', 'Ralls', 'Randolph', 'Ray', 'Reynolds', 'Ripley', 'Saline', 'Schuyler', 'Scotland', 'Scott', 'Shannon', 'Shelby', 'St. Charles', 'St. Clair', 'St. Francois', 'St. Louis', 'St. Louis City', 'Ste. Genevieve', 'Stoddard', 'Stone', 'Sullivan', 'Taney', 'Texas', 'Vernon', 'Warren', 'Washington', 'Wayne', 'Webster', 'Worth', 'Wright'],
+    'Montana': ['Beaverhead', 'Big Horn', 'Blaine', 'Broadwater', 'Carbon', 'Carter', 'Cascade', 'Chouteau', 'Custer', 'Daniels', 'Dawson', 'Deer Lodge', 'Fallon', 'Fergus', 'Flathead', 'Gallatin', 'Garfield', 'Glacier', 'Golden Valley', 'Granite', 'Hill', 'Jefferson', 'Judith Basin', 'Lake', 'Lewis and Clark', 'Liberty', 'Lincoln', 'Madison', 'McCone', 'Meagher', 'Mineral', 'Missoula', 'Musselshell', 'Park', 'Petroleum', 'Phillips', 'Pondera', 'Powder River', 'Powell', 'Prairie', 'Ravalli', 'Richland', 'Roosevelt', 'Rosebud', 'Sanders', 'Sheridan', 'Silver Bow', 'Stillwater', 'Sweet Grass', 'Teton', 'Toole', 'Treasure', 'Valley', 'Wheatland', 'Wibaux', 'Yellowstone'],
+    'Nebraska': ['Adams', 'Antelope', 'Arthur', 'Banner', 'Blaine', 'Boone', 'Box Butte', 'Boyd', 'Brown', 'Buffalo', 'Burt', 'Butler', 'Cass', 'Cedar', 'Chase', 'Cherry', 'Cheyenne', 'Clay', 'Colfax', 'Cuming', 'Custer', 'Dakota', 'Dawes', 'Dawson', 'Deuel', 'Dixon', 'Dodge', 'Douglas', 'Dundy', 'Fillmore', 'Franklin', 'Frontier', 'Furnas', 'Gage', 'Garden', 'Garfield', 'Gosper', 'Grant', 'Greeley', 'Hall', 'Hamilton', 'Harlan', 'Hayes', 'Hitchcock', 'Holt', 'Hooker', 'Howard', 'Jefferson', 'Johnson', 'Kearney', 'Keith', 'Keya Paha', 'Kimball', 'Knox', 'Lancaster', 'Lincoln', 'Logan', 'Loup', 'Madison', 'McPherson', 'Merrick', 'Morrill', 'Nance', 'Nemaha', 'Nuckolls', 'Otoe', 'Pawnee', 'Perkins', 'Phelps', 'Pierce', 'Platte', 'Polk', 'Red Willow', 'Richardson', 'Rock', 'Saline', 'Sarpy', 'Saunders', 'Scotts Bluff', 'Seward', 'Sheridan', 'Sherman', 'Sioux', 'Stanton', 'Thayer', 'Thomas', 'Thurston', 'Valley', 'Washington', 'Wayne', 'Webster', 'Wheeler', 'York'],
+    'Nevada': ['Carson City', 'Churchill', 'Clark', 'Douglas', 'Elko', 'Esmeralda', 'Eureka', 'Humboldt', 'Lander', 'Lincoln', 'Lyon', 'Mineral', 'Nye', 'Pershing', 'Storey', 'Washoe', 'White Pine'],
+    'New Hampshire': ['Belknap', 'Carroll', 'Cheshire', 'Coos', 'Grafton', 'Hillsborough', 'Merrimack', 'Rockingham', 'Strafford', 'Sullivan'],
+    'New Jersey': ['Atlantic', 'Bergen', 'Burlington', 'Camden', 'Cape May', 'Cumberland', 'Essex', 'Gloucester', 'Hudson', 'Hunterdon', 'Mercer', 'Middlesex', 'Monmouth', 'Morris', 'Ocean', 'Passaic', 'Salem', 'Somerset', 'Sussex', 'Union', 'Warren'],
+    'New Mexico': ['Bernalillo', 'Catron', 'Chaves', 'Cibola', 'Colfax', 'Curry', 'De Baca', 'Dona Ana', 'Eddy', 'Grant', 'Guadalupe', 'Harding', 'Hidalgo', 'Lea', 'Lincoln', 'Los Alamos', 'Luna', 'McKinley', 'Mora', 'Otero', 'Quay', 'Rio Arriba', 'Roosevelt', 'San Juan', 'San Miguel', 'Sandoval', 'Santa Fe', 'Sierra', 'Socorro', 'Taos', 'Torrance', 'Union', 'Valencia'],
+    'New York': ['Albany', 'Allegany', 'Bronx', 'Broome', 'Cattaraugus', 'Cayuga', 'Chautauqua', 'Chemung', 'Chenango', 'Clinton', 'Columbia', 'Cortland', 'Delaware', 'Dutchess', 'Erie', 'Essex', 'Franklin', 'Fulton', 'Genesee', 'Greene', 'Hamilton', 'Herkimer', 'Jefferson', 'Kings', 'Lewis', 'Livingston', 'Madison', 'Monroe', 'Montgomery', 'Nassau', 'New York', 'Niagara', 'Oneida', 'Onondaga', 'Ontario', 'Orange', 'Orleans', 'Oswego', 'Otsego', 'Putnam', 'Queens', 'Rensselaer', 'Richmond', 'Rockland', 'Saratoga', 'Schenectady', 'Schoharie', 'Schuyler', 'Seneca', 'St. Lawrence', 'Steuben', 'Suffolk', 'Sullivan', 'Tioga', 'Tompkins', 'Ulster', 'Warren', 'Washington', 'Wayne', 'Westchester', 'Wyoming', 'Yates'],
+    'North Carolina': ['Alamance', 'Alexander', 'Alleghany', 'Anson', 'Ashe', 'Avery', 'Beaufort', 'Bertie', 'Bladen', 'Brunswick', 'Buncombe', 'Burke', 'Cabarrus', 'Caldwell', 'Camden', 'Carteret', 'Caswell', 'Catawba', 'Chatham', 'Cherokee', 'Chowan', 'Clay', 'Cleveland', 'Columbus', 'Craven', 'Cumberland', 'Currituck', 'Dare', 'Davidson', 'Davie', 'Duplin', 'Durham', 'Edgecombe', 'Forsyth', 'Franklin', 'Gaston', 'Gates', 'Graham', 'Granville', 'Greene', 'Guilford', 'Halifax', 'Harnett', 'Haywood', 'Henderson', 'Hertford', 'Hoke', 'Hyde', 'Iredell', 'Jackson', 'Johnston', 'Jones', 'Lee', 'Lenoir', 'Lincoln', 'Macon', 'Madison', 'Martin', 'McDowell', 'Mecklenburg', 'Mitchell', 'Montgomery', 'Moore', 'Nash', 'New Hanover', 'Northampton', 'Onslow', 'Orange', 'Pamlico', 'Pasquotank', 'Pender', 'Perquimans', 'Person', 'Pitt', 'Polk', 'Randolph', 'Richmond', 'Robeson', 'Rockingham', 'Rowan', 'Rutherford', 'Sampson', 'Scotland', 'Stanly', 'Stokes', 'Surry', 'Swain', 'Transylvania', 'Tyrrell', 'Union', 'Vance', 'Wake', 'Warren', 'Washington', 'Watauga', 'Wayne', 'Wilkes', 'Wilson', 'Yadkin', 'Yancey'],
+    'North Dakota': ['Adams', 'Barnes', 'Benson', 'Billings', 'Bottineau', 'Bowman', 'Burke', 'Burleigh', 'Cass', 'Cavalier', 'Dickey', 'Divide', 'Dunn', 'Eddy', 'Emmons', 'Foster', 'Golden Valley', 'Grand Forks', 'Grant', 'Griggs', 'Hettinger', 'Kidder', 'LaMoure', 'Logan', 'McHenry', 'McIntosh', 'McKenzie', 'McLean', 'Mercer', 'Morton', 'Mountrail', 'Nelson', 'Oliver', 'Pembina', 'Pierce', 'Ramsey', 'Ransom', 'Renville', 'Richland', 'Rolette', 'Sargent', 'Sheridan', 'Sioux', 'Slope', 'Stark', 'Steele', 'Stutsman', 'Towner', 'Traill', 'Walsh', 'Ward', 'Wells', 'Williams'],
+    'Ohio': ['Adams', 'Allen', 'Ashland', 'Ashtabula', 'Athens', 'Auglaize', 'Belmont', 'Brown', 'Butler', 'Carroll', 'Champaign', 'Clark', 'Clermont', 'Clinton', 'Columbiana', 'Coshocton', 'Crawford', 'Cuyahoga', 'Darke', 'Defiance', 'Delaware', 'Erie', 'Fairfield', 'Fayette', 'Franklin', 'Fulton', 'Gallia', 'Geauga', 'Greene', 'Guernsey', 'Hamilton', 'Hancock', 'Hardin', 'Harrison', 'Henry', 'Highland', 'Hocking', 'Holmes', 'Huron', 'Jackson', 'Jefferson', 'Knox', 'Lake', 'Lawrence', 'Licking', 'Logan', 'Lorain', 'Lucas', 'Madison', 'Mahoning', 'Marion', 'Medina', 'Meigs', 'Mercer', 'Miami', 'Monroe', 'Montgomery', 'Morgan', 'Morrow', 'Muskingum', 'Noble', 'Ottawa', 'Paulding', 'Perry', 'Pickaway', 'Pike', 'Portage', 'Preble', 'Putnam', 'Richland', 'Ross', 'Sandusky', 'Scioto', 'Seneca', 'Shelby', 'Stark', 'Summit', 'Trumbull', 'Tuscarawas', 'Union', 'Van Wert', 'Vinton', 'Warren', 'Washington', 'Wayne', 'Williams', 'Wood', 'Wyandot'],
+    'Oklahoma': ['Adair', 'Alfalfa', 'Atoka', 'Beaver', 'Beckham', 'Blaine', 'Bryan', 'Caddo', 'Canadian', 'Carter', 'Cherokee', 'Choctaw', 'Cimarron', 'Cleveland', 'Coal', 'Comanche', 'Cotton', 'Craig', 'Creek', 'Custer', 'Delaware', 'Dewey', 'Ellis', 'Garfield', 'Garvin', 'Grady', 'Grant', 'Greer', 'Harmon', 'Harper', 'Haskell', 'Hughes', 'Jackson', 'Jefferson', 'Johnston', 'Kay', 'Kingfisher', 'Kiowa', 'Latimer', 'Le Flore', 'Lincoln', 'Logan', 'Love', 'Major', 'Marshall', 'Mayes', 'McClain', 'McCurtain', 'McIntosh', 'Murray', 'Muskogee', 'Noble', 'Nowata', 'Okfuskee', 'Oklahoma', 'Okmulgee', 'Osage', 'Ottawa', 'Pawnee', 'Payne', 'Pittsburg', 'Pontotoc', 'Pottawatomie', 'Pushmataha', 'Roger Mills', 'Rogers', 'Seminole', 'Sequoyah', 'Stephens', 'Texas', 'Tillman', 'Tulsa', 'Wagoner', 'Washington', 'Washita', 'Woods', 'Woodward'],
+    'Oregon': ['Baker', 'Benton', 'Clackamas', 'Clatsop', 'Columbia', 'Coos', 'Crook', 'Curry', 'Deschutes', 'Douglas', 'Gilliam', 'Grant', 'Harney', 'Hood River', 'Jackson', 'Jefferson', 'Josephine', 'Klamath', 'Lake', 'Lane', 'Lincoln', 'Linn', 'Malheur', 'Marion', 'Morrow', 'Multnomah', 'Polk', 'Sherman', 'Tillamook', 'Umatilla', 'Union', 'Wallowa', 'Wasco', 'Washington', 'Wheeler', 'Yamhill'],
+    'Pennsylvania': ['Adams', 'Allegheny', 'Armstrong', 'Beaver', 'Bedford', 'Berks', 'Blair', 'Bradford', 'Bucks', 'Butler', 'Cambria', 'Cameron', 'Carbon', 'Centre', 'Chester', 'Clarion', 'Clearfield', 'Clinton', 'Columbia', 'Crawford', 'Cumberland', 'Dauphin', 'Delaware', 'Elk', 'Erie', 'Fayette', 'Forest', 'Franklin', 'Fulton', 'Greene', 'Huntingdon', 'Indiana', 'Jefferson', 'Juniata', 'Lackawanna', 'Lancaster', 'Lawrence', 'Lebanon', 'Lehigh', 'Luzerne', 'Lycoming', 'McKean', 'Mercer', 'Mifflin', 'Monroe', 'Montgomery', 'Montour', 'Northampton', 'Northumberland', 'Perry', 'Philadelphia', 'Pike', 'Potter', 'Schuylkill', 'Snyder', 'Somerset', 'Sullivan', 'Susquehanna', 'Tioga', 'Union', 'Venango', 'Warren', 'Washington', 'Wayne', 'Westmoreland', 'Wyoming', 'York'],
+    'Rhode Island': ['Bristol', 'Kent', 'Newport', 'Providence', 'Washington'],
+    'South Carolina': ['Abbeville', 'Aiken', 'Allendale', 'Anderson', 'Bamberg', 'Barnwell', 'Beaufort', 'Berkeley', 'Calhoun', 'Charleston', 'Cherokee', 'Chester', 'Chesterfield', 'Clarendon', 'Colleton', 'Darlington', 'Dillon', 'Dorchester', 'Edgefield', 'Fairfield', 'Florence', 'Georgetown', 'Greenville', 'Greenwood', 'Hampton', 'Horry', 'Jasper', 'Kershaw', 'Lancaster', 'Laurens', 'Lee', 'Lexington', 'Marion', 'Marlboro', 'McCormick', 'Newberry', 'Oconee', 'Orangeburg', 'Pickens', 'Richland', 'Saluda', 'Spartanburg', 'Sumter', 'Union', 'Williamsburg', 'York'],
+    'South Dakota': ['Aurora', 'Beadle', 'Bennett', 'Bon Homme', 'Brookings', 'Brown', 'Brule', 'Buffalo', 'Butte', 'Campbell', 'Charles Mix', 'Clark', 'Clay', 'Codington', 'Corson', 'Custer', 'Davison', 'Day', 'Deuel', 'Dewey', 'Douglas', 'Edmunds', 'Fall River', 'Faulk', 'Grant', 'Gregory', 'Haakon', 'Hamlin', 'Hand', 'Hanson', 'Harding', 'Hughes', 'Hutchinson', 'Hyde', 'Jackson', 'Jerauld', 'Jones', 'Kingsbury', 'Lake', 'Lawrence', 'Lincoln', 'Lyman', 'Marshall', 'McCook', 'McPherson', 'Meade', 'Mellette', 'Miner', 'Minnehaha', 'Moody', 'Pennington', 'Perkins', 'Potter', 'Roberts', 'Sanborn', 'Shannon', 'Spink', 'Stanley', 'Sully', 'Todd', 'Tripp', 'Turner', 'Union', 'Walworth', 'Yankton', 'Ziebach'],
+    'Tennessee': ['Anderson', 'Bedford', 'Benton', 'Bledsoe', 'Blount', 'Bradley', 'Campbell', 'Cannon', 'Carroll', 'Carter', 'Cheatham', 'Chester', 'Claiborne', 'Clay', 'Cocke', 'Coffee', 'Crockett', 'Cumberland', 'Davidson', 'Decatur', 'DeKalb', 'Dickson', 'Dyer', 'Fayette', 'Fentress', 'Franklin', 'Gibson', 'Giles', 'Grainger', 'Greene', 'Grundy', 'Hamblen', 'Hamilton', 'Hancock', 'Hardeman', 'Hardin', 'Hawkins', 'Haywood', 'Henderson', 'Henry', 'Hickman', 'Houston', 'Humphreys', 'Jackson', 'Jefferson', 'Johnson', 'Knox', 'Lake', 'Lauderdale', 'Lawrence', 'Lewis', 'Lincoln', 'Loudon', 'Macon', 'Madison', 'Marion', 'Marshall', 'Maury', 'McMinn', 'McNairy', 'Meigs', 'Monroe', 'Montgomery', 'Moore', 'Morgan', 'Obion', 'Overton', 'Perry', 'Pickett', 'Polk', 'Putnam', 'Rhea', 'Roane', 'Robertson', 'Rutherford', 'Scott', 'Sequatchie', 'Sevier', 'Shelby', 'Smith', 'Stewart', 'Sullivan', 'Sumner', 'Tipton', 'Trousdale', 'Unicoi', 'Union', 'Van Buren', 'Warren', 'Washington', 'Wayne', 'Weakley', 'White', 'Williamson', 'Wilson'],
+    'Texas': ['Anderson', 'Andrews', 'Angelina', 'Aransas', 'Archer', 'Armstrong', 'Atascosa', 'Austin', 'Bailey', 'Bandera', 'Bastrop', 'Baylor', 'Bee', 'Bell', 'Bexar', 'Blanco', 'Borden', 'Bosque', 'Bowie', 'Brazoria', 'Brazos', 'Brewster', 'Briscoe', 'Brooks', 'Brown', 'Burleson', 'Burnet', 'Caldwell', 'Calhoun', 'Callahan', 'Cameron', 'Camp', 'Carson', 'Cass', 'Castro', 'Chambers', 'Cherokee', 'Childress', 'Clay', 'Cochran', 'Coke', 'Coleman', 'Collin', 'Collingsworth', 'Colorado', 'Comal', 'Comanche', 'Concho', 'Cooke', 'Coryell', 'Cottle', 'Crane', 'Crockett', 'Crosby', 'Culberson', 'Dallam', 'Dallas', 'Dawson', 'Deaf Smith', 'Delta', 'Denton', 'DeWitt', 'Dickens', 'Dimmit', 'Donley', 'Duval', 'Eastland', 'Ector', 'Edwards', 'El Paso', 'Ellis', 'Erath', 'Falls', 'Fannin', 'Fayette', 'Fisher', 'Floyd', 'Foard', 'Fort Bend', 'Franklin', 'Freestone', 'Frio', 'Gaines', 'Galveston', 'Garza', 'Gillespie', 'Glasscock', 'Goliad', 'Gonzales', 'Gray', 'Grayson', 'Gregg', 'Grimes', 'Guadalupe', 'Hale', 'Hall', 'Hamilton', 'Hansford', 'Hardeman', 'Hardin', 'Harris', 'Harrison', 'Hartley', 'Haskell', 'Hays', 'Hemphill', 'Henderson', 'Hidalgo', 'Hill', 'Hockley', 'Hood', 'Hopkins', 'Houston', 'Howard', 'Hudspeth', 'Hunt', 'Hutchinson', 'Irion', 'Jack', 'Jackson', 'Jasper', 'Jeff Davis', 'Jefferson', 'Jim Hogg', 'Jim Wells', 'Johnson', 'Jones', 'Karnes', 'Kaufman', 'Kendall', 'Kenedy', 'Kent', 'Kerr', 'Kimble', 'King', 'Kinney', 'Kleberg', 'Knox', 'La Salle', 'Lamar', 'Lamb', 'Lampasas', 'Lavaca', 'Lee', 'Leon', 'Liberty', 'Limestone', 'Lipscomb', 'Live Oak', 'Llano', 'Loving', 'Lubbock', 'Lynn', 'Madison', 'Marion', 'Martin', 'Mason', 'Matagorda', 'Maverick', 'McCulloch', 'McLennan', 'McMullen', 'Medina', 'Menard', 'Midland', 'Milam', 'Mills', 'Mitchell', 'Montague', 'Montgomery', 'Moore', 'Morris', 'Motley', 'Nacogdoches', 'Navarro', 'Newton', 'Nolan', 'Nueces', 'Ochiltree', 'Oldham', 'Orange', 'Palo Pinto', 'Panola', 'Parker', 'Parmer', 'Pecos', 'Polk', 'Potter', 'Presidio', 'Rains', 'Randall', 'Reagan', 'Real', 'Red River', 'Reeves', 'Refugio', 'Roberts', 'Robertson', 'Rockwall', 'Runnels', 'Rusk', 'Sabine', 'San Augustine', 'San Jacinto', 'San Patricio', 'San Saba', 'Schleicher', 'Scurry', 'Shackelford', 'Shelby', 'Sherman', 'Smith', 'Somervell', 'Starr', 'Stephens', 'Sterling', 'Stonewall', 'Sutton', 'Swisher', 'Tarrant', 'Taylor', 'Terrell', 'Terry', 'Throckmorton', 'Titus', 'Tom Green', 'Travis', 'Trinity', 'Tyler', 'Upshur', 'Upton', 'Uvalde', 'Val Verde', 'Van Zandt', 'Victoria', 'Walker', 'Waller', 'Ward', 'Washington', 'Webb', 'Wharton', 'Wheeler', 'Wichita', 'Wilbarger', 'Willacy', 'Williamson', 'Wilson', 'Winkler', 'Wise', 'Wood', 'Yoakum', 'Young', 'Zapata', 'Zavala'],
+    'Utah': ['Beaver', 'Box Elder', 'Cache', 'Carbon', 'Daggett', 'Davis', 'Duchesne', 'Emery', 'Garfield', 'Grand', 'Iron', 'Juab', 'Kane', 'Millard', 'Morgan', 'Piute', 'Rich', 'Salt Lake', 'San Juan', 'Sanpete', 'Sevier', 'Summit', 'Tooele', 'Uintah', 'Utah', 'Wasatch', 'Washington', 'Wayne', 'Weber'],
+    'Vermont': ['Addison', 'Bennington', 'Caledonia', 'Chittenden', 'Essex', 'Franklin', 'Grand Isle', 'Lamoille', 'Orange', 'Orleans', 'Rutland', 'Washington', 'Windham', 'Windsor'],
+    'Virginia': ['Accomack', 'Albemarle', 'Alexandria', 'Alleghany', 'Amelia', 'Amherst', 'Appomattox', 'Arlington', 'Augusta', 'Bath', 'Bedford', 'Bland', 'Botetourt', 'Bristol', 'Brunswick', 'Buchanan', 'Buckingham', 'Buena Vista', 'Campbell', 'Caroline', 'Carroll', 'Charles City', 'Charlotte', 'Charlottesville', 'Chesapeake', 'Chesterfield', 'Clarke', 'Colonial Heights', 'Covington', 'Craig', 'Culpeper', 'Cumberland', 'Danville', 'Dickenson', 'Dinwiddie', 'Emporia', 'Essex', 'Fairfax', 'Falls Church', 'Fauquier', 'Floyd', 'Fluvanna', 'Franklin', 'Frederick', 'Fredericksburg', 'Galax', 'Giles', 'Gloucester', 'Goochland', 'Grayson', 'Greene', 'Greensville', 'Halifax', 'Hampton', 'Hanover', 'Harrisonburg', 'Henrico', 'Henry', 'Highland', 'Hopewell', 'Isle of Wight', 'James City', 'King and Queen', 'King George', 'King William', 'Lancaster', 'Lee', 'Lexington', 'Loudoun', 'Louisa', 'Lunenburg', 'Lynchburg', 'Madison', 'Manassas', 'Manassas Park', 'Martinsville', 'Mathews', 'Mecklenburg', 'Middlesex', 'Montgomery', 'Nelson', 'New Kent', 'Newport News', 'Norfolk', 'Northampton', 'Northumberland', 'Norton', 'Nottoway', 'Orange', 'Page', 'Patrick', 'Petersburg', 'Pittsylvania', 'Poquoson', 'Portsmouth', 'Powhatan', 'Prince Edward', 'Prince George', 'Prince William', 'Pulaski', 'Radford', 'Rappahannock', 'Richmond', 'Roanoke', 'Rockbridge', 'Rockingham', 'Russell', 'Salem', 'Scott', 'Shenandoah', 'Smyth', 'Southampton', 'Spotsylvania', 'Stafford', 'Staunton', 'Suffolk', 'Surry', 'Sussex', 'Tazewell', 'Virginia Beach', 'Warren', 'Washington', 'Waynesboro', 'Westmoreland', 'Williamsburg', 'Winchester', 'Wise', 'Wythe', 'York'],
+    'Washington': ['Adams', 'Asotin', 'Benton', 'Chelan', 'Clallam', 'Clark', 'Columbia', 'Cowlitz', 'Douglas', 'Ferry', 'Franklin', 'Garfield', 'Grant', 'Grays Harbor', 'Island', 'Jefferson', 'King', 'Kitsap', 'Kittitas', 'Klickitat', 'Lewis', 'Lincoln', 'Mason', 'Okanogan', 'Pacific', 'Pend Oreille', 'Pierce', 'San Juan', 'Skagit', 'Skamania', 'Snohomish', 'Spokane', 'Stevens', 'Thurston', 'Wahkiakum', 'Walla Walla', 'Whatcom', 'Whitman', 'Yakima'],
+    'West Virginia': ['Barbour', 'Berkeley', 'Boone', 'Braxton', 'Brooke', 'Cabell', 'Calhoun', 'Clay', 'Doddridge', 'Fayette', 'Gilmer', 'Grant', 'Greenbrier', 'Hampshire', 'Hancock', 'Hardy', 'Harrison', 'Jackson', 'Jefferson', 'Kanawha', 'Lewis', 'Lincoln', 'Logan', 'Marion', 'Marshall', 'Mason', 'McDowell', 'Mercer', 'Mineral', 'Mingo', 'Monongalia', 'Monroe', 'Morgan', 'Nicholas', 'Ohio', 'Pendleton', 'Pleasants', 'Pocahontas', 'Preston', 'Putnam', 'Raleigh', 'Randolph', 'Ritchie', 'Roane', 'Summers', 'Taylor', 'Tucker', 'Tyler', 'Upshur', 'Wayne', 'Webster', 'Wetzel', 'Wirt', 'Wood', 'Wyoming'],
+    'Wisconsin': ['Adams', 'Ashland', 'Barron', 'Bayfield', 'Brown', 'Buffalo', 'Burnett', 'Calumet', 'Chippewa', 'Clark', 'Columbia', 'Crawford', 'Dane', 'Dodge', 'Door', 'Douglas', 'Dunn', 'Eau Claire', 'Florence', 'Fond du Lac', 'Forest', 'Grant', 'Green', 'Green Lake', 'Iowa', 'Iron', 'Jackson', 'Jefferson', 'Juneau', 'Kenosha', 'Kewaunee', 'La Crosse', 'Lafayette', 'Langlade', 'Lincoln', 'Manitowoc', 'Marathon', 'Marinette', 'Marquette', 'Menominee', 'Milwaukee', 'Monroe', 'Oconto', 'Oneida', 'Outagamie', 'Ozaukee', 'Pepin', 'Pierce', 'Polk', 'Portage', 'Price', 'Racine', 'Richland', 'Rock', 'Rusk', 'Sauk', 'Sawyer', 'Shawano', 'Sheboygan', 'St. Croix', 'Taylor', 'Trempealeau', 'Vernon', 'Vilas', 'Walworth', 'Washburn', 'Washington', 'Waukesha', 'Waupaca', 'Waushara', 'Winnebago', 'Wood'],
+    'Wyoming': ['Albany', 'Big Horn', 'Campbell', 'Carbon', 'Converse', 'Crook', 'Fremont', 'Goshen', 'Hot Springs', 'Johnson', 'Laramie', 'Lincoln', 'Natrona', 'Niobrara', 'Park', 'Platte', 'Sheridan', 'Sublette', 'Sweetwater', 'Teton', 'Uinta', 'Washakie', 'Weston']
+  };
+
+  const handleCountyChange = (value) => {
+    setFormData({...formData, propertyCounty: value});
+    const stateCounties = COUNTIES_BY_STATE[formData.propertyState] || [];
+    if (value.length > 0 && stateCounties.length > 0) {
+      const filtered = stateCounties.filter(county =>
+        county.toLowerCase().startsWith(value.toLowerCase())
+      );
+      setCountySuggestions(filtered);
+      setShowCountySuggestions(filtered.length > 0);
+    } else {
+      setCountySuggestions([]);
+      setShowCountySuggestions(false);
+    }
+  };
+
+  const selectCounty = (county) => {
+    setFormData({...formData, propertyCounty: county});
+    setShowCountySuggestions(false);
+  };
+
+  // Lock body scroll when modal is open OR form is focused
+  useEffect(() => {
+    if (showDisqualifiedModal || formFocused) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showDisqualifiedModal, formFocused]);
+
+  const formatPhoneNumber = (value) => {
+    // Remove all non-digit characters
+    const phoneNumber = value.replace(/\D/g, '');
+
+    // Format as (XXX) XXX-XXXX
+    if (phoneNumber.length <= 3) {
+      return phoneNumber;
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'phone') {
+      const formatted = formatPhoneNumber(value);
+      setFormData({
+        ...formData,
+        [name]: formatted
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
+  };
+
+  const handleNext = () => {
+    // Check if user selected realtor or wholesaler on step 1
+    if (currentStep === 1 && (formData.position === 'realtor' || formData.position === 'wholesaler')) {
+      trackerRef.current?.trackDisqualification(1, formData.position);
+      setShowDisqualifiedModal(true);
+      return;
+    }
+
+    // Check if user selected 0-2 acres on step 2
+    if (currentStep === 2 && formData.acres === '0-2 Acres') {
+      trackerRef.current?.trackDisqualification(2, '0-2 Acres');
+      setShowDisqualifiedModal(true);
+      return;
+    }
+
+    // Check if user selected YES for home on property (Step 3)
+    // BUT allow if they have 50+ acres
+    if (currentStep === 3 && formData.homeOnProperty === 'yes') {
+      const hasLargeAcreage = formData.acres === '50-100 Acres' || formData.acres === '100+ Acres';
+      if (!hasLargeAcreage) {
+        trackerRef.current?.trackDisqualification(3, 'home on property, under 50 acres');
+        setShowDisqualifiedModal(true);
+        return;
+      }
+    }
+
+    // Check if user selected YES for property listed (Step 4)
+    if (currentStep === 4 && formData.propertyListed === 'yes') {
+      trackerRef.current?.trackDisqualification(4, 'property listed with realtor');
+      setShowDisqualifiedModal(true);
+      return;
+    }
+
+    // If property is inherited (Step 5), skip step 6 (ownership length) and step 7 (removed)
+    if (currentStep === 5 && formData.isInherited === 'yes') {
+      setCurrentStep(8);
+      window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Step 6 → if owned 4+ years, skip to 8. If not, show equity warning (step 7)
+    if (currentStep === 6) {
+      if (formData.ownedFourYears === 'yes') {
+        setCurrentStep(8);
+      } else {
+        setCurrentStep(7);
+      }
+      window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
+      return;
+    }
+
+    setCurrentStep(currentStep + 1);
+    window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
+  };
+
+  const handleBack = () => {
+    // Step 8 → go back through the right path
+    if (currentStep === 8) {
+      if (formData.isInherited === 'yes') {
+        setCurrentStep(5);
+      } else if (formData.ownedFourYears === 'no') {
+        setCurrentStep(7); // back to equity warning
+      } else {
+        setCurrentStep(6);
+      }
+    } else if (currentStep === 7) {
+      setCurrentStep(6);
+    } else {
+      setCurrentStep(currentStep - 1);
+    }
+    window.scrollTo({ top: document.getElementById('contact-form')?.offsetTop - 100 || 0, behavior: 'smooth' });
+  };
+
+  const handleFormFocus = () => {
+    setFormFocused(true);
+  };
+
+  const sendOTP = async () => {
+    setIsLoading(true);
+    setOtpError('');
+
+    // Convert formatted phone to E.164 format for Twilio
+    const e164 = '+1' + formData.phone.replace(/\D/g, '');
+    setE164Phone(e164);
+
+    try {
+      const response = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: e164 })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setOtpSent(true);
+        setCurrentStep(16); // Move to OTP verification step
+      } else {
+        setOtpError(data.error || 'Failed to send code');
+      }
+    } catch (error) {
+      setOtpError('Failed to send code. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyOTP = async () => {
+    setIsLoading(true);
+    setOtpError('');
+
+    try {
+      const response = await fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: e164Phone, code: otpCode })
+      });
+
+      const data = await response.json();
+
+      if (data.verified) {
+        setOtpVerified(true);
+        setIsLoading(false);
+        // Submit to GHL (this will handle redirect)
+        await submitToGHL();
+      } else {
+        setOtpError('Invalid code. Please try again.');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      setOtpError('Verification failed. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  const submitToGHL = async () => {
+    console.log('🚀 Starting submitToGHL...');
+
+    // Prepare data for GHL webhook
+    const webhookData = {
+      full_name: formData.fullName,
+      firstName: formData.fullName ? formData.fullName.split(' ')[0] : '',
+      lastName: formData.fullName ? formData.fullName.split(' ').slice(1).join(' ') : '',
+      email: formData.email,
+      phone: e164Phone,
+      position: formData.position,
+      home_on_property: formData.homeOnProperty,
+      property_listed: formData.propertyListed,
+      owned_four_years: formData.ownedFourYears,
+      property_state: formData.propertyState,
+      street_address: formData.streetAddress,
+      property_county: formData.propertyCounty,
+      acres: formData.acres,
+      names_on_deed: formData.namesOnDeed,
+      phone_verified: true,
+      lead_source: 'Website - Sell Your Land Form',
+      submitted_at: new Date().toISOString()
+    };
+
+    console.log('📦 Webhook data:', webhookData);
+
+    try {
+      // Get user's IP address
+      let userIp = null;
+      try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        userIp = ipData.ip;
+      } catch (ipError) {
+        console.error('Could not fetch IP:', ipError);
+      }
+
+      // Submit to Parcel Reach (Supabase) first
+      console.log('💾 Saving to Parcel Reach database...');
+      const { data: insertedLead, error: supabaseError } = await supabase
+        .from('leads')
+        .insert([{
+          name: formData.fullName,
+          email: formData.email,
+          phone: e164Phone,
+          address: `${formData.streetAddress}, ${formData.propertyCounty}, ${formData.propertyState}`,
+          county: formData.propertyCounty,
+          state: formData.propertyState,
+          acres: parseFloat(formData.acres) || null,
+          status: 'new',
+          source: 'Haven Ground - Sell Your Land Form',
+          notes: `Position: ${formData.position}\nHome on property: ${formData.homeOnProperty}\nProperty listed: ${formData.propertyListed}\nInherited: ${formData.isInherited}\nOwned 4+ years: ${formData.ownedFourYears || 'N/A (inherited)'}\nWhy selling: ${formData.whySelling}\nNames on deed: ${formData.namesOnDeed}`,
+          phone_verified: true,
+          ip_address: userIp,
+          // Google click IDs in dedicated columns too (for the nightly offline upload).
+          gclid: clickIdsRef.current.gclid || null,
+          gbraid: clickIdsRef.current.gbraid || null,
+          wbraid: clickIdsRef.current.wbraid || null,
+          form_data: {
+            position: formData.position,
+            homeOnProperty: formData.homeOnProperty,
+            propertyListed: formData.propertyListed,
+            isInherited: formData.isInherited,
+            ownedFourYears: formData.ownedFourYears,
+            whySelling: formData.whySelling,
+            propertyState: formData.propertyState,
+            streetAddress: formData.streetAddress,
+            propertyCounty: formData.propertyCounty,
+            acres: formData.acres,
+            fullName: formData.fullName,
+            namesOnDeed: formData.namesOnDeed,
+            email: formData.email,
+            phone: e164Phone,
+            // Google click IDs (VBB attribution) — captured on landing from the ad URL.
+            gclid: clickIdsRef.current.gclid || null,
+            gbraid: clickIdsRef.current.gbraid || null,
+            wbraid: clickIdsRef.current.wbraid || null,
+            // Full first-touch landing URL — always recoverable even if a gclid wasn't parsed.
+            landing_url: clickIdsRef.current.landing_url || null,
+            // Which themed landing page this lead came through (null for the main Sell Your Land form).
+            landing_page: landingPage || null
+          }
+        }])
+        .select('id')
+        .single();
+
+      if (supabaseError) {
+        console.error('❌ Supabase error:', supabaseError);
+        // Continue anyway - don't block GHL submission
+      } else {
+        console.log('✅ Saved to Parcel Reach');
+        // Link lead to tracking session
+        if (insertedLead?.id) {
+          trackerRef.current?.linkLeadId(insertedLead.id);
+        }
+      }
+
+      // Stash email/phone for enhanced conversions BEFORE the GHL webhook, so it's
+      // set even if the webhook throws — the catch block below still redirects to
+      // /thank-you, which reads hg_ec and passes the hashed email/phone to Google.
+      // (Previously this ran only after a successful webhook, so a webhook failure
+      // silently dropped the enhanced-conversion data.)
+      try { sessionStorage.setItem('hg_ec', JSON.stringify({ email: formData.email, phone: e164Phone })); } catch (e) {}
+
+      // Submit to GHL webhook
+      console.log('📡 Sending webhook to GHL...');
+      const response = await fetch('https://services.leadconnectorhq.com/hooks/wLaNbf44RqmPNhV1IEev/webhook-trigger/32643373-57f4-47c1-9b89-c4ecf9143beb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webhookData)
+      });
+
+      console.log('✅ Response status:', response.status);
+      const responseData = await response.json();
+      console.log('✅ Response data:', responseData);
+
+      if (!response.ok) {
+        throw new Error(`Webhook failed: ${response.status}`);
+      }
+
+      console.log('⏳ Waiting 1 second before redirect...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Redirect to thank you page — any completed submission is a qualified lead
+      console.log('🎯 Redirecting to: /thank-you');
+      window.location.href = '/thank-you';
+    } catch (error) {
+      console.error('❌ Webhook error:', error);
+      // Still redirect even if webhook fails
+      console.log('🎯 Redirecting anyway to: /thank-you');
+      window.location.href = '/thank-you';
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Form submission is now handled by OTP verification
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen font-serif relative">
+      {/* Darkened overlay when form is focused */}
+      {formFocused && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-500"
+          onClick={() => setFormFocused(false)}
+        ></div>
+      )}
+
+      {/* Disqualified Modal */}
+      {showDisqualifiedModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 relative animate-fadeIn my-8">
+            <button
+              onClick={() => {
+                setShowDisqualifiedModal(false);
+                setRealtorExit(false);
+              }}
+              className="absolute top-4 right-4 text-[#3A4045] hover:text-[#2F4F33] text-2xl"
+            >
+              ×
+            </button>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#2F4F33] rounded-full mx-auto mb-6 flex items-center justify-center">
+                <svg className="w-8 h-8 text-[#F5EFD9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+
+              <h3 className="text-2xl font-serif font-bold text-[#2F4F33] mb-4">
+                Thanks for Your Interest
+              </h3>
+
+              {/* Message based on exit reason */}
+              {realtorExit ? (
+                /* Message for self-selected realtor preference */
+                <p className="text-[#3A4045] mb-6 leading-relaxed">
+                  No hard feelings — we respect that. If anything changes, we're here. Good luck with your sale!
+                  <br /><br />
+                  <span className="font-semibold text-[#2F4F33]">- The Haven Team</span>
+                </p>
+              ) : (formData.position === 'realtor' || formData.position === 'wholesaler') ? (
+                <>
+                  <p className="text-[#3A4045] mb-6 leading-relaxed">
+                    We appreciate you reaching out. For professional inquiries, please send your potential deal information directly to our acquisitions team:
+                  </p>
+
+                  <div className="bg-[#F5EFD9] rounded-lg p-6 mb-6">
+                    <div>
+                      <p className="text-sm text-[#3A4045] mb-2">Email us at:</p>
+                      <a href="mailto:acquisitions@havenground.com" className="text-lg font-semibold text-[#2F4F33] hover:underline">
+                        acquisitions@havenground.com
+                      </a>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Message for all other disqualifications (home on property, listed, small acreage) */
+                <p className="text-[#3A4045] mb-6 leading-relaxed">
+                  Our current investment criteria doesn't allow for further application at this time. We are here to help in any other way. Thank you.
+                  <br /><br />
+                  <span className="font-semibold text-[#2F4F33]">- Haven Team</span>
+                </p>
+              )}
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowDisqualifiedModal(false)}
+                  className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-6 py-3 rounded-lg font-semibold hover:bg-[#F5EFD9] transition-colors duration-200"
+                >
+                  Exit Form
+                </button>
+                <a
+                  href="/"
+                  className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-6 py-3 rounded-lg font-semibold hover:bg-[#1a2e1c] transition-colors duration-200 text-center"
+                >
+                  Continue to Site
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Navigation */}
+      <nav className="bg-[#F5EFD9] py-4 border-b border-[#D2C6B2] sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center relative z-20">
+              <a href="/" className="relative">
+                <img src="/images/Haven LOGO Use.png" alt="Haven Ground Logo" className="h-16 sm:h-20 md:h-24 w-auto hover:opacity-90 transition-opacity duration-300"/>
+              </a>
+            </div>
+            <div className="hidden md:flex items-center space-x-8 lg:space-x-10">
+              <a href="/properties" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Properties</a>
+              <a href="/development" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Development</a>
+              <a href="/sell-your-land" className="text-[#2F4F33] text-lg font-medium border-b-2 border-[#2F4F33] transition-colors duration-200">Sell Us Land</a>
+              <a href="/community" className="text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium transition-colors duration-200">Community</a>
+            </div>
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden relative z-20 p-2 rounded-md text-[#2F4F33] hover:text-[#7D6B58] hover:bg-[#D2C6B2] focus:outline-none focus:ring-2 focus:ring-[#7D6B58] transition-colors duration-200">
+              <div className="w-6 h-6 flex flex-col justify-center items-center space-y-1">
+                <span className={`block w-6 h-0.5 bg-current transform transition duration-300 ease-in-out ${mobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
+                <span className={`block w-6 h-0.5 bg-current transform transition duration-300 ease-in-out ${mobileMenuOpen ? 'opacity-0' : ''}`}></span>
+                <span className={`block w-6 h-0.5 bg-current transform transition duration-300 ease-in-out ${mobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
+              </div>
+            </button>
+          </div>
+          <div className={`md:hidden absolute top-full left-0 right-0 bg-[#F5EFD9] border-b border-[#D2C6B2] shadow-lg transform transition-all duration-300 ease-in-out origin-top ${mobileMenuOpen ? 'translate-y-0 opacity-100 scale-y-100' : '-translate-y-2 opacity-0 scale-y-95 pointer-events-none'}`}>
+            <div className="px-4 py-4 space-y-2">
+              <a href="/properties" className="block text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium py-3 hover:bg-[#D2C6B2] rounded-lg px-4 transition-all duration-200 border-l-4 border-transparent hover:border-[#7D6B58]">Properties</a>
+              <a href="/development" className="block text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium py-3 hover:bg-[#D2C6B2] rounded-lg px-4 transition-all duration-200 border-l-4 border-transparent hover:border-[#7D6B58]">Development</a>
+              <a href="/sell-your-land" className="block text-[#2F4F33] font-medium text-lg py-3 bg-[#D2C6B2] rounded-lg px-4 border-l-4 border-[#2F4F33]">Sell Us Land</a>
+              <a href="/community" className="block text-[#2F4F33] hover:text-[#7D6B58] text-lg font-medium py-3 hover:bg-[#D2C6B2] rounded-lg px-4 transition-all duration-200 border-l-4 border-transparent hover:border-[#7D6B58]">Community</a>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <div className="relative bg-[#2F4F33] overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2F4F33] to-[#1a2e1c] opacity-90"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl text-[#F5EFD9] font-serif font-light mb-6 leading-tight">
+              {headline}
+            </h1>
+            <p className="text-xl md:text-2xl text-[#D2C6B2] max-w-3xl mx-auto leading-relaxed mb-8">
+              {subhead}
+            </p>
+            {Array.isArray(bullets) && bullets.length > 0 && (
+              <ul className="max-w-2xl mx-auto mb-8 text-left space-y-3">
+                {bullets.map((bullet, i) => (
+                  <li key={i} className="flex items-start gap-3 text-lg text-[#F5EFD9]">
+                    <svg className="w-6 h-6 text-[#D4A574] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <a href="#contact-form" className="inline-block bg-[#D4A574] text-white px-10 py-4 text-lg font-bold hover:bg-[#C69A65] transition-all duration-300 shadow-lg shadow-orange-500/50 hover:shadow-xl hover:shadow-orange-500/70 transform hover:scale-105 rounded-md border-2 border-[#E8B86D]">
+              CLICK FOR MY OFFER
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Trust Builders */}
+      <div className="py-16 bg-gradient-to-br from-[#F5EFD9] to-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl text-[#2F4F33] font-serif font-light mb-4">Why Landowners Choose Us</h2>
+            <p className="text-lg text-[#3A4045] max-w-2xl mx-auto">
+              We've been doing this long enough to know what works and what doesn't. Here's what sets us apart.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            <div className="p-8 bg-white rounded-lg shadow-lg border-t-4 border-[#2F4F33] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <svg className="w-12 h-12 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-3">We Know Land</h3>
+                  <p className="text-[#3A4045] leading-relaxed">
+                    Mountain properties, working ranches, development tracts, commercial land. Simple closings and complicated ones with tax issues, title questions, or scattered family members who all need to sign. We've handled it all and know how to get deals closed.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 bg-white rounded-lg shadow-lg border-t-4 border-[#2F4F33] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <svg className="w-12 h-12 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-3">We Actually Close</h3>
+                  <p className="text-[#3A4045] leading-relaxed">
+                    No surprises at the closing table. No last-minute renegotiations. When we make an offer and you accept it, we follow through. Our reputation depends on it, and we've built that reputation one handshake at a time.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 bg-white rounded-lg shadow-lg border-t-4 border-[#2F4F33] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <svg className="w-12 h-12 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-3">Straightforward Process</h3>
+                  <p className="text-[#3A4045] leading-relaxed">
+                    We handle the paperwork, take care of closing costs, and work on your timeline. If you need time to move equipment or settle estate matters, we understand. This is your land and your decision.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 bg-white rounded-lg shadow-lg border-t-4 border-[#2F4F33] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <svg className="w-12 h-12 text-[#2F4F33]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-3">Respect for Your Legacy</h3>
+                  <p className="text-[#3A4045] leading-relaxed">
+                    We know this land likely means something to you. Maybe it's been in your family. Maybe you built something here. We're not just buying dirt, we're continuing a story. That matters to us.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Life Situations */}
+      <div className="py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl text-[#2F4F33] font-serif font-light mb-4">Whatever Your Reason</h2>
+            <p className="text-lg text-[#3A4045] max-w-2xl mx-auto">
+              Life happens. We've worked with landowners in all kinds of situations, and we understand that every story is different.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+            <div className="text-center p-6 bg-[#F5EFD9] rounded-lg hover:bg-[#D2C6B2] transition-colors duration-300">
+              <h3 className="text-lg text-[#2F4F33] font-semibold mb-2">Estate Settlements</h3>
+              <p className="text-[#3A4045] text-sm">Inherited land you don't need or can't maintain</p>
+            </div>
+            <div className="text-center p-6 bg-[#F5EFD9] rounded-lg hover:bg-[#D2C6B2] transition-colors duration-300">
+              <h3 className="text-lg text-[#2F4F33] font-semibold mb-2">Relocation</h3>
+              <p className="text-[#3A4045] text-sm">Moving and need to sell before you go</p>
+            </div>
+            <div className="text-center p-6 bg-[#F5EFD9] rounded-lg hover:bg-[#D2C6B2] transition-colors duration-300">
+              <h3 className="text-lg text-[#2F4F33] font-semibold mb-2">Financial Changes</h3>
+              <p className="text-[#3A4045] text-sm">Need to free up cash or reduce obligations</p>
+            </div>
+            <div className="text-center p-6 bg-[#F5EFD9] rounded-lg hover:bg-[#D2C6B2] transition-colors duration-300">
+              <h3 className="text-lg text-[#2F4F33] font-semibold mb-2">Retirement Planning</h3>
+              <p className="text-[#3A4045] text-sm">Simplifying assets as you plan ahead</p>
+            </div>
+            <div className="text-center p-6 bg-[#F5EFD9] rounded-lg hover:bg-[#D2C6B2] transition-colors duration-300">
+              <h3 className="text-lg text-[#2F4F33] font-semibold mb-2">Property Challenges</h3>
+              <p className="text-[#3A4045] text-sm">Tax burdens, maintenance, or access issues</p>
+            </div>
+            <div className="text-center p-6 bg-[#F5EFD9] rounded-lg hover:bg-[#D2C6B2] transition-colors duration-300">
+              <h3 className="text-lg text-[#2F4F33] font-semibold mb-2">Just Ready to Sell</h3>
+              <p className="text-[#3A4045] text-sm">Sometimes you're just ready to move on</p>
+            </div>
+          </div>
+
+          <div className="text-center mt-10">
+            <p className="text-lg text-[#3A4045] max-w-2xl mx-auto font-light italic">
+              No matter your situation, we approach every conversation with respect and understanding. This is about helping you, not pushing a sale.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works */}
+      <div className="py-16 bg-gradient-to-b from-[#F5EFD9] to-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl text-[#2F4F33] font-serif font-light mb-4">Simple Process</h2>
+            <p className="text-lg text-[#3A4045]">
+              No games. No pressure. Just an honest process from start to finish.
+            </p>
+          </div>
+
+          <div className="relative">
+            {/* Connecting Line */}
+            <div className="hidden md:block absolute left-6 top-6 bottom-6 w-0.5 bg-[#D2C6B2]"></div>
+
+            <div className="space-y-8">
+              <div className="flex gap-6 items-start relative">
+                <div className="flex-shrink-0 w-14 h-14 rounded-full bg-[#2F4F33] text-[#F5EFD9] flex items-center justify-center text-2xl font-bold shadow-lg z-10">1</div>
+                <div className="bg-white p-6 rounded-lg shadow-md flex-1 border-l-4 border-[#2F4F33]">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-2">Tell Us About Your Property</h3>
+                  <p className="text-[#3A4045] leading-relaxed">
+                    Fill out the form below or give us a call. We'll ask about your land, your timeline, and what you're hoping to accomplish.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-6 items-start relative">
+                <div className="flex-shrink-0 w-14 h-14 rounded-full bg-[#2F4F33] text-[#F5EFD9] flex items-center justify-center text-2xl font-bold shadow-lg z-10">2</div>
+                <div className="bg-white p-6 rounded-lg shadow-md flex-1 border-l-4 border-[#2F4F33]">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-2">We Do Our Homework</h3>
+                  <p className="text-[#3A4045] leading-relaxed">
+                    We'll research your property, review surveys and access, understand the market, and figure out what it's truly worth. This takes a few days, not weeks.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-6 items-start relative">
+                <div className="flex-shrink-0 w-14 h-14 rounded-full bg-[#2F4F33] text-[#F5EFD9] flex items-center justify-center text-2xl font-bold shadow-lg z-10">3</div>
+                <div className="bg-white p-6 rounded-lg shadow-md flex-1 border-l-4 border-[#2F4F33]">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-2">You Get a Fair Offer</h3>
+                  <p className="text-[#3A4045] leading-relaxed">
+                    We'll present our offer and explain how we got there. You take your time deciding. No pressure, no tactics. Accept it or don't.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-6 items-start relative">
+                <div className="flex-shrink-0 w-14 h-14 rounded-full bg-[#2F4F33] text-[#F5EFD9] flex items-center justify-center text-2xl font-bold shadow-lg z-10">4</div>
+                <div className="bg-white p-6 rounded-lg shadow-md flex-1 border-l-4 border-[#2F4F33]">
+                  <h3 className="text-xl text-[#2F4F33] font-serif mb-2">We Handle Everything</h3>
+                  <p className="text-[#3A4045] leading-relaxed">
+                    Title work, surveys if needed, closing costs—we take care of it. You show up to closing, sign papers, and get paid. That's it.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Form Section */}
+      <div id="contact-form" className="py-16 bg-white">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl text-[#2F4F33] font-serif font-light mb-4">Ready to Get Started?</h2>
+            <p className="text-lg text-[#3A4045]">
+              Tell us about your property and we'll be in touch within 24 hours.
+            </p>
+          </div>
+
+          {/* Beautiful 12-Step Form */}
+          <form
+            onSubmit={handleSubmit}
+            onClick={handleFormFocus}
+            className={`bg-white rounded-2xl shadow-2xl p-6 sm:p-8 md:p-12 max-w-2xl mx-auto transition-all duration-500 ${
+              formFocused ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 scale-105 max-h-[90vh] overflow-y-auto w-[95vw] sm:w-auto' : ''
+            }`}
+          >
+            {/* Progress Bar */}
+            <div className="mb-8">
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-medium text-[#2F4F33]">Step {currentStep} of 16</span>
+                <span className="text-sm font-medium text-[#2F4F33]">{Math.round((currentStep / 16) * 100)}%</span>
+              </div>
+              <div className="w-full bg-[#D2C6B2] rounded-full h-2">
+                <div
+                  className="bg-[#2F4F33] h-2 rounded-full transition-all duration-500"
+                  style={{width: `${(currentStep / 16) * 100}%`}}
+                ></div>
+              </div>
+            </div>
+
+            {/* Step 1: Position Qualifier */}
+            {currentStep === 1 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What's your relationship to this property?
+                </h3>
+
+                <div className="grid gap-3">
+                  {[
+                    {value: 'sole-owner', label: 'Sole Owner'},
+                    {value: 'co-owner', label: 'Co-Owner'},
+                    {value: 'family-member', label: 'Family Member, POA, or Friend Assisting Sale'},
+                    {value: 'realtor', label: 'Realtor'},
+                    {value: 'wholesaler', label: 'Wholesaler'}
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFormData({...formData, position: option.value})}
+                      className={`w-full p-5 border-2 rounded-lg text-left transition-all transform hover:scale-102 ${
+                        formData.position === option.value
+                          ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                          : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045] hover:bg-[#F5EFD9]/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          formData.position === option.value ? 'border-[#2F4F33] bg-[#2F4F33]' : 'border-[#D2C6B2]'
+                        }`}>
+                          {formData.position === option.value && (
+                            <div className="w-3 h-3 bg-[#F5EFD9] rounded-full"></div>
+                          )}
+                        </div>
+                        <span className="text-lg">{option.label}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!formData.position}
+                  className="w-full bg-[#D4A574] text-white px-8 py-4 sm:py-5 text-base sm:text-lg font-bold hover:bg-[#C69A65] transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/50 disabled:opacity-50 disabled:cursor-not-allowed mt-6 rounded-lg active:scale-95"
+                >
+                  Continue →
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: Acres */}
+            {currentStep === 2 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  How many acres?
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    '0-2 Acres',
+                    '2-5 Acres',
+                    '5-10 Acres',
+                    '10-20 Acres',
+                    '20-50 Acres',
+                    '50-100 Acres',
+                    '100+ Acres'
+                  ].map((range) => (
+                    <button
+                      key={range}
+                      type="button"
+                      onClick={() => setFormData({...formData, acres: range})}
+                      className={`p-5 border-2 rounded-lg text-center transition-all transform hover:scale-102 ${
+                        formData.acres === range
+                          ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                          : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045] hover:bg-[#F5EFD9]/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          formData.acres === range ? 'border-[#2F4F33] bg-[#2F4F33]' : 'border-[#D2C6B2]'
+                        }`}>
+                          {formData.acres === range && (
+                            <div className="w-3 h-3 bg-[#F5EFD9] rounded-full"></div>
+                          )}
+                        </div>
+                        <span className="text-base font-medium">{range}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300 rounded-lg">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.acres} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed rounded-lg">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Home on Property */}
+            {currentStep === 3 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  Is there a home on the property?
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, homeOnProperty: 'no'})}
+                    className={`p-5 sm:p-6 border-2 rounded-lg text-center transition-all active:scale-95 ${
+                      formData.homeOnProperty === 'no'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-3xl sm:text-4xl font-bold">No</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, homeOnProperty: 'yes'})}
+                    className={`p-5 sm:p-6 border-2 rounded-lg text-center transition-all active:scale-95 ${
+                      formData.homeOnProperty === 'yes'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-3xl sm:text-4xl font-bold">Yes</span>
+                  </button>
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={!formData.homeOnProperty}
+                    className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Property Listed */}
+            {currentStep === 4 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  Is the property currently listed with a realtor?
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, propertyListed: 'no'})}
+                    className={`p-6 border-2 rounded-lg text-center transition-all ${
+                      formData.propertyListed === 'no'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-4xl font-bold">No</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, propertyListed: 'yes'})}
+                    className={`p-6 border-2 rounded-lg text-center transition-all ${
+                      formData.propertyListed === 'yes'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-4xl font-bold">Yes</span>
+                  </button>
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.propertyListed} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Is Property Inherited */}
+            {currentStep === 5 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  Is the property inherited?
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, isInherited: 'yes'})}
+                    className={`p-6 border-2 rounded-lg text-center transition-all ${
+                      formData.isInherited === 'yes'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-4xl font-bold">Yes</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, isInherited: 'no'})}
+                    className={`p-6 border-2 rounded-lg text-center transition-all ${
+                      formData.isInherited === 'no'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-4xl font-bold">No</span>
+                  </button>
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.isInherited} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Owned 4 Years (skipped if inherited) */}
+            {currentStep === 6 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  Have you owned the property for at least 4 years?
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, ownedFourYears: 'yes'})}
+                    className={`p-6 border-2 rounded-lg text-center transition-all ${
+                      formData.ownedFourYears === 'yes'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-4xl font-bold">Yes</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, ownedFourYears: 'no'})}
+                    className={`p-6 border-2 rounded-lg text-center transition-all ${
+                      formData.ownedFourYears === 'no'
+                        ? 'border-[#2F4F33] bg-[#F5EFD9] text-[#2F4F33] font-semibold shadow-lg'
+                        : 'border-[#D2C6B2] hover:border-[#2F4F33] text-[#3A4045]'
+                    }`}
+                  >
+                    <span className="text-4xl font-bold">No</span>
+                  </button>
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.ownedFourYears} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 7: Equity Expectation Warning (shown when owned < 4 years) */}
+            {currentStep === 7 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  Just so we're upfront with you —
+                </h3>
+                <div className="text-[#3A4045] space-y-4">
+                  <p>
+                    Properties owned for less than 4 years typically haven't built enough equity for us to offer above the original purchase price.
+                  </p>
+                  <p>
+                    Our cash offer may come in at or below what you paid. We believe in being straightforward about that from the start.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 mt-8">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(8)}
+                    className="w-full bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl"
+                  >
+                    I understand, let's continue →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      trackerRef.current?.trackDisqualification(7, 'declined equity warning');
+                      setShowDisqualifiedModal(true);
+                    }}
+                    className="w-full bg-white border-2 border-[#D2C6B2] text-[#7D6B58] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300"
+                  >
+                    That won't work for me
+                  </button>
+                </div>
+
+                <div className="flex gap-4 mt-4">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 8: Why Selling */}
+            {currentStep === 8 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  In a few words, why are you looking to sell?
+                </h3>
+                <p className="text-sm text-[#7D6B58] -mt-4 mb-4">
+                  We've bought hundreds of properties — we understand every situation. Feel free to be open and honest.
+                </p>
+
+                <textarea
+                  name="whySelling"
+                  value={formData.whySelling}
+                  onChange={(e) => {
+                    setFormData({...formData, whySelling: e.target.value});
+                    setWhySellingError('');
+                  }}
+                  placeholder="Tell us a bit about your situation..."
+                  rows={3}
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors resize-none"
+                  autoFocus
+                />
+                <p className={`text-sm ${formData.whySelling.length >= 50 ? 'text-green-600' : 'text-[#7D6B58]'}`}>
+                  {formData.whySelling.length}/50 characters minimum
+                </p>
+
+                {whySellingError && (
+                  <div className={`p-4 rounded-lg ${wholesalerBlocks >= 2 ? 'bg-red-100 border border-red-300' : 'bg-amber-50 border border-amber-200'}`}>
+                    <p className={`text-sm ${wholesalerBlocks >= 2 ? 'text-red-700' : 'text-amber-800'}`}>{whySellingError}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsValidatingReason(true);
+                      setWhySellingError('');
+                      try {
+                        const response = await fetch('/api/validate-reason', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ reason: formData.whySelling })
+                        });
+                        const { result } = await response.json();
+
+                        if (result === 'PASS') {
+                          setCurrentStep(9);
+                        } else if (result === 'WHOLESALER') {
+                          setWholesalerBlocks(prev => prev + 1);
+                          if (wholesalerBlocks >= 1) {
+                            setWhySellingError("It looks like this form isn't the right fit. Feel free to reach out directly at jordan@havenground.com");
+                          } else {
+                            setWhySellingError("We appreciate your interest, but Haven Ground works directly with landowners. If you own property and are looking to sell, we'd love to help!");
+                          }
+                        } else if (result === 'TIRE_KICKER') {
+                          setWhySellingError("We understand! When you're ready to move forward with selling, we're here. Feel free to come back anytime.");
+                        } else if (result === 'DESCRIPTION_ONLY') {
+                          setWhySellingError("Please tell us why you're looking to sell, not just what the property is. This helps us put together the best offer for your situation.");
+                        }
+                      } catch (error) {
+                        console.error('Validation error:', error);
+                        // On error, pass them through
+                        setCurrentStep(9);
+                      } finally {
+                        setIsValidatingReason(false);
+                      }
+                    }}
+                    disabled={formData.whySelling.length < 50 || wholesalerBlocks >= 2 || isValidatingReason}
+                    className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isValidatingReason ? 'Checking...' : 'Continue →'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 9: Property State */}
+            {currentStep === 9 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What state is the property located in?
+                </h3>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="propertyState"
+                    value={formData.propertyState}
+                    onChange={(e) => handleStateChange(e.target.value)}
+                    onFocus={() => formData.propertyState && handleStateChange(formData.propertyState)}
+                    onBlur={() => setTimeout(() => setShowStateSuggestions(false), 200)}
+                    placeholder="Start typing..."
+                    className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                    autoFocus
+                    autoComplete="off"
+                  />
+                  {showStateSuggestions && stateSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border-2 border-[#D2C6B2] rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {stateSuggestions.map((state) => (
+                        <button
+                          key={state}
+                          type="button"
+                          onClick={() => selectState(state)}
+                          className="w-full px-6 py-3 text-left text-lg text-[#3A4045] hover:bg-[#F5EFD9] transition-colors border-b border-[#D2C6B2] last:border-b-0"
+                        >
+                          {state}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!US_STATES.includes(formData.propertyState)} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+                {formData.propertyState && !US_STATES.includes(formData.propertyState) && (
+                  <p className="text-sm text-red-600 mt-2">Please select a valid state from the list</p>
+                )}
+              </div>
+            )}
+
+            {/* Step 10: County */}
+            {currentStep === 10 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What county is the property in?
+                </h3>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="propertyCounty"
+                    value={formData.propertyCounty}
+                    onChange={(e) => handleCountyChange(e.target.value)}
+                    onFocus={() => formData.propertyCounty && handleCountyChange(formData.propertyCounty)}
+                    onBlur={() => setTimeout(() => setShowCountySuggestions(false), 200)}
+                    placeholder="Start typing..."
+                    className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                    autoFocus
+                    autoComplete="off"
+                  />
+                  {showCountySuggestions && countySuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border-2 border-[#D2C6B2] rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {countySuggestions.map((county) => (
+                        <button
+                          key={county}
+                          type="button"
+                          onClick={() => selectCounty(county)}
+                          className="w-full px-6 py-3 text-left text-lg text-[#3A4045] hover:bg-[#F5EFD9] transition-colors border-b border-[#D2C6B2] last:border-b-0"
+                        >
+                          {county}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.propertyCounty || !(COUNTIES_BY_STATE[formData.propertyState] || []).includes(formData.propertyCounty)} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+                {formData.propertyCounty && !(COUNTIES_BY_STATE[formData.propertyState] || []).includes(formData.propertyCounty) && (
+                  <p className="text-sm text-red-600 mt-2">Please select a valid county from the list</p>
+                )}
+              </div>
+            )}
+
+            {/* Step 11: Street Address */}
+            {currentStep === 11 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What is the street address or APN?
+                </h3>
+                <p className="text-sm text-[#7D6B58] -mt-4 mb-4">(Check your tax bill for APN)</p>
+
+                <input
+                  type="text"
+                  name="streetAddress"
+                  value={formData.streetAddress}
+                  onChange={handleChange}
+                  placeholder="Ex: Riverway Rd or R102777"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  autoFocus
+                />
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.streetAddress} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 11: Full Name */}
+            {currentStep === 12 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What is your full name?
+                </h3>
+
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  placeholder="First and Last Name"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  autoFocus
+                />
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.fullName} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 12: Names on Deed */}
+            {currentStep === 13 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What names are on the deed?
+                </h3>
+
+                <input
+                  type="text"
+                  name="namesOnDeed"
+                  value={formData.namesOnDeed}
+                  onChange={handleChange}
+                  placeholder="All names on the property deed"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  autoFocus
+                />
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.namesOnDeed} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 13: Email */}
+            {currentStep === 14 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What is your email address?
+                </h3>
+
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (emailError) setEmailError('');
+                  }}
+                  onBlur={(e) => {
+                    const result = validateEmail(e.target.value);
+                    if (!result.valid) setEmailError(result.error);
+                  }}
+                  placeholder="your@email.com"
+                  className={`w-full px-6 py-4 text-lg border-2 rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors ${emailError ? 'border-red-400 bg-red-50' : 'border-[#D2C6B2]'}`}
+                  autoFocus
+                />
+                {emailError && (
+                  <p className="text-red-500 text-sm mt-2">{emailError}</p>
+                )}
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={handleNext} disabled={!formData.email || !validateEmail(formData.email).valid} className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 14: Phone */}
+            {currentStep === 15 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  What is your phone number?
+                </h3>
+
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="(469) 640-3864"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors"
+                  autoFocus
+                />
+
+                <div className="bg-[#F5EFD9] p-4 rounded-lg">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="smsConsent"
+                      checked={formData.smsConsent}
+                      onChange={(e) => setFormData({...formData, smsConsent: e.target.checked})}
+                      className="mt-1 w-5 h-5 text-[#2F4F33] border-[#D2C6B2] rounded focus:ring-[#2F4F33]"
+                    />
+                    <span className="text-sm text-[#3A4045]">
+                      By continuing, you agree to receive SMS messages from Haven Ground about your property inquiry. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help. <a href="https://havenground.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#2F4F33]">Privacy Policy</a> | <a href="https://havenground.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#2F4F33]">Terms of Service</a>
+                    </span>
+                  </label>
+                </div>
+
+                {otpError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {otpError}
+                  </div>
+                )}
+
+                <div className="flex gap-4 mt-6">
+                  <button type="button" onClick={handleBack} className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300">
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={sendOTP}
+                    disabled={!formData.phone || !formData.smsConsent || isLoading}
+                    className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Sending...' : 'Send Verification Code →'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 15: OTP Verification */}
+            {currentStep === 16 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-[#2F4F33] mb-6 leading-tight">
+                  Enter verification code
+                </h3>
+
+                <p className="text-[#3A4045] mb-4">
+                  We sent a code to <strong>{formData.phone}</strong>
+                </p>
+
+                <input
+                  type="text"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Enter code"
+                  maxLength="8"
+                  className="w-full px-6 py-4 text-lg border-2 border-[#D2C6B2] rounded-lg focus:border-[#2F4F33] focus:outline-none bg-transparent text-[#3A4045] transition-colors text-center tracking-widest font-bold"
+                  autoFocus
+                />
+
+                {otpError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {otpError}
+                  </div>
+                )}
+
+                <div className="flex gap-4 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentStep(15);
+                      setOtpSent(false);
+                      setOtpCode('');
+                      setOtpError('');
+                    }}
+                    className="flex-1 bg-white border-2 border-[#2F4F33] text-[#2F4F33] px-8 py-4 text-lg font-medium hover:bg-[#F5EFD9] transition-all duration-300"
+                  >
+                    ← Change Number
+                  </button>
+                  <button
+                    type="button"
+                    onClick={verifyOTP}
+                    disabled={otpCode.length < 4 || isLoading}
+                    className="flex-1 bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Verifying...' : 'Verify & Submit →'}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={sendOTP}
+                  disabled={isLoading}
+                  className="w-full text-[#2F4F33] underline hover:text-[#7D6B58] transition-colors"
+                >
+                  Didn't receive code? Resend
+                </button>
+              </div>
+            )}
+          </form>
+
+          <style jsx>{`
+            @keyframes fadeIn {
+              from { opacity: 0; transform: translateY(10px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fadeIn {
+              animation: fadeIn 0.3s ease-out;
+            }
+          `}</style>
+        </div>
+      </div>
+
+      {/* Final Trust Section */}
+      <div className="py-16 bg-[#2F4F33]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl text-[#F5EFD9] font-serif font-light mb-6">No Pressure, Just Honest Conversation</h2>
+          <p className="text-xl text-[#D2C6B2] mb-8 leading-relaxed">
+            We know selling land is a big decision. Take your time, ask questions, and make the choice that's right for you. We'll be here either way.
+          </p>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-[#2F4F33] text-[#F5EFD9] py-16 border-t border-[#7D6B58]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div className="md:col-span-2">
+              <div className="mb-4">
+                <h3 className="text-3xl font-bold text-[#F5EFD9] italic font-serif">Haven Ground</h3>
+              </div>
+              <p className="text-[#D2C6B2] text-lg mb-4 leading-relaxed">Land and community, one meaningful handshake at a time.</p>
+              <img src="/images/isaiah-58-10-banner.png" alt="Isaiah 58:10 - If you pour yourself out for the hungry" className="h-20 md:h-24 lg:h-28 w-auto" />
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-[#F5EFD9] mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><a href="/" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Home</a></li>
+                <li><a href="/properties" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Properties</a></li>
+                <li><a href="/development" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Development</a></li>
+                <li><a href="/sell-your-land" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Sell Us Land</a></li>
+                <li><a href="/community" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200">Community</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-[#F5EFD9] mb-4">Get in Touch</h4>
+              <div className="space-y-3">
+                <p className="text-[#D2C6B2] text-sm">Find your homesite that feels the most like home</p>
+                <a href="/sell-your-land#contact-form" className="inline-block bg-[#F5EFD9] text-[#2F4F33] px-4 py-2 rounded-md hover:bg-[#D2C6B2] active:bg-[#D2C6B2] transition-all duration-200 text-sm font-medium transform hover:scale-105 active:scale-95">Contact Us</a>
+              </div>
+            </div>
+          </div>
+          <div className="pt-8 border-t border-[#7D6B58] text-center">
+            <p className="text-[#D2C6B2] text-sm">
+              &copy; {new Date().getFullYear()} Haven Ground. All rights reserved.
+              <span className="mx-2">|</span>
+              Serving land owners from our heart.
+              <span className="mx-2">|</span>
+              <a href="/privacy-policy" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200 underline">Privacy Policy</a>
+              <span className="mx-2">|</span>
+              <a href="/terms-of-use" className="text-[#D2C6B2] hover:text-[#F5EFD9] transition-colors duration-200 underline">Terms of Use</a>
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
