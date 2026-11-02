@@ -26,6 +26,14 @@ const fmtPriceRange = (v) => {
   const m = s.match(/^\$?\s*(\d{1,4})\s*s?\.?$/i);
   return m ? `From the $${m[1]}s` : s;
 };
+// Starting price derived from the actual lot table (lowest priced lot), so the
+// price shown always matches the pricing set in the editor. Null if no priced lots.
+const startingFromLots = (p) => {
+  const prices = ((p && p.lotTable) || [])
+    .map((l) => parseFloat(String(l && l.price || '').replace(/[^0-9.]/g, '')))
+    .filter((n) => isFinite(n) && n > 0);
+  return prices.length ? `From $${Math.min(...prices).toLocaleString()}` : null;
+};
 
 // Dynamic Property Map Component - Acres.com Style
 function PropertyMap({ property }) {
@@ -1071,10 +1079,10 @@ export default function PropertyDetailPage() {
                             ))}
                           </div>
                           <div className="flex flex-col gap-2 mb-4">
-                            <button className="w-full bg-[#2F4F33] text-white py-3 rounded font-medium">
+                            <button type="button" onClick={() => setShowCalendar(true)} className="w-full bg-[#2F4F33] text-white py-3 rounded font-medium hover:bg-[#1a2e1c] transition">
                               Schedule a Tour
                             </button>
-                            <button className="w-full border-2 border-[#2F4F33] text-[#2F4F33] py-3 rounded font-medium">
+                            <button type="button" onClick={() => { const f = document.getElementById('contact-form'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className="w-full border-2 border-[#2F4F33] text-[#2F4F33] py-3 rounded font-medium hover:bg-[#F5EFD9] transition">
                               Request Info
                             </button>
                           </div>
@@ -1172,10 +1180,10 @@ export default function PropertyDetailPage() {
                                       ))}
                                     </div>
                                     <div className="space-y-2 mb-4">
-                                      <button className="w-full bg-[#2F4F33] text-white py-2.5 rounded">
+                                      <button type="button" onClick={() => setShowCalendar(true)} className="w-full bg-[#2F4F33] text-white py-2.5 rounded hover:bg-[#1a2e1c] transition">
                                         Schedule a Tour
                                       </button>
-                                      <button className="w-full border border-[#2F4F33] text-[#2F4F33] py-2.5 rounded">
+                                      <button type="button" onClick={() => { const f = document.getElementById('contact-form'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className="w-full border border-[#2F4F33] text-[#2F4F33] py-2.5 rounded hover:bg-[#F5EFD9] transition">
                                         Request Info
                                       </button>
                                     </div>
@@ -1216,10 +1224,10 @@ export default function PropertyDetailPage() {
                                           ))}
                                         </div>
                                         <div className="flex gap-3 mt-6">
-                                          <button className="bg-[#2F4F33] text-white px-6 py-3 rounded hover:bg-[#1a2e1c] transition">
+                                          <button type="button" onClick={() => setShowCalendar(true)} className="bg-[#2F4F33] text-white px-6 py-3 rounded hover:bg-[#1a2e1c] transition">
                                             Schedule a Tour
                                           </button>
-                                          <button className="border-2 border-[#2F4F33] text-[#2F4F33] px-6 py-3 rounded hover:bg-[#2F4F33] hover:text-white transition">
+                                          <button type="button" onClick={() => { const f = document.getElementById('contact-form'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); }} className="border-2 border-[#2F4F33] text-[#2F4F33] px-6 py-3 rounded hover:bg-[#2F4F33] hover:text-white transition">
                                             Request Info
                                           </button>
                                         </div>
@@ -1583,7 +1591,7 @@ export default function PropertyDetailPage() {
               <div className="text-center">
                 {(property.type === 'community' || property.type === 'subdivision') ? (
                   <>
-                    <p className="text-2xl sm:text-3xl md:text-4xl text-[#2F4F33] font-light mb-2 break-words">{fmtPriceRange(property.priceRange)}</p>
+                    <p className="text-2xl sm:text-3xl md:text-4xl text-[#2F4F33] font-light mb-2 break-words">{startingFromLots(property) || fmtPriceRange(property.priceRange)}</p>
                     <p className="text-[#7D6B58] mb-1 text-sm md:text-base break-words">{property.lots}</p>
                     <p className="text-lg sm:text-xl md:text-2xl text-[#2F4F33] mb-1 break-words">{property.homeTypes}</p>
                   </>
@@ -1632,7 +1640,7 @@ export default function PropertyDetailPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       <div className="text-center">
                         <p className="text-[#7D6B58] text-sm mb-1">Starting Price</p>
-                        <p className="text-white font-bold text-xl">{fmtPriceRange(property.priceRange)}</p>
+                        <p className="text-white font-bold text-xl">{startingFromLots(property) || fmtPriceRange(property.priceRange)}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-[#7D6B58] text-sm mb-1">Home Type</p>
@@ -1838,32 +1846,26 @@ export default function PropertyDetailPage() {
               </div>
             </div>
 
-            {/* Oak Hill Reserve: area-opportunity banners (desire-builders right before the form) */}
+            {/* Oak Hill Reserve: area-opportunity banners, each with its own lead-in */}
             {property.slug === 'oak-hill' && (
-              <div className="mb-8">
-                <div className="text-center mb-6">
-                  <p className="text-xs uppercase tracking-[0.25em] text-[#7D6B58] font-semibold mb-2">Why Oak Hill Reserve</p>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl text-[#2F4F33] font-serif font-light [text-wrap:balance]">You are not just buying land. You are buying in early.</h2>
-                  <p className="text-[#7D6B58] mt-3 max-w-2xl mx-auto leading-relaxed">Washington County sits minutes from one of the biggest investments coming to Texas, with Brenham and Houston both within easy reach.</p>
-                </div>
-                <div className="space-y-5">
+              <div className="mb-8 space-y-8">
+                <div>
+                  <p className="text-[#2F4F33] text-lg leading-relaxed mb-3 max-w-3xl">A major chip plant is landing in the next county over, and Oak Hill Reserve sits 20 minutes from it. Buyers here are getting in ahead of the growth.</p>
                   <img
                     src="/property-banners/oak-hill-growth-terafab.png"
                     alt="SpaceX Terafab chip plant coming to neighboring Grimes County, 20 minutes from Oak Hill Reserve, with a 16.8 billion dollar initial investment and 3,000 new jobs announced"
                     className="w-full h-auto rounded-xl shadow-lg border border-[#D2C6B2]"
                     loading="lazy"
                   />
+                </div>
+                <div>
+                  <p className="text-[#2F4F33] text-lg leading-relaxed mb-3 max-w-3xl">You get the quiet of Washington County with downtown Brenham 15 minutes away and Houston inside of an hour.</p>
                   <img
                     src="/property-banners/oak-hill-location-drive-times.png"
                     alt="Oak Hill Reserve in Washington County, Texas: 15 minutes to downtown Brenham and 40 minutes to Houston, near Blue Bell Creameries in Brenham"
                     className="w-full h-auto rounded-xl shadow-lg border border-[#D2C6B2]"
                     loading="lazy"
                   />
-                </div>
-                <div className="text-center mt-6">
-                  <a href="#contact-form" className="inline-block bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium rounded hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg">
-                    Get More Info on Oak Hill Reserve →
-                  </a>
                 </div>
               </div>
             )}
@@ -2675,7 +2677,7 @@ export default function PropertyDetailPage() {
                     <span className="text-white/40 text-sm">|</span>
                     <span className="text-sm text-white whitespace-nowrap">{property.specifications?.lotSize || property.lots || '40+ Lots'}</span>
                     <span className="text-white/40 text-sm">|</span>
-                    <span className="font-bold text-base text-white whitespace-nowrap">{fmtPriceRange(property.priceRange)}</span>
+                    <span className="font-bold text-base text-white whitespace-nowrap">{startingFromLots(property) || fmtPriceRange(property.priceRange)}</span>
                   </>
                 ) : (
                   // Single land parcels
@@ -2694,15 +2696,10 @@ export default function PropertyDetailPage() {
               {/* CTA Button - Centered on mobile, right-aligned on desktop */}
               <button
                 type="button"
-                onClick={() => {
-                  const contactForm = document.getElementById('contact-form');
-                  if (contactForm) {
-                    contactForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }
-                }}
+                onClick={() => setShowCalendar(true)}
                 className="bg-[#D4A574] text-white px-8 md:px-6 py-4 md:py-3 text-base font-bold hover:bg-[#C69A65] transition-all duration-300 shadow-lg shadow-orange-500/40 hover:shadow-xl hover:shadow-orange-500/60 rounded-md border-2 border-[#E8B86D] whitespace-nowrap"
               >
-                Get More Info
+                Schedule a Tour
               </button>
             </div>
           </div>
