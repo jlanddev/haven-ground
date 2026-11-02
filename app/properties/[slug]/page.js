@@ -80,12 +80,16 @@ function PropertyMap({ property }) {
           if (existing && existing._leaflet_id) { existing._leaflet_id = undefined; existing.innerHTML = ''; }
 
           const map = L.map(mapId, {
-            scrollWheelZoom: true,   // trackpad pinch + wheel zoom to the cursor
+            // Scroll does NOT zoom (so panning/page scroll works). Pinch zooms via
+            // the ctrl-wheel handler below; the +/- buttons and drag still work.
+            scrollWheelZoom: false,
             touchZoom: true,
             doubleClickZoom: true,
             zoomControl: true,
             zoomSnap: 0.5,
-            wheelPxPerZoomLevel: 120,
+            // Cap at 18: Esri rural imagery runs out above this ("Map data not yet
+            // available" at z19-20), so never request tiles past what exists.
+            maxZoom: 18,
             // No zoom animation: a fitBounds-triggered zoom that finishes AFTER
             // the effect re-runs/unmounts throws Leaflet's "_leaflet_pos of
             // undefined" and takes down the whole page. Snapping avoids the race.
@@ -97,18 +101,28 @@ function PropertyMap({ property }) {
           // Esri satellite imagery - no country flags
           L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: false,
-            maxZoom: 20
+            maxZoom: 18
           }).addTo(map);
 
           // Labels overlay (roads, place names) so you can orient yourself.
           L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
             attribution: false,
-            maxZoom: 20
+            maxZoom: 18
           }).addTo(map);
           L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
             attribution: false,
-            maxZoom: 20
+            maxZoom: 18
           }).addTo(map);
+
+          // Trackpad pinch (ctrl + wheel) zooms toward the cursor; a plain two-finger
+          // scroll passes through to the page instead of zooming the map.
+          map.getContainer().addEventListener('wheel', (e) => {
+            if (!e.ctrlKey) return;
+            e.preventDefault();
+            const pt = map.mouseEventToContainerPoint(e);
+            const next = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), map.getZoom() - e.deltaY * 0.01));
+            map.setZoomAround(map.containerPointToLatLng(pt), next);
+          }, { passive: false });
 
           // Remove Leaflet attribution and add custom text
           map.attributionControl.setPrefix('');
@@ -158,8 +172,8 @@ function PropertyMap({ property }) {
           try {
             const vb = map.getBounds();
             if (vb && vb.isValid()) {
-              map.setMaxBounds(vb.pad(1.5));
-              map.setMinZoom(Math.max(10, map.getZoom() - 2));
+              map.setMaxBounds(vb.pad(2));
+              map.setMinZoom(Math.max(11, map.getZoom() - 4));
             }
           } catch (e) { /* non-fatal */ }
 
