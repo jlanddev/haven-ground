@@ -61,12 +61,16 @@ export default function PropertiesPage() {
   const [showLandListThankYou, setShowLandListThankYou] = useState(false);
   const [savedLandListFormData, setSavedLandListFormData] = useState(null);
 
-  // Properties: render the static data instantly (fast, never hangs), then
-  // refresh from Supabase. If the DB is slow or down, the static data stays.
-  const [properties, setProperties] = useState(propertiesData);
+  // Load the live listings first so the page shows the correct order from the
+  // start (no flash from stale static order). fetchProperties falls back to the
+  // bundled static data internally if the DB is slow or down, so this never hangs.
+  const [properties, setProperties] = useState([]);
+  const [propsLoaded, setPropsLoaded] = useState(false);
   useEffect(() => {
     let alive = true;
-    fetchProperties().then((rows) => { if (alive && rows?.length) setProperties(rows); }).catch(() => {});
+    fetchProperties()
+      .then((rows) => { if (alive) { setProperties(Array.isArray(rows) && rows.length ? rows : propertiesData); setPropsLoaded(true); } })
+      .catch(() => { if (alive) { setProperties(propertiesData); setPropsLoaded(true); } });
     return () => { alive = false; };
   }, []);
 
@@ -936,7 +940,7 @@ export default function PropertiesPage() {
             {/* Sort and View Controls */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <span className="text-[#7D6B58]">{sortedProperties.length} properties found</span>
+                <span className="text-[#7D6B58]">{propsLoaded ? `${sortedProperties.length} properties found` : 'Loading properties…'}</span>
                 <select
                   className="px-4 py-2 border border-[#D2C6B2] rounded-md focus:ring-[#7D6B58] focus:border-[#2F4F33]"
                   value={filters.sortBy}
@@ -981,7 +985,13 @@ export default function PropertiesPage() {
             )}
 
             {/* Properties Display */}
-            {viewMode === 'grid' ? (
+            {!propsLoaded ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white rounded-lg shadow animate-pulse" style={{ height: 380 }} />
+                ))}
+              </div>
+            ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {sortedProperties.map((property) => {
                   const currentIndex = currentImageIndex[property.id] || 0;

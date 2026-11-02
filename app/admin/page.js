@@ -130,7 +130,7 @@ function Dashboard({ email }) {
   };
 
   if (editing) {
-    return <Editor row={editing} onClose={closeEditor} />;
+    return <Editor key={editing.id || 'new'} row={editing} onClose={closeEditor} />;
   }
 
   return (
@@ -208,7 +208,15 @@ function Editor({ row, onClose }) {
   // localStorage keyed by this listing, restore it on mount, clear it on close.
   const draftKey = `hg-editor-draft-${row.id || 'new'}`;
   const [form, setForm] = useState(() => {
-    try { const saved = localStorage.getItem(draftKey); if (saved) return JSON.parse(saved); } catch {}
+    try {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Only restore a draft that belongs to THIS listing (guard against a
+        // stale or mismatched draft showing the wrong listing).
+        if ((parsed && (parsed.id || null)) === (row.id || null)) return parsed;
+      }
+    } catch {}
     return JSON.parse(JSON.stringify(row));
   });
   const [tab, setTab] = useState('basics');
