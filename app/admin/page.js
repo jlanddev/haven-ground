@@ -295,56 +295,61 @@ function Editor({ row, onClose }) {
   const toggleDocShow = (id) => setD('documents', (d.documents || []).map((x) => (x.id === id ? { ...x, showOnSite: !x.showOnSite } : x)));
   const removeDoc = (id) => setD('documents', (d.documents || []).filter((x) => x.id !== id));
 
+  // Read a plat's lots from its public URL into the table. Shared by the upload
+  // flow and the per-document "Read lots" button.
+  const readLotsFromUrl = async (fileUrl, name, prefixMsg = '') => {
+    const res = await fetch('/api/ai/read-plat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileUrl, mediaType: /\.pdf($|\?)/i.test(name || fileUrl) ? 'application/pdf' : '', filename: name }),
+    });
+    const txt = await res.text();
+    let j = null;
+    try { j = JSON.parse(txt); } catch { /* non-JSON = timeout/error page */ }
+    if (!res.ok || !j || !j.ok) {
+      const why = (j && j.error) ? j.error : 'the read timed out or the file was too complex';
+      setPlatMsg(`${prefixMsg}Could not read lots (${why}). You can type the lots in by hand.`);
+      return;
+    }
+    const lots = j.lots || [];
+    if (!lots.length) { setPlatMsg(`${prefixMsg}No lots could be read, so the table was left as is.`); return; }
+    const rate = parseFloat(ppa);
+    const unitR = j.unit === 'Lots' ? 'Lots' : 'Tracts';
+    const singular = unitR === 'Tracts' ? 'Tract' : 'Lot';
+    const rows = lots.map((l, i) => {
+      let lot = (l.lot == null ? '' : String(l.lot)).trim();
+      if (!lot || /^\d+$/.test(lot)) lot = `${singular} ${i + 1}`;
+      const acres = (typeof l.acres === 'number' && isFinite(l.acres)) ? l.acres : null;
+      const size = acres != null ? `${acres} acres` : '';
+      const price = (acres != null && rate > 0) ? `$${Math.round(acres * rate).toLocaleString()}` : '';
+      return { lot, size, price, status: 'Available' };
+    });
+    setForm((f) => ({ ...f, data: { ...(f.data || {}), lotUnit: unitR, lotTable: rows } }));
+    const priced = rows.filter((r) => r.price).length;
+    setPlatMsg(`${prefixMsg}Read ${rows.length} ${unitR.toLowerCase()} from the plat${rate > 0 ? `, priced ${priced} at $${rate.toLocaleString()}/acre` : ' (set a price per acre and click Apply $/acre)'}. Check the table, then Save.`);
+  };
+
   // Upload a plat/survey: store it as a document AND read its lots into the table.
   const readPlat = async (file) => {
     if (!file) return;
     setPlatBusy(true); setPlatErr(''); setPlatMsg('');
     try {
       const slug = form.slug || slugify(form.title) || 'listing';
-      // 1) store the file so it is downloadable AND readable by URL
-      let storedName = file.name;
-      let fileUrl = '';
-      try {
-        const up = await uploadDoc(file, slug);
-        addDocEntry({ id: rid(), kind: 'survey', label: 'Plat / Survey', url: up.url, name: up.name, showOnSite: false });
-        storedName = up.name; fileUrl = up.url;
-      } catch (e) {
-        setPlatErr('File upload failed: ' + (e.message || e)); return;
-      }
-      // 2) read its lots with AI (send the public URL, not a big base64 payload)
-      const res = await fetch('/api/ai/read-plat', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileUrl, mediaType: file.type, filename: file.name }),
-      });
-      const txt = await res.text();
-      let j = null;
-      try { j = JSON.parse(txt); } catch { /* non-JSON = timeout/error page */ }
-      if (!res.ok || !j || !j.ok) {
-        const why = (j && j.error) ? j.error : 'the read timed out or the file was too complex';
-        setPlatMsg(`Saved ${storedName} as a document. Could not read lots (${why}). You can type the lots in by hand.`);
-        return;
-      }
-      const lots = j.lots || [];
-      if (!lots.length) { setPlatMsg(`Saved ${storedName} as a document. No lots could be read, so the ${unit} table was left as is.`); return; }
-      const rate = parseFloat(ppa);
-      const unitR = j.unit === 'Lots' ? 'Lots' : 'Tracts';
-      const singular = unitR === 'Tracts' ? 'Tract' : 'Lot';
-      const rows = lots.map((l, i) => {
-        let lot = (l.lot == null ? '' : String(l.lot)).trim();
-        if (!lot || /^\d+$/.test(lot)) lot = `${singular} ${i + 1}`;
-        const acres = (typeof l.acres === 'number' && isFinite(l.acres)) ? l.acres : null;
-        const size = acres != null ? `${acres} acres` : '';
-        const price = (acres != null && rate > 0) ? `$${Math.round(acres * rate).toLocaleString()}` : '';
-        return { lot, size, price, status: 'Available' };
-      });
-      setForm((f) => ({ ...f, data: { ...(f.data || {}), lotUnit: unitR, lotTable: rows } }));
-      const priced = rows.filter((r) => r.price).length;
-      setPlatMsg(`Saved ${storedName} and read ${rows.length} ${unitR.toLowerCase()} from it${rate > 0 ? `, priced ${priced} at $${rate.toLocaleString()}/acre` : ' (add a price per acre to auto-price them)'}. Check the table, then Save.`);
+      const up = await uploadDoc(file, slug);
+      addDocEntry({ id: rid(), kind: 'survey', label: 'Plat / Survey', url: up.url, name: up.name, showOnSite: false });
+      await readLotsFromUrl(up.url, up.name, `Saved ${up.name}. `);
     } catch (e) {
-      setPlatErr(e.message || 'Could not read the plat.');
+      setPlatErr('Upload or read failed: ' + (e.message || e));
     } finally {
       setPlatBusy(false);
     }
+  };
+
+  // Re-read lots from an already-uploaded document (no re-upload needed).
+  const readDocLots = async (doc) => {
+    setPlatBusy(true); setPlatErr(''); setPlatMsg('');
+    try { await readLotsFromUrl(doc.url, doc.name, ''); }
+    catch (e) { setPlatErr('Read failed: ' + (e.message || e)); }
+    finally { setPlatBusy(false); }
   };
 
   // Upload a brochure (or any document) without reading it.
@@ -655,6 +660,11 @@ function Editor({ row, onClose }) {
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.label || 'Document'}</div>
                           <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: GREEN, textDecoration: 'underline', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{doc.name || 'open'}</a>
                         </div>
+                        {doc.kind === 'survey' && (
+                          <button onClick={() => readDocLots(doc)} disabled={platBusy} style={{ ...btnGhost, padding: '5px 10px', fontSize: 12, flex: '0 0 auto', opacity: platBusy ? 0.6 : 1 }} title="Read the lots from this plat">
+                            {platBusy ? '…' : 'Read lots'}
+                          </button>
+                        )}
                         <label style={{ fontSize: 13, color: '#374151', display: 'flex', alignItems: 'center', gap: 6, flex: '0 0 auto' }}>
                           <input type="checkbox" checked={!!doc.showOnSite} onChange={() => toggleDocShow(doc.id)} /> Show on site
                         </label>
