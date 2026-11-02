@@ -1838,6 +1838,36 @@ export default function PropertyDetailPage() {
               </div>
             </div>
 
+            {/* Oak Hill Reserve: area-opportunity banners (desire-builders right before the form) */}
+            {property.slug === 'oak-hill' && (
+              <div className="mb-8">
+                <div className="text-center mb-6">
+                  <p className="text-xs uppercase tracking-[0.25em] text-[#7D6B58] font-semibold mb-2">Why Oak Hill Reserve</p>
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl text-[#2F4F33] font-serif font-light [text-wrap:balance]">You are not just buying land. You are buying in early.</h2>
+                  <p className="text-[#7D6B58] mt-3 max-w-2xl mx-auto leading-relaxed">Washington County sits minutes from one of the biggest investments coming to Texas, with Brenham and Houston both within easy reach.</p>
+                </div>
+                <div className="space-y-5">
+                  <img
+                    src="/property-banners/oak-hill-growth-terafab.png"
+                    alt="SpaceX Terafab chip plant coming to neighboring Grimes County, 20 minutes from Oak Hill Reserve, with a 16.8 billion dollar initial investment and 3,000 new jobs announced"
+                    className="w-full h-auto rounded-xl shadow-lg border border-[#D2C6B2]"
+                    loading="lazy"
+                  />
+                  <img
+                    src="/property-banners/oak-hill-location-drive-times.png"
+                    alt="Oak Hill Reserve in Washington County, Texas: 15 minutes to downtown Brenham and 40 minutes to Houston, near Blue Bell Creameries in Brenham"
+                    className="w-full h-auto rounded-xl shadow-lg border border-[#D2C6B2]"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="text-center mt-6">
+                  <a href="#contact-form" className="inline-block bg-[#2F4F33] text-[#F5EFD9] px-8 py-4 text-lg font-medium rounded hover:bg-[#1a2e1c] transition-all duration-300 shadow-lg">
+                    Get More Info on Oak Hill Reserve →
+                  </a>
+                </div>
+              </div>
+            )}
+
             {/* Contact Form */}
             <div id="contact-form" className="contact-form-section bg-[#FDFCF8] rounded-lg shadow-xl border-2 border-[#2F4F33] p-6 sm:p-8 mb-8">
               {embeddedShowThankYou ? (
