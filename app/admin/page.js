@@ -248,6 +248,19 @@ function Editor({ row, onClose }) {
       dd.propertyDetails = pd;
     }
     if (x.listingAgent) { const a = clean(x.listingAgent); if (Object.keys(a).length) { dd.listingAgent = { ...(dd.listingAgent || {}), ...a }; filled.push('agent'); } }
+    if (x.lotUnit === 'Lots' || x.lotUnit === 'Tracts') dd.lotUnit = x.lotUnit;
+    if (Array.isArray(x.lotTable) && x.lotTable.length) {
+      const singular = (dd.lotUnit === 'Tracts') ? 'Tract' : 'Lot';
+      dd.lotTable = x.lotTable.map((r, i) => {
+        let lot = (r.lot == null ? '' : String(r.lot)).trim();
+        if (!lot || /^\d+$/.test(lot)) lot = `${singular} ${i + 1}`;
+        return {
+          lot, size: r.size || '', price: r.price || '',
+          status: ['Available', 'Pending', 'Sold'].includes(r.status) ? r.status : 'Available',
+        };
+      });
+      filled.push(`${x.lotTable.length} ${(dd.lotUnit || 'Lots').toLowerCase()}`);
+    }
     setForm(next);
     setAiFilled([...new Set(filled)]);
     return filled.length;
