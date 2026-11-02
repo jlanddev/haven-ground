@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabaseCms as supabase } from '../../lib/supabase-cms';
 import {
-  getAdminProperties, saveProperty, deleteProperty, uploadPhoto, blankProperty, updateSortOrder,
+  getAdminProperties, saveProperty, deleteProperty, uploadPhoto, uploadDoc, blankProperty, updateSortOrder,
 } from '../../lib/admin-properties';
 
 const GREEN = '#2F4F33';
@@ -212,6 +212,10 @@ function Editor({ row, onClose }) {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiErr, setAiErr] = useState('');
   const [aiFilled, setAiFilled] = useState([]);
+  const [platBusy, setPlatBusy] = useState(false);
+  const [platErr, setPlatErr] = useState('');
+  const [platMsg, setPlatMsg] = useState('');
+  const [ppa, setPpa] = useState('');
 
   // Build the next form + the list of filled fields synchronously, then set both.
   // (Doing this inside setForm's updater left the filled list empty on the line
@@ -281,6 +285,79 @@ function Editor({ row, onClose }) {
       setAiErr(e.message || 'Draft failed.');
     } finally {
       setAiBusy(false);
+    }
+  };
+
+  const rid = () => Math.random().toString(36).slice(2, 9);
+  const addDocEntry = (doc) => setForm((f) => ({ ...f, data: { ...(f.data || {}), documents: [...((f.data && f.data.documents) || []), doc] } }));
+  const toggleDocShow = (id) => setD('documents', (d.documents || []).map((x) => (x.id === id ? { ...x, showOnSite: !x.showOnSite } : x)));
+  const removeDoc = (id) => setD('documents', (d.documents || []).filter((x) => x.id !== id));
+
+  // Upload a plat/survey: store it as a document AND read its lots into the table.
+  const readPlat = async (file) => {
+    if (!file) return;
+    setPlatBusy(true); setPlatErr(''); setPlatMsg('');
+    try {
+      const slug = form.slug || slugify(form.title) || 'listing';
+      // 1) store the file so it is downloadable
+      let storedName = file.name;
+      try {
+        const up = await uploadDoc(file, slug);
+        addDocEntry({ id: rid(), kind: 'survey', label: 'Plat / Survey', url: up.url, name: up.name, showOnSite: false });
+        storedName = up.name;
+      } catch (e) {
+        setPlatErr('Saved reading but file upload failed: ' + (e.message || e));
+      }
+      // 2) read its lots with AI
+      const dataUrl = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = () => reject(new Error('Could not read the file.'));
+        r.readAsDataURL(file);
+      });
+      const base64 = String(dataUrl).split(',')[1] || '';
+      const res = await fetch('/api/ai/read-plat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileBase64: base64, mediaType: file.type, filename: file.name }),
+      });
+      const j = await res.json();
+      if (!j.ok) { setPlatMsg(`Saved ${storedName} as a document. Could not read lots from it (${j.error || 'unreadable'}).`); return; }
+      const lots = j.lots || [];
+      if (!lots.length) { setPlatMsg(`Saved ${storedName} as a document. No lots could be read, so the ${unit} table was left as is.`); return; }
+      const rate = parseFloat(ppa);
+      const unitR = j.unit === 'Lots' ? 'Lots' : 'Tracts';
+      const singular = unitR === 'Tracts' ? 'Tract' : 'Lot';
+      const rows = lots.map((l, i) => {
+        let lot = (l.lot == null ? '' : String(l.lot)).trim();
+        if (!lot || /^\d+$/.test(lot)) lot = `${singular} ${i + 1}`;
+        const acres = (typeof l.acres === 'number' && isFinite(l.acres)) ? l.acres : null;
+        const size = acres != null ? `${acres} acres` : '';
+        const price = (acres != null && rate > 0) ? `$${Math.round(acres * rate).toLocaleString()}` : '';
+        return { lot, size, price, status: 'Available' };
+      });
+      setForm((f) => ({ ...f, data: { ...(f.data || {}), lotUnit: unitR, lotTable: rows } }));
+      const priced = rows.filter((r) => r.price).length;
+      setPlatMsg(`Saved ${storedName} and read ${rows.length} ${unitR.toLowerCase()} from it${rate > 0 ? `, priced ${priced} at $${rate.toLocaleString()}/acre` : ' (add a price per acre to auto-price them)'}. Check the table, then Save.`);
+    } catch (e) {
+      setPlatErr(e.message || 'Could not read the plat.');
+    } finally {
+      setPlatBusy(false);
+    }
+  };
+
+  // Upload a brochure (or any document) without reading it.
+  const addBrochure = async (file) => {
+    if (!file) return;
+    setPlatBusy(true); setPlatErr(''); setPlatMsg('');
+    try {
+      const slug = form.slug || slugify(form.title) || 'listing';
+      const up = await uploadDoc(file, slug);
+      addDocEntry({ id: rid(), kind: 'brochure', label: 'Brochure', url: up.url, name: up.name, showOnSite: false });
+      setPlatMsg(`Added brochure: ${up.name}. Check "Show on site" to put a download link on the listing.`);
+    } catch (e) {
+      setPlatErr('Upload failed: ' + (e.message || e));
+    } finally {
+      setPlatBusy(false);
     }
   };
 
@@ -370,6 +447,7 @@ function Editor({ row, onClose }) {
               Open the tabs above to review, then hit <strong>Save</strong>. Nothing is saved yet.
             </div>
           )}
+
         </details>
 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -483,7 +561,64 @@ function Editor({ row, onClose }) {
           )}
 
           {tab === 'lots' && (
-            <LotsEditor lots={d.lotTable || []} unit={unit} onUnitChange={(u) => setD('lotUnit', u)} onChange={(v) => setD('lotTable', v)} />
+            <div>
+              <LotsEditor lots={d.lotTable || []} unit={unit} onUnitChange={(u) => setD('lotUnit', u)} onChange={(v) => setD('lotTable', v)} />
+
+              <div style={{ borderTop: '1px solid #e5e7eb', marginTop: 20, paddingTop: 16 }}>
+                <div style={{ fontWeight: 600, color: GREEN, fontSize: 15, marginBottom: 4 }}>Documents</div>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 10px' }}>
+                  Upload a plat/survey (also reads the lots into the table above) or a brochure. Check "Show on site" to add a download link on the property page.
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+                  <label style={{ fontSize: 13, color: '#374151' }}>Price per acre (optional, for plat pricing):</label>
+                  <input type="number" value={ppa} onChange={(e) => setPpa(e.target.value)} placeholder="e.g. 29000" style={{ ...inp, width: 160 }} />
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <label style={{ ...btn, display: 'inline-block', cursor: platBusy ? 'wait' : 'pointer', opacity: platBusy ? 0.6 : 1 }}>
+                    {platBusy ? '⏳ Working…' : '+ Plat / survey (reads lots)'}
+                    <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" style={{ display: 'none' }} disabled={platBusy}
+                      onChange={(e) => { const fl = e.target.files?.[0]; e.target.value = ''; if (fl) readPlat(fl); }} />
+                  </label>
+                  <label style={{ ...btnGhost, display: 'inline-block', cursor: platBusy ? 'wait' : 'pointer', opacity: platBusy ? 0.6 : 1 }}>
+                    {platBusy ? '…' : '+ Brochure'}
+                    <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" style={{ display: 'none' }} disabled={platBusy}
+                      onChange={(e) => { const fl = e.target.files?.[0]; e.target.value = ''; if (fl) addBrochure(fl); }} />
+                  </label>
+                </div>
+                {platBusy && (
+                  <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: '#FEF3C7', border: '1px solid #FCD34D', color: '#92400E', fontSize: 14 }}>
+                    ⏳ Uploading and reading the file. A plat can take 10 to 20 seconds…
+                  </div>
+                )}
+                {!platBusy && platErr && (
+                  <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', fontSize: 14 }}>{platErr}</div>
+                )}
+                {!platBusy && !platErr && platMsg && (
+                  <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: '#DCFCE7', border: '1px solid #86EFAC', color: '#166534', fontSize: 14 }}><strong>✓</strong> {platMsg}</div>
+                )}
+
+                <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
+                  {(d.documents || []).map((doc) => {
+                    const isImg = /\.(jpe?g|png|webp|gif)$/i.test(doc.name || doc.url || '');
+                    return (
+                      <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', background: '#fff' }}>
+                        {isImg
+                          ? <img src={doc.url} alt="" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6, flex: '0 0 auto' }} />
+                          : <span style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F3F4F6', borderRadius: 6, fontSize: 20, flex: '0 0 auto' }}>📄</span>}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.label || 'Document'}</div>
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: GREEN, textDecoration: 'underline', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{doc.name || 'open'}</a>
+                        </div>
+                        <label style={{ fontSize: 13, color: '#374151', display: 'flex', alignItems: 'center', gap: 6, flex: '0 0 auto' }}>
+                          <input type="checkbox" checked={!!doc.showOnSite} onChange={() => toggleDocShow(doc.id)} /> Show on site
+                        </label>
+                        <button onClick={() => removeDoc(doc.id)} style={{ ...miniBtn, color: '#b91c1c', flex: '0 0 auto' }} title="Remove">✕</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

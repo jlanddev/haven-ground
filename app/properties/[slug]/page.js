@@ -1801,6 +1801,25 @@ export default function PropertyDetailPage() {
                         {property.detailedDescription ? property.detailedDescription.split('\n\n')[0] : property.description}
                       </p>
                     </div>
+                    {Array.isArray(property.documents) && property.documents.some((dc) => dc.showOnSite) && (
+                      <div className="mt-4 bg-[#F5EFD9] rounded-lg p-6">
+                        <h3 className="text-[#2F4F33] font-serif text-lg mb-3">Property Documents</h3>
+                        <div className="flex flex-wrap gap-3">
+                          {property.documents.filter((dc) => dc.showOnSite).map((dc, i) => {
+                            const isImg = /\.(jpe?g|png|webp|gif)$/i.test(dc.name || dc.url || '');
+                            return (
+                              <a key={i} href={dc.url} target="_blank" rel="noopener noreferrer" download
+                                className="inline-flex items-center gap-3 bg-white border border-[#D2C6B2] rounded-lg px-3 py-2 hover:border-[#2F4F33] transition-colors">
+                                {isImg
+                                  ? <img src={dc.url} alt="" className="w-10 h-10 object-cover rounded" />
+                                  : <span className="w-10 h-10 flex items-center justify-center bg-[#F5EFD9] rounded text-xl">📄</span>}
+                                <span className="text-[#2F4F33] font-medium text-sm underline">Download {dc.label || dc.name}</span>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
