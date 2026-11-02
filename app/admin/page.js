@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabaseCms as supabase } from '../../lib/supabase-cms';
 import {
   getAdminProperties, saveProperty, deleteProperty, uploadPhoto, uploadDoc, blankProperty, updateSortOrder,
@@ -72,6 +72,24 @@ function Dashboard({ email }) {
   };
   useEffect(() => { load(); }, []);
 
+  // Keep the open editor in the URL hash so a refresh reopens it (instead of
+  // dropping back to the list). Restore once, after the rows have loaded.
+  const setHash = (h) => { try { window.history.replaceState(null, '', h ? `#${h}` : window.location.pathname + window.location.search); } catch {} };
+  const openEditor = (r) => { setEditing(r); setHash(`edit=${encodeURIComponent(r.id)}`); };
+  const openNew = () => { setEditing(blankProperty()); setHash('edit=new'); };
+  const closeEditor = () => { setHash(''); setEditing(null); load(); };
+  const didRestore = useRef(false);
+  useEffect(() => {
+    if (!rows || didRestore.current) return;
+    didRestore.current = true;
+    const m = (window.location.hash || '').match(/^#edit=(.+)$/);
+    if (!m) return;
+    const id = decodeURIComponent(m[1]);
+    if (id === 'new') { setEditing(blankProperty()); return; }
+    const r = rows.find((x) => String(x.id) === id);
+    if (r) setEditing(r);
+  }, [rows]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Move a listing up/down. Optimistically reorders, renumbers sort_order to the
   // new positions, and persists only the rows that changed. Public pages list by
   // sort_order ascending, so this controls the order on the site.
@@ -112,7 +130,7 @@ function Dashboard({ email }) {
   };
 
   if (editing) {
-    return <Editor row={editing} onClose={() => { setEditing(null); load(); }} />;
+    return <Editor row={editing} onClose={closeEditor} />;
   }
 
   return (
@@ -128,7 +146,7 @@ function Dashboard({ email }) {
       <div style={{ maxWidth: 980, margin: '0 auto', padding: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h2 style={{ color: GREEN, margin: 0 }}>All listings {rows ? `(${rows.length})` : ''}</h2>
-          <button onClick={() => setEditing(blankProperty())} style={btn}>+ New Listing</button>
+          <button onClick={openNew} style={btn}>+ New Listing</button>
         </div>
         {err && <p style={{ color: '#b91c1c' }}>{err}</p>}
         {!rows && <p>Loading…</p>}
@@ -174,7 +192,7 @@ function Dashboard({ email }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                 <span style={tagStyle(r.status === 'Sold' ? '#9ca3af' : GREEN)}>{r.status}</span>
                 <a href={`/properties/${r.slug}`} target="_blank" rel="noreferrer" style={btnGhost}>View</a>
-                <button onClick={() => setEditing(r)} style={btn}>Edit</button>
+                <button onClick={() => openEditor(r)} style={btn}>Edit</button>
               </div>
             </div>
           ))}
@@ -186,11 +204,21 @@ function Dashboard({ email }) {
 
 // ---- Editor ----------------------------------------------------------------
 function Editor({ row, onClose }) {
-  const [form, setForm] = useState(() => JSON.parse(JSON.stringify(row)));
+  // Keep unsaved edits across a page refresh: persist the working copy to
+  // localStorage keyed by this listing, restore it on mount, clear it on close.
+  const draftKey = `hg-editor-draft-${row.id || 'new'}`;
+  const [form, setForm] = useState(() => {
+    try { const saved = localStorage.getItem(draftKey); if (saved) return JSON.parse(saved); } catch {}
+    return JSON.parse(JSON.stringify(row));
+  });
   const [tab, setTab] = useState('basics');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [uploading, setUploading] = useState(false);
+
+  useEffect(() => { try { localStorage.setItem(draftKey, JSON.stringify(form)); } catch {} }, [draftKey, form]);
+  const clearDraft = () => { try { localStorage.removeItem(draftKey); } catch {} };
+  const close = () => { clearDraft(); onClose(); };
 
   const d = form.data || {};
   const setTop = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -377,6 +405,7 @@ function Editor({ row, onClose }) {
     const rate = parseFloat(ppa);
     setPlatErr(''); setPlatMsg('');
     if (!n || n < 1) { setPlatErr('Enter how many tracts (a number).'); return; }
+    if (!ac || ac <= 0) { setPlatErr('Enter "Acres each" to fill sizes. Tracts are different sizes? Upload the plat and click "Read lots" to pull each acreage from the survey.'); return; }
     const singular = (d.lotUnit === 'Tracts') ? 'Tract' : 'Lot';
     const rows = Array.from({ length: n }, (_, i) => ({
       lot: `${singular} ${i + 1}`,
@@ -406,7 +435,7 @@ function Editor({ row, onClose }) {
     setSaving(true);
     try {
       await saveProperty({ ...form, slug });
-      onClose();
+      close();
     } catch (e) {
       setErr(e.message || 'Could not save');
       setSaving(false);
@@ -444,7 +473,7 @@ function Editor({ row, onClose }) {
   return (
     <div style={{ minHeight: '100vh', background: '#F5EFD9', fontFamily: 'Georgia, serif' }}>
       <div style={{ background: GREEN, color: '#fff', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
-        <button onClick={onClose} style={{ ...btnGhost, borderColor: '#ffffff66', color: '#fff' }}>← Back</button>
+        <button onClick={close} style={{ ...btnGhost, borderColor: '#ffffff66', color: '#fff' }}>← Back</button>
         <div style={{ fontSize: 17 }}>{form.id ? 'Edit listing' : 'New listing'}</div>
         <button onClick={save} disabled={saving || uploading} style={{ ...btn, background: '#fff', color: GREEN }}>{saving ? 'Saving…' : 'Save'}</button>
       </div>
