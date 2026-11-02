@@ -11,12 +11,12 @@ const IMG = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export async function POST(request) {
   try {
-    const { fileBase64, mediaType, filename } = await request.json();
-    if (!fileBase64 || !mediaType) {
+    const { fileUrl, fileBase64, mediaType, filename } = await request.json();
+    if (!fileUrl && !fileBase64) {
       return NextResponse.json({ ok: false, error: 'No file received.' }, { status: 400 });
     }
-    const isPdf = mediaType === 'application/pdf';
-    if (!isPdf && !IMG.includes(mediaType)) {
+    const isPdf = mediaType === 'application/pdf' || (!!fileUrl && /\.pdf($|\?)/i.test(fileUrl));
+    if (!isPdf && mediaType && !IMG.includes(mediaType)) {
       return NextResponse.json({ ok: false, error: 'Upload a PDF or a JPG/PNG image of the plat (not HEIC).' }, { status: 400 });
     }
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -32,9 +32,9 @@ export async function POST(request) {
       'If the image is not a readable plat, return { "unit": "Tracts", "lots": [] }.',
     ].join('\n');
 
-    const fileBlock = isPdf
-      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: fileBase64 } }
-      : { type: 'image', source: { type: 'base64', media_type: mediaType, data: fileBase64 } };
+    // Prefer the public URL (tiny request, no payload limit); fall back to base64.
+    const source = fileUrl ? { type: 'url', url: fileUrl } : { type: 'base64', media_type: mediaType, data: fileBase64 };
+    const fileBlock = isPdf ? { type: 'document', source } : { type: 'image', source };
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

@@ -216,6 +216,8 @@ function Editor({ row, onClose }) {
   const [platErr, setPlatErr] = useState('');
   const [platMsg, setPlatMsg] = useState('');
   const [ppa, setPpa] = useState('');
+  const [qtyTracts, setQtyTracts] = useState('');
+  const [acresEach, setAcresEach] = useState('');
 
   // Build the next form + the list of filled fields synchronously, then set both.
   // (Doing this inside setForm's updater left the filled list empty on the line
@@ -299,29 +301,29 @@ function Editor({ row, onClose }) {
     setPlatBusy(true); setPlatErr(''); setPlatMsg('');
     try {
       const slug = form.slug || slugify(form.title) || 'listing';
-      // 1) store the file so it is downloadable
+      // 1) store the file so it is downloadable AND readable by URL
       let storedName = file.name;
+      let fileUrl = '';
       try {
         const up = await uploadDoc(file, slug);
         addDocEntry({ id: rid(), kind: 'survey', label: 'Plat / Survey', url: up.url, name: up.name, showOnSite: false });
-        storedName = up.name;
+        storedName = up.name; fileUrl = up.url;
       } catch (e) {
-        setPlatErr('Saved reading but file upload failed: ' + (e.message || e));
+        setPlatErr('File upload failed: ' + (e.message || e)); return;
       }
-      // 2) read its lots with AI
-      const dataUrl = await new Promise((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result);
-        r.onerror = () => reject(new Error('Could not read the file.'));
-        r.readAsDataURL(file);
-      });
-      const base64 = String(dataUrl).split(',')[1] || '';
+      // 2) read its lots with AI (send the public URL, not a big base64 payload)
       const res = await fetch('/api/ai/read-plat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileBase64: base64, mediaType: file.type, filename: file.name }),
+        body: JSON.stringify({ fileUrl, mediaType: file.type, filename: file.name }),
       });
-      const j = await res.json();
-      if (!j.ok) { setPlatMsg(`Saved ${storedName} as a document. Could not read lots from it (${j.error || 'unreadable'}).`); return; }
+      const txt = await res.text();
+      let j = null;
+      try { j = JSON.parse(txt); } catch { /* non-JSON = timeout/error page */ }
+      if (!res.ok || !j || !j.ok) {
+        const why = (j && j.error) ? j.error : 'the read timed out or the file was too complex';
+        setPlatMsg(`Saved ${storedName} as a document. Could not read lots (${why}). You can type the lots in by hand.`);
+        return;
+      }
       const lots = j.lots || [];
       if (!lots.length) { setPlatMsg(`Saved ${storedName} as a document. No lots could be read, so the ${unit} table was left as is.`); return; }
       const rate = parseFloat(ppa);
@@ -359,6 +361,37 @@ function Editor({ row, onClose }) {
     } finally {
       setPlatBusy(false);
     }
+  };
+
+  // Manual tract builder: type a count + acreage (+ price per acre) and fill the table.
+  const money = (n) => `$${Math.round(n).toLocaleString()}`;
+  const parseAcres = (sz) => { const m = String(sz || '').match(/[\d.]+/); return m ? parseFloat(m[0]) : null; };
+  const buildTracts = () => {
+    const n = parseInt(qtyTracts, 10);
+    const ac = parseFloat(acresEach);
+    const rate = parseFloat(ppa);
+    setPlatErr(''); setPlatMsg('');
+    if (!n || n < 1) { setPlatErr('Enter how many tracts (a number).'); return; }
+    const singular = (d.lotUnit === 'Tracts') ? 'Tract' : 'Lot';
+    const rows = Array.from({ length: n }, (_, i) => ({
+      lot: `${singular} ${i + 1}`,
+      size: ac ? `${ac} acres` : '',
+      price: (ac && rate > 0) ? money(ac * rate) : '',
+      status: 'Available',
+    }));
+    setD('lotTable', rows);
+    setPlatMsg(`Built ${n} ${singular.toLowerCase()}${n > 1 ? 's' : ''}${ac ? ` of ${ac} acres` : ''}${(ac && rate > 0) ? ` at ${money(rate)}/acre` : ''}. Adjust any row, then Save.`);
+  };
+  const applyPricePerAcre = () => {
+    const rate = parseFloat(ppa);
+    const rows = d.lotTable || [];
+    setPlatErr(''); setPlatMsg('');
+    if (!(rate > 0)) { setPlatErr('Enter a price per acre first.'); return; }
+    if (!rows.length) { setPlatErr('No tracts to price yet. Build or upload them first.'); return; }
+    let priced = 0;
+    const next = rows.map((r) => { const ac = parseAcres(r.size); if (ac) { priced += 1; return { ...r, price: money(ac * rate) }; } return r; });
+    setD('lotTable', next);
+    setPlatMsg(`Priced ${priced} of ${rows.length} row${rows.length > 1 ? 's' : ''} at ${money(rate)}/acre.`);
   };
 
   const save = async () => {
@@ -452,7 +485,7 @@ function Editor({ row, onClose }) {
 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
           {tabs.map(([k, label]) => (
-            <button key={k} onClick={() => setTab(k)} style={{ ...tabBtn, ...(tab === k ? { background: GREEN, color: '#fff' } : {}) }}>{label}</button>
+            <button key={k} onClick={() => setTab(k)} style={{ ...tabBtn, ...(tab === k ? { background: GREEN, color: '#fff', borderColor: GREEN, boxShadow: '0 1px 2px rgba(47,79,51,0.25)' } : {}) }}>{label}</button>
           ))}
         </div>
 
@@ -565,14 +598,27 @@ function Editor({ row, onClose }) {
               <LotsEditor lots={d.lotTable || []} unit={unit} onUnitChange={(u) => setD('lotUnit', u)} onChange={(v) => setD('lotTable', v)} />
 
               <div style={{ borderTop: '1px solid #e5e7eb', marginTop: 20, paddingTop: 16 }}>
+                <div style={{ fontWeight: 600, color: GREEN, fontSize: 15, marginBottom: 4 }}>Build / price {unit.toLowerCase()}</div>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 10px' }}>
+                  Type how many, the acreage each, and a price per acre, then Fill. Or set just the price per acre and apply it to the rows above (or the ones a plat reads in).
+                </p>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+                  <div><div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}># of {unit.toLowerCase()}</div>
+                    <input type="number" value={qtyTracts} onChange={(e) => setQtyTracts(e.target.value)} placeholder="5" style={{ ...inp, width: 90 }} /></div>
+                  <div><div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Acres each</div>
+                    <input type="number" value={acresEach} onChange={(e) => setAcresEach(e.target.value)} placeholder="5.23" style={{ ...inp, width: 110 }} /></div>
+                  <div><div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Price per acre</div>
+                    <input type="number" value={ppa} onChange={(e) => setPpa(e.target.value)} placeholder="29000" style={{ ...inp, width: 120 }} /></div>
+                  <button onClick={buildTracts} style={btn}>Fill {unit.toLowerCase()}</button>
+                  <button onClick={applyPricePerAcre} style={btnGhost}>Apply $/acre to rows</button>
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid #e5e7eb', marginTop: 20, paddingTop: 16 }}>
                 <div style={{ fontWeight: 600, color: GREEN, fontSize: 15, marginBottom: 4 }}>Documents</div>
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 10px' }}>
-                  Upload a plat/survey (also reads the lots into the table above) or a brochure. Check "Show on site" to add a download link on the property page.
+                  Upload a plat/survey (reads the lots into the table above, and uses the price per acre you set) or a brochure. Check "Show on site" to add a download link on the property page.
                 </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-                  <label style={{ fontSize: 13, color: '#374151' }}>Price per acre (optional, for plat pricing):</label>
-                  <input type="number" value={ppa} onChange={(e) => setPpa(e.target.value)} placeholder="e.g. 29000" style={{ ...inp, width: 160 }} />
-                </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <label style={{ ...btn, display: 'inline-block', cursor: platBusy ? 'wait' : 'pointer', opacity: platBusy ? 0.6 : 1 }}>
                     {platBusy ? '⏳ Working…' : '+ Plat / survey (reads lots)'}
@@ -839,9 +885,9 @@ function ParcelMap({ boundary, center, defaultQuery, onSet, onClear }) {
 
 // ---- inline styles ---------------------------------------------------------
 const inp = { width: '100%', padding: '9px 11px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', background: '#fff' };
-const btn = { background: GREEN, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' };
-const btnGhost = { background: 'transparent', color: GREEN, border: `1px solid ${GREEN}`, borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', display: 'inline-block' };
-const tabBtn = { background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' };
+const btn = { background: GREEN, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', outline: 'none' };
+const btnGhost = { background: 'transparent', color: GREEN, border: `1px solid ${GREEN}`, borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', display: 'inline-block', outline: 'none' };
+const tabBtn = { background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', outline: 'none' };
 const card = { background: '#fff', borderRadius: 12, padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,.06)' };
 const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 };
 const chk = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#374151', marginTop: 8 };
