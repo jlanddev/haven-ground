@@ -1637,6 +1637,17 @@ export default function PropertyDetailPage() {
                   </div>
                   
                   {(property.type === 'community' || property.type === 'subdivision') ? (
+                    property.slug === 'oak-hill' ? (
+                      // Oak Hill: proximity + connectivity (facts not stated elsewhere on the page)
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        {[['To SpaceX TeraFab', '20 Min'], ['To Houston', '40 Min'], ['To Brenham', '15 Min'], ['Internet', 'High-Speed']].map(([label, value]) => (
+                          <div key={label} className="text-center">
+                            <p className="text-[#7D6B58] text-sm mb-1">{label}</p>
+                            <p className="text-white font-bold text-xl">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       <div className="text-center">
                         <p className="text-[#7D6B58] text-sm mb-1">Starting Price</p>
@@ -1655,6 +1666,7 @@ export default function PropertyDetailPage() {
                         <p className="text-white font-bold text-xl">{property.location}</p>
                       </div>
                     </div>
+                    )
                   ) : property.type === 'raw_land' ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       <div className="text-center">
