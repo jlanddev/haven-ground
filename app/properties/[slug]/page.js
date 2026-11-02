@@ -18,6 +18,15 @@ const fmtLotPrice = (v) => {
   return isFinite(n) ? `$${n.toLocaleString()}` : s;
 };
 
+// Keep price ranges consistent: a bare "$70s" / "70s" / "140" shows as "From the $70s".
+const fmtPriceRange = (v) => {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  if (/^from the/i.test(s)) return s;
+  const m = s.match(/^\$?\s*(\d{1,4})\s*s?\.?$/i);
+  return m ? `From the $${m[1]}s` : s;
+};
+
 // Dynamic Property Map Component - Acres.com Style
 function PropertyMap({ property }) {
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -1584,7 +1593,7 @@ export default function PropertyDetailPage() {
               <div className="text-center">
                 {(property.type === 'community' || property.type === 'subdivision') ? (
                   <>
-                    <p className="text-2xl sm:text-3xl md:text-4xl text-[#2F4F33] font-light mb-2 break-words">{property.priceRange}</p>
+                    <p className="text-2xl sm:text-3xl md:text-4xl text-[#2F4F33] font-light mb-2 break-words">{fmtPriceRange(property.priceRange)}</p>
                     <p className="text-[#7D6B58] mb-1 text-sm md:text-base break-words">{property.lots}</p>
                     <p className="text-lg sm:text-xl md:text-2xl text-[#2F4F33] mb-1 break-words">{property.homeTypes}</p>
                   </>
@@ -1633,7 +1642,7 @@ export default function PropertyDetailPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       <div className="text-center">
                         <p className="text-[#7D6B58] text-sm mb-1">Starting Price</p>
-                        <p className="text-white font-bold text-xl">{property.priceRange}</p>
+                        <p className="text-white font-bold text-xl">{fmtPriceRange(property.priceRange)}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-[#7D6B58] text-sm mb-1">Home Type</p>
@@ -2646,7 +2655,7 @@ export default function PropertyDetailPage() {
                     <span className="text-white/40 text-sm">|</span>
                     <span className="text-sm text-white whitespace-nowrap">{property.specifications?.lotSize || property.lots || '40+ Lots'}</span>
                     <span className="text-white/40 text-sm">|</span>
-                    <span className="font-bold text-base text-white whitespace-nowrap">{property.priceRange}</span>
+                    <span className="font-bold text-base text-white whitespace-nowrap">{fmtPriceRange(property.priceRange)}</span>
                   </>
                 ) : (
                   // Single land parcels

@@ -19,6 +19,15 @@ const fmtMoney = (v) => {
   const n = Math.round(parseFloat(digits));
   return isFinite(n) ? `$${n.toLocaleString()}` : s;
 };
+// Keep price ranges consistent: a bare "$70s" / "70s" / "140" becomes
+// "From the $70s". Anything already prefixed, empty, or more complex is left alone.
+const fmtPriceRange = (v) => {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  if (/^from the/i.test(s)) return s;
+  const m = s.match(/^\$?\s*(\d{1,4})\s*s?\.?$/i);
+  return m ? `From the $${m[1]}s` : s;
+};
 
 export default function AdminPage() {
   const [session, setSession] = useState(undefined); // undefined = loading
@@ -277,7 +286,7 @@ function Editor({ row, onClose }) {
     const put = (k, v, label) => { if (v !== undefined && v !== null && v !== '') { dd[k] = v; filled.push(label || k); } };
     put('location', x.location);
     put('type', x.type);
-    put('priceRange', x.priceRange, 'price range');
+    put('priceRange', fmtPriceRange(x.priceRange), 'price range');
     put('acres', x.acres);
     put('lots', x.lots, 'acreage label');
     put('homeTypes', x.homeTypes, 'home types');
@@ -561,7 +570,7 @@ function Editor({ row, onClose }) {
                   <option value="single">Single tract</option><option value="community">Community (multiple lots)</option>
                 </select>
               </Field>
-              <Field label="Price range (text)"><input style={inp} value={d.priceRange || ''} onChange={(e) => setD('priceRange', e.target.value)} placeholder="From the $140s" /></Field>
+              <Field label="Price range (text)"><input style={inp} value={d.priceRange || ''} onChange={(e) => setD('priceRange', e.target.value)} onBlur={(e) => setD('priceRange', fmtPriceRange(e.target.value))} placeholder="From the $140s" /></Field>
               <Field label="Price (number)"><input style={inp} type="number" value={d.price ?? ''} onChange={(e) => setD('price', e.target.value === '' ? null : Number(e.target.value))} /></Field>
               <Field label="Price per acre"><input style={inp} type="number" value={d.pricePerAcre ?? ''} onChange={(e) => setD('pricePerAcre', e.target.value === '' ? null : Number(e.target.value))} /></Field>
               <Field label="Acres (text)"><input style={inp} value={d.acres || ''} onChange={(e) => setD('acres', e.target.value)} placeholder="5-11" /></Field>

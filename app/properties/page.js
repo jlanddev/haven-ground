@@ -5,6 +5,15 @@ import { properties as propertiesData } from './propertiesData';
 import { fetchProperties } from '../../lib/properties-data';
 import { US_STATES, COUNTIES_BY_STATE, STATE_ABBR } from '../../lib/us-locations';
 
+// Keep price ranges consistent: a bare "$70s" / "70s" / "140" shows as "From the $70s".
+const fmtPriceRange = (v) => {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  if (/^from the/i.test(s)) return s;
+  const m = s.match(/^\$?\s*(\d{1,4})\s*s?\.?$/i);
+  return m ? `From the $${m[1]}s` : s;
+};
+
 // A property's full state name, read from its "City, ST" (or "City, State") location.
 const propStateFull = (p) => {
   const tail = (p?.location || '').split(',').pop().trim();
@@ -556,7 +565,7 @@ export default function PropertiesPage() {
             <p style="color: #3A4045; font-size: 12px; margin: 0 0 12px 0; line-height: 1.4;">${property.description}</p>
             <div style="margin-bottom: 12px;">
               <div style="font-size: 11px; color: #7D6B58; font-weight: 500;">Price Range</div>
-              <div style="font-size: 15px; color: #2F4F33; font-weight: bold;">${property.priceRange}</div>
+              <div style="font-size: 15px; color: #2F4F33; font-weight: bold;">${fmtPriceRange(property.priceRange)}</div>
             </div>
             <a
               href="/properties/${property.slug}"
@@ -1222,7 +1231,7 @@ export default function PropertiesPage() {
                                   </div>
                                   <div>
                                     <p className="text-sm text-[#7D6B58] font-medium">Price Range</p>
-                                    <p className="text-2xl text-[#2F4F33] font-bold">{property.priceRange}</p>
+                                    <p className="text-2xl text-[#2F4F33] font-bold">{fmtPriceRange(property.priceRange)}</p>
                                   </div>
                                 </div>
                               </div>
