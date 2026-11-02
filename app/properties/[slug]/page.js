@@ -1637,17 +1637,9 @@ export default function PropertyDetailPage() {
                   </div>
                   
                   {(property.type === 'community' || property.type === 'subdivision') ? (
-                    property.slug === 'oak-hill' ? (
-                      // Oak Hill: proximity + connectivity (facts not stated elsewhere on the page)
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        {[['To SpaceX TeraFab', '20 Min'], ['To Houston', '40 Min'], ['To Brenham', '15 Min'], ['Internet', 'High-Speed']].map(([label, value]) => (
-                          <div key={label} className="text-center">
-                            <p className="text-[#7D6B58] text-sm mb-1">{label}</p>
-                            <p className="text-white font-bold text-xl">{value}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
+                    // Oak Hill: no stat row here (price/acres/location/drive times are all
+                    // shown elsewhere on the page already); the card leads straight to Highlights.
+                    property.slug === 'oak-hill' ? null : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       <div className="text-center">
                         <p className="text-[#7D6B58] text-sm mb-1">Starting Price</p>
