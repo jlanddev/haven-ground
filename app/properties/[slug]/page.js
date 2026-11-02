@@ -6,6 +6,18 @@ import { properties as propertiesData } from '../propertiesData';
 import { fetchPropertyBySlug } from '../../../lib/properties-data';
 import { getContactFormText, getSectionHeaders, sanitizePropertyData } from '../propertyConfig';
 
+// Display a lot price cleanly: "$387000" or "387000" -> "$387,000".
+// Leaves ranges / words (e.g. "Call", "From the $140s") untouched.
+const fmtLotPrice = (v) => {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return s;
+  if (/[a-zA-Z]/.test(s) || /[-–]/.test(s)) return s;
+  const digits = s.replace(/[^0-9.]/g, '');
+  if (!digits) return s;
+  const n = Math.round(parseFloat(digits));
+  return isFinite(n) ? `$${n.toLocaleString()}` : s;
+};
+
 // Dynamic Property Map Component - Acres.com Style
 function PropertyMap({ property }) {
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -1010,7 +1022,7 @@ export default function PropertyDetailPage() {
                             <p className="text-sm text-gray-600">{lot.size}</p>
                           </div>
                           <div className="text-right ml-4">
-                            <p className="font-semibold text-[#2F4F33]">{lot.price}</p>
+                            <p className="font-semibold text-[#2F4F33]">{fmtLotPrice(lot.price)}</p>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               lot.status?.toLowerCase() === 'sold'
                                 ? 'bg-red-100 text-red-800'
@@ -1122,7 +1134,7 @@ export default function PropertyDetailPage() {
                             </td>
                             <td className="px-6 py-4 text-[#2F4F33] font-semibold">{lot.size}</td>
                             <td className="px-6 py-4 text-[#2F4F33] font-bold text-lg">
-                              {lot.price}
+                              {fmtLotPrice(lot.price)}
                             </td>
                             <td className="px-4 py-3">
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${

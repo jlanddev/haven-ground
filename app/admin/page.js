@@ -8,6 +8,17 @@ import {
 
 const GREEN = '#2F4F33';
 const slugify = (s) => (s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+// Format a price field to clean currency: "387000" or "$387000" -> "$387,000".
+// Leaves ranges / non-numeric text (e.g. "From the $140s", "Call") untouched.
+const fmtMoney = (v) => {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  if (/[a-zA-Z]/.test(s) || /[-–]/.test(s)) return s; // ranges or words: leave as-is
+  const digits = s.replace(/[^0-9.]/g, '');
+  if (!digits) return s;
+  const n = Math.round(parseFloat(digits));
+  return isFinite(n) ? `$${n.toLocaleString()}` : s;
+};
 
 export default function AdminPage() {
   const [session, setSession] = useState(undefined); // undefined = loading
@@ -769,7 +780,7 @@ function LotsEditor({ lots, unit, onUnitChange, onChange }) {
           <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: 6, alignItems: 'center' }}>
             <input style={inp} value={l.lot || ''} onChange={(e) => set(i, 'lot', e.target.value)} placeholder={`${singular} ${i + 1}`} />
             <input style={inp} value={l.size || ''} onChange={(e) => set(i, 'size', e.target.value)} placeholder="5.23 acres" />
-            <input style={inp} value={l.price || ''} onChange={(e) => set(i, 'price', e.target.value)} placeholder="$151,670" />
+            <input style={inp} value={l.price || ''} onChange={(e) => set(i, 'price', e.target.value)} onBlur={(e) => set(i, 'price', fmtMoney(e.target.value))} placeholder="$151,670" />
             <select style={inp} value={l.status || 'Available'} onChange={(e) => set(i, 'status', e.target.value)}>
               <option>Available</option><option>Pending</option><option>Sold</option>
             </select>
