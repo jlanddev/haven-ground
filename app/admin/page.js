@@ -213,41 +213,44 @@ function Editor({ row, onClose }) {
   const [aiErr, setAiErr] = useState('');
   const [aiFilled, setAiFilled] = useState([]);
 
+  // Build the next form + the list of filled fields synchronously, then set both.
+  // (Doing this inside setForm's updater left the filled list empty on the line
+  // that read it, so the "complete" message never showed.)
   const applyDraft = (x) => {
     const filled = [];
-    setForm((f) => {
-      const next = { ...f, data: { ...(f.data || {}) } };
-      const dd = next.data;
-      const put = (k, v, label) => { if (v !== undefined && v !== null && v !== '') { dd[k] = v; filled.push(label || k); } };
-      put('location', x.location);
-      put('type', x.type);
-      put('priceRange', x.priceRange, 'price range');
-      put('acres', x.acres);
-      put('lots', x.lots, 'acreage label');
-      put('homeTypes', x.homeTypes, 'home types');
-      put('targetBuyer', x.targetBuyer, 'target buyer');
-      put('description', x.description);
-      if (Array.isArray(x.features) && x.features.length) { dd.features = x.features; filled.push('features'); }
-      if (Array.isArray(x.communityHighlights) && x.communityHighlights.length) { dd.communityHighlights = x.communityHighlights; filled.push('community highlights'); }
-      if (x.price != null && x.price !== '') { dd.price = Number(x.price); filled.push('price'); }
-      if (x.pricePerAcre != null && x.pricePerAcre !== '') { dd.pricePerAcre = Number(x.pricePerAcre); filled.push('price/acre'); }
-      if (x.availableLots != null && x.availableLots !== '') { dd.availableLots = Number(x.availableLots); filled.push('available lots'); }
-      if (x.title) { next.title = x.title; dd.title = x.title; if (!f.slug) next.slug = slugify(x.title); filled.push('title'); }
-      if (x.status) { next.status = x.status; dd.status = x.status; filled.push('status'); }
-      if (typeof x.featured === 'boolean') { next.featured = x.featured; dd.featured = x.featured; filled.push('featured'); }
-      const clean = (o) => Object.fromEntries(Object.entries(o || {}).filter(([, v]) => v !== undefined && v !== null && v !== ''));
-      if (x.propertyDetails) {
-        const pd = { ...(dd.propertyDetails || {}) };
-        const loc = clean(x.propertyDetails.location);
-        const feat = clean(x.propertyDetails.features);
-        if (Object.keys(loc).length) { pd.location = { ...(pd.location || {}), ...loc }; filled.push('location details'); }
-        if (Object.keys(feat).length) { pd.features = { ...(pd.features || {}), ...feat }; filled.push('utilities/topography'); }
-        dd.propertyDetails = pd;
-      }
-      if (x.listingAgent) { const a = clean(x.listingAgent); if (Object.keys(a).length) { dd.listingAgent = { ...(dd.listingAgent || {}), ...a }; filled.push('agent'); } }
-      return next;
-    });
+    const f = form;
+    const next = { ...f, data: { ...(f.data || {}) } };
+    const dd = next.data;
+    const put = (k, v, label) => { if (v !== undefined && v !== null && v !== '') { dd[k] = v; filled.push(label || k); } };
+    put('location', x.location);
+    put('type', x.type);
+    put('priceRange', x.priceRange, 'price range');
+    put('acres', x.acres);
+    put('lots', x.lots, 'acreage label');
+    put('homeTypes', x.homeTypes, 'home types');
+    put('targetBuyer', x.targetBuyer, 'target buyer');
+    put('description', x.description);
+    if (Array.isArray(x.features) && x.features.length) { dd.features = x.features; filled.push('features'); }
+    if (Array.isArray(x.communityHighlights) && x.communityHighlights.length) { dd.communityHighlights = x.communityHighlights; filled.push('community highlights'); }
+    if (x.price != null && x.price !== '') { dd.price = Number(x.price); filled.push('price'); }
+    if (x.pricePerAcre != null && x.pricePerAcre !== '') { dd.pricePerAcre = Number(x.pricePerAcre); filled.push('price/acre'); }
+    if (x.availableLots != null && x.availableLots !== '') { dd.availableLots = Number(x.availableLots); filled.push('available lots'); }
+    if (x.title) { next.title = x.title; dd.title = x.title; if (!f.slug) next.slug = slugify(x.title); filled.push('title'); }
+    if (x.status) { next.status = x.status; dd.status = x.status; filled.push('status'); }
+    if (typeof x.featured === 'boolean') { next.featured = x.featured; dd.featured = x.featured; filled.push('featured'); }
+    const clean = (o) => Object.fromEntries(Object.entries(o || {}).filter(([, v]) => v !== undefined && v !== null && v !== ''));
+    if (x.propertyDetails) {
+      const pd = { ...(dd.propertyDetails || {}) };
+      const loc = clean(x.propertyDetails.location);
+      const feat = clean(x.propertyDetails.features);
+      if (Object.keys(loc).length) { pd.location = { ...(pd.location || {}), ...loc }; filled.push('location details'); }
+      if (Object.keys(feat).length) { pd.features = { ...(pd.features || {}), ...feat }; filled.push('utilities/topography'); }
+      dd.propertyDetails = pd;
+    }
+    if (x.listingAgent) { const a = clean(x.listingAgent); if (Object.keys(a).length) { dd.listingAgent = { ...(dd.listingAgent || {}), ...a }; filled.push('agent'); } }
+    setForm(next);
     setAiFilled([...new Set(filled)]);
+    return filled.length;
   };
 
   const draftWithAI = async () => {
@@ -321,7 +324,7 @@ function Editor({ row, onClose }) {
       <div style={{ maxWidth: 860, margin: '0 auto', padding: 24 }}>
         {err && <p style={{ color: '#b91c1c' }}>{err}</p>}
 
-        <details style={{ ...card, marginBottom: 16, padding: 16 }}>
+        <details open style={{ ...card, marginBottom: 16, padding: 16 }}>
           <summary style={{ cursor: 'pointer', fontWeight: 600, color: GREEN, fontSize: 15 }}>✨ Draft with AI</summary>
           <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0' }}>
             Paste your notes or a listing blurb. AI fills the fields and writes the description for you to review. It only uses facts you give it, and nothing saves until you hit Save.
@@ -330,15 +333,30 @@ function Editor({ row, onClose }) {
             style={{ ...inp, minHeight: 110, width: '100%', boxSizing: 'border-box' }}
             value={aiNotes}
             onChange={(e) => setAiNotes(e.target.value)}
+            disabled={aiBusy}
             placeholder={'e.g. 11.15 acres on paved FM 3151, Houston County TX. Tract 3 of Gilbert Ranch, 5 tracts total. Mix of mature trees and open pasture. Outside FEMA flood zone, no county zoning. Coming soon. From the $160s.'}
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10, flexWrap: 'wrap' }}>
-            <button onClick={draftWithAI} disabled={aiBusy} style={{ ...btn, opacity: aiBusy ? 0.6 : 1 }}>
-              {aiBusy ? 'Drafting…' : 'Draft with AI'}
+          <div style={{ marginTop: 10 }}>
+            <button onClick={draftWithAI} disabled={aiBusy || !aiNotes.trim()} style={{ ...btn, opacity: (aiBusy || !aiNotes.trim()) ? 0.6 : 1, cursor: aiBusy ? 'wait' : 'pointer' }}>
+              {aiBusy ? '⏳ Drafting…' : (aiFilled.length > 0 ? 'Redraft' : 'Draft with AI')}
             </button>
-            {aiErr && <span style={{ color: '#b91c1c', fontSize: 13 }}>{aiErr}</span>}
-            {aiFilled.length > 0 && <span style={{ color: GREEN, fontSize: 13 }}>Filled: {aiFilled.join(', ')}. Review the tabs, then Save.</span>}
           </div>
+          {aiBusy && (
+            <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: '#FEF3C7', border: '1px solid #FCD34D', color: '#92400E', fontSize: 14 }}>
+              ⏳ Reading your notes and filling the fields. This usually takes a few seconds…
+            </div>
+          )}
+          {!aiBusy && aiErr && (
+            <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', fontSize: 14 }}>
+              {aiErr}
+            </div>
+          )}
+          {!aiBusy && !aiErr && aiFilled.length > 0 && (
+            <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: '#DCFCE7', border: '1px solid #86EFAC', color: '#166534', fontSize: 14 }}>
+              <strong>✓ Draft complete.</strong> Filled {aiFilled.length} {aiFilled.length === 1 ? 'field' : 'fields'}: {aiFilled.join(', ')}.<br />
+              Open the tabs above to review, then hit <strong>Save</strong>. Nothing is saved yet.
+            </div>
+          )}
         </details>
 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
