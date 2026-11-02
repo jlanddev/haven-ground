@@ -1637,9 +1637,6 @@ export default function PropertyDetailPage() {
                   </div>
                   
                   {(property.type === 'community' || property.type === 'subdivision') ? (
-                    // Oak Hill: no stat row here (price/acres/location/drive times are all
-                    // shown elsewhere on the page already); the card leads straight to Highlights.
-                    property.slug === 'oak-hill' ? null : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       <div className="text-center">
                         <p className="text-[#7D6B58] text-sm mb-1">Starting Price</p>
@@ -1658,7 +1655,6 @@ export default function PropertyDetailPage() {
                         <p className="text-white font-bold text-xl">{property.location}</p>
                       </div>
                     </div>
-                    )
                   ) : property.type === 'raw_land' ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       <div className="text-center">
