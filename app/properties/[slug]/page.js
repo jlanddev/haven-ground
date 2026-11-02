@@ -80,8 +80,12 @@ function PropertyMap({ property }) {
           if (existing && existing._leaflet_id) { existing._leaflet_id = undefined; existing.innerHTML = ''; }
 
           const map = L.map(mapId, {
-            scrollWheelZoom: false,
+            scrollWheelZoom: true,   // trackpad pinch + wheel zoom to the cursor
+            touchZoom: true,
+            doubleClickZoom: true,
             zoomControl: true,
+            zoomSnap: 0.5,
+            wheelPxPerZoomLevel: 120,
             // No zoom animation: a fitBounds-triggered zoom that finishes AFTER
             // the effect re-runs/unmounts throws Leaflet's "_leaflet_pos of
             // undefined" and takes down the whole page. Snapping avoids the race.
@@ -92,6 +96,16 @@ function PropertyMap({ property }) {
 
           // Esri satellite imagery - no country flags
           L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: false,
+            maxZoom: 20
+          }).addTo(map);
+
+          // Labels overlay (roads, place names) so you can orient yourself.
+          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            attribution: false,
+            maxZoom: 20
+          }).addTo(map);
+          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
             attribution: false,
             maxZoom: 20
           }).addTo(map);
@@ -138,6 +152,16 @@ function PropertyMap({ property }) {
               radius: radius
             }).addTo(map);
           }
+
+          // Keep the view anchored on the property: cap how far out you can zoom
+          // and how far you can pan, so the +/- buttons and pinch never lose it.
+          try {
+            const vb = map.getBounds();
+            if (vb && vb.isValid()) {
+              map.setMaxBounds(vb.pad(1.5));
+              map.setMinZoom(Math.max(10, map.getZoom() - 2));
+            }
+          } catch (e) { /* non-fatal */ }
 
           // Property marker at center
           L.marker([lat, lng], {
