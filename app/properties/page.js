@@ -13,6 +13,15 @@ const fmtPriceRange = (v) => {
   const m = s.match(/^\$?\s*(\d{1,4})\s*s?\.?$/i);
   return m ? `From the $${m[1]}s` : s;
 };
+// Starting price from the actual lot table (lowest priced lot), so the price shown
+// always tracks what was set in the editor. Falls back to the price-range text.
+const startingFromLots = (p) => {
+  const prices = (Array.isArray(p && p.lotTable) ? p.lotTable : [])
+    .map((l) => parseFloat(String((l && l.price) || '').replace(/[^0-9.]/g, '')))
+    .filter((n) => isFinite(n) && n > 0);
+  return prices.length ? `From $${Math.min(...prices).toLocaleString()}` : null;
+};
+const displayStartingPrice = (p) => startingFromLots(p) || fmtPriceRange(p && p.priceRange);
 
 // A property's full state name, read from its "City, ST" (or "City, State") location.
 const propStateFull = (p) => {
@@ -565,7 +574,7 @@ export default function PropertiesPage() {
             <p style="color: #3A4045; font-size: 12px; margin: 0 0 12px 0; line-height: 1.4;">${property.description}</p>
             <div style="margin-bottom: 12px;">
               <div style="font-size: 11px; color: #7D6B58; font-weight: 500;">Price Range</div>
-              <div style="font-size: 15px; color: #2F4F33; font-weight: bold;">${fmtPriceRange(property.priceRange)}</div>
+              <div style="font-size: 15px; color: #2F4F33; font-weight: bold;">${displayStartingPrice(property)}</div>
             </div>
             <a
               href="/properties/${property.slug}"
@@ -1231,7 +1240,7 @@ export default function PropertiesPage() {
                                   </div>
                                   <div>
                                     <p className="text-sm text-[#7D6B58] font-medium">Price Range</p>
-                                    <p className="text-2xl text-[#2F4F33] font-bold">{fmtPriceRange(property.priceRange)}</p>
+                                    <p className="text-2xl text-[#2F4F33] font-bold">{displayStartingPrice(property)}</p>
                                   </div>
                                 </div>
                               </div>

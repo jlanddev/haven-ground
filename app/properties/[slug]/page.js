@@ -67,8 +67,10 @@ function PropertyMap({ property }) {
 
         const L = window.L;
         const coords = property.propertyDetails.location.coordinates;
-        const lat = coords.lat;
-        const lng = coords.lng;
+        const lat = Number(coords.lat);
+        const lng = Number(coords.lng);
+        // No usable coordinates: skip the map entirely rather than throw on setView.
+        if (!isFinite(lat) || !isFinite(lng)) { setMapLoaded(true); return; }
 
         try {
           // Tear down any prior Leaflet instance on this container first. The
