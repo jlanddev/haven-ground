@@ -45,13 +45,17 @@ const fmtPriceRange = (v) => {
   const m = s.match(/^\$?\s*(\d{1,4})\s*s?\.?$/i);
   return m ? `From the $${m[1]}s` : s;
 };
-// Starting price derived from the actual lot table (lowest priced lot), so the
-// price shown always matches the pricing set in the editor. Null if no priced lots.
+// Starting price band from the actual lot table (lowest priced lot), shown as
+// "From the $150s" so it tracks the editor pricing automatically. Null if no priced
+// lots. Band = lowest price floored to the $10k, e.g. $150,175 -> $150s.
 const startingFromLots = (p) => {
-  const prices = ((p && p.lotTable) || [])
+  const prices = (Array.isArray(p && p.lotTable) ? p.lotTable : [])
     .map((l) => parseFloat(String(l && l.price || '').replace(/[^0-9.]/g, '')))
     .filter((n) => isFinite(n) && n > 0);
-  return prices.length ? `From $${Math.min(...prices).toLocaleString()}` : null;
+  if (!prices.length) return null;
+  const min = Math.min(...prices);
+  if (min < 10000) return `From $${min.toLocaleString()}`;
+  return `From the $${Math.floor(min / 10000) * 10}s`;
 };
 
 // Dynamic Property Map Component - Acres.com Style
