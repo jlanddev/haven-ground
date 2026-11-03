@@ -18,6 +18,25 @@ const fmtLotPrice = (v) => {
   return isFinite(n) ? `$${n.toLocaleString()}` : s;
 };
 
+// Neutral placeholder for a slug that isn't in the bundled static data yet, so the
+// page never flashes a different listing while the real data loads. Safe empties so
+// no effect throws before the real property arrives.
+const makePlaceholderProperty = (slug) => ({
+  slug: slug || '',
+  title: String(slug || '').replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+  location: '',
+  type: 'community',
+  status: 'Available',
+  priceRange: '',
+  images: [],
+  features: [],
+  communityHighlights: [],
+  lotTable: [],
+  boundary: null,
+  propertyDetails: { location: { address: '', county: '', parcelId: '', coordinates: null }, features: {} },
+  listingAgent: { name: '', phone: '', brokerage: '' },
+});
+
 // Keep price ranges consistent: a bare "$70s" / "70s" / "140" shows as "From the $70s".
 const fmtPriceRange = (v) => {
   const s = String(v == null ? '' : v).trim();
@@ -283,11 +302,19 @@ export default function PropertyDetailPage() {
   // Render the static match instantly (fast, never hangs), then refresh from
   // Supabase so edited or newly published listings show. Static stays as the
   // fallback if the DB is slow or down.
-  const staticMatch = propertiesData.find(p => p.slug === propertySlug) || propertiesData[0];
-  const [property, setProperty] = useState(staticMatch);
+  // Only use a static entry when it matches THIS slug. For a listing not in the
+  // bundled static data (e.g. Gilbert Ranch), fall back to a neutral placeholder
+  // keyed to the slug, NOT propertiesData[0] (which flashed Mallards Bend while the
+  // real listing loaded). We show a loading screen over the placeholder until the
+  // real data arrives, so no wrong listing ever appears.
+  const exactStaticMatch = propertiesData.find(p => p.slug === propertySlug) || null;
+  const [property, setProperty] = useState(exactStaticMatch || makePlaceholderProperty(propertySlug));
+  const [propertyLoaded, setPropertyLoaded] = useState(!!exactStaticMatch);
   useEffect(() => {
     let alive = true;
-    fetchPropertyBySlug(propertySlug).then((p) => { if (alive && p) setProperty(p); }).catch(() => {});
+    fetchPropertyBySlug(propertySlug)
+      .then((p) => { if (alive && p) { setProperty(p); setPropertyLoaded(true); } })
+      .catch(() => { if (alive) setPropertyLoaded(true); });
     return () => { alive = false; };
   }, [propertySlug]);
 
@@ -791,6 +818,20 @@ export default function PropertyDetailPage() {
       console.error('Webhook error:', error);
     }
   };
+
+  // Listing not in the bundled static data and real data not loaded yet: show a
+  // clean loading screen instead of the neutral placeholder's empty sections (and
+  // never a different listing).
+  if (!propertyLoaded && !property.location) {
+    return (
+      <div className="flex flex-col min-h-screen font-serif bg-stone-50 items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#D2C6B2] border-t-[#2F4F33] rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#7D6B58] text-lg">Loading {property.title}…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen font-serif bg-stone-50 max-w-full">
